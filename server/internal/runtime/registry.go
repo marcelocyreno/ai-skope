@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os/exec"
@@ -98,9 +99,7 @@ func (r *Registry) Detect(ctx context.Context) []Info {
 		info.Available = true
 
 		started := time.Now()
-		vctx, cancel := context.WithTimeout(ctx, r.cfg.ProbeTimeout.D())
-		out, verr := exec.CommandContext(vctx, path, s.VersionArgs...).CombinedOutput()
-		cancel()
+		out, verr := probeVersion(ctx, path, s.VersionArgs, r.cfg.ProbeTimeout.D())
 		info.LatencyMS = time.Since(started).Milliseconds()
 		if verr != nil {
 			info.Status = StatusDegraded
@@ -320,6 +319,25 @@ func (r *Registry) StartProbes(ctx context.Context) {
 	}()
 }
 
+// probeVersion asks a binary for its version under a hard time bound.
+//
+// It uses the same process-group handling as a turn: an agent that hangs (or
+// that leaves a child holding its output pipe) must not stall detection, which
+// runs on a timer and blocks the settings page.
+func probeVersion(parent context.Context, path string, args []string, timeout time.Duration) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(parent, timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, path, args...)
+	configureProcAttr(cmd)
+	cmd.Stdin = strings.NewReader("")
+	var buf bytes.Buffer
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+	err := cmd.Run()
+	return buf.Bytes(), err
+}
+
 func firstLine(s string) string {
 	if i := strings.IndexByte(s, '\n'); i >= 0 {
 		return s[:i]
@@ -340,4 +358,16 @@ func parseVersion(out string) string {
 		}
 	}
 	return line
+}
+
+// Label renders a selection the way the transcript shows it.
+func (s Selection) Label() string {
+	switch {
+	case s.Provider != "" && s.Model != "":
+		return s.Provider + " / " + s.Model
+	case s.Model != "":
+		return s.Model
+	default:
+		return s.Runtime
+	}
 }

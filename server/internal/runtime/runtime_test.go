@@ -211,6 +211,7 @@ func TestRegistryDetectAndModels(t *testing.T) {
 	}
 	defer db.Close()
 	cfg := config.Default()
+	cfg.ProbeTimeout = config.Duration(2 * time.Second)
 	cfg.RuntimeCommands = map[string]string{"custom:fake": fake(t, "versioned.sh")}
 	reg := NewRegistry(db, cfg, provider.NewRegistry(db, nil), status.NewBus())
 
@@ -253,6 +254,7 @@ func TestRegistryStartRefusesDisabled(t *testing.T) {
 	}
 	defer db.Close()
 	cfg := config.Default()
+	cfg.ProbeTimeout = config.Duration(2 * time.Second)
 	cfg.RuntimeCommands = map[string]string{"custom:fake": fake(t, "versioned.sh")}
 	reg := NewRegistry(db, cfg, provider.NewRegistry(db, nil), status.NewBus())
 	ctx := context.Background()

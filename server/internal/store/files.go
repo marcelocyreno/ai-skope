@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"errors"
+	"path/filepath"
 	"strings"
 )
 
@@ -224,8 +225,11 @@ func (db *DB) RecentFiles(limit int) ([]File, error) {
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
-	rows, err := db.sql.Query(`SELECT f.path, f.folder_id, f.name, f.ext, f.size, f.mtime
-		FROM recent_files r JOIN files f ON f.path = r.path
+	// A file the user attached is recent whether or not the indexer has
+	// reached it yet, so this does not require an index row.
+	rows, err := db.sql.Query(`SELECT r.path, COALESCE(f.folder_id, ''), COALESCE(f.name, ''),
+		COALESCE(f.ext, ''), COALESCE(f.size, 0), COALESCE(f.mtime, 0)
+		FROM recent_files r LEFT JOIN files f ON f.path = r.path
 		ORDER BY r.used_at DESC LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -236,6 +240,10 @@ func (db *DB) RecentFiles(limit int) ([]File, error) {
 		var f File
 		if err := rows.Scan(&f.Path, &f.FolderID, &f.Name, &f.Ext, &f.Size, &f.MTime); err != nil {
 			return nil, err
+		}
+		if f.Name == "" {
+			f.Name = filepath.Base(f.Path)
+			f.Ext = strings.ToLower(filepath.Ext(f.Path))
 		}
 		out = append(out, f)
 	}

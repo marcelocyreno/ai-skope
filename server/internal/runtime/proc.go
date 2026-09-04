@@ -14,6 +14,10 @@ import (
 	"github.com/ai-skope/aiss/internal/store"
 )
 
+// abandonGrace is how long a cancelled turn waits for its output readers
+// before giving up on them.
+const abandonGrace = 1500 * time.Millisecond
+
 // maxLine caps one line of agent output. Anything longer is truncated rather
 // than buffered without bound.
 const maxLine = 4 << 20
@@ -122,8 +126,24 @@ func spawn(parent context.Context, spec Spec, req TurnRequest, bin string) (Turn
 		})
 	}()
 
+	readersDone := make(chan struct{})
+	go func() { wg.Wait(); close(readersDone) }()
+
 	go func() {
-		wg.Wait()
+		// Normally the readers finish when the agent exits and its pipes
+		// close. After a cancellation a descendant may still hold a pipe
+		// open, so waiting for the readers is bounded: past the grace period
+		// they are abandoned and cmd.Wait (with WaitDelay set) closes the
+		// pipes itself. Without this the turn would stay open for as long as
+		// the stray process lives.
+		select {
+		case <-readersDone:
+		case <-ctx.Done():
+			select {
+			case <-readersDone:
+			case <-time.After(abandonGrace):
+			}
+		}
 		waitErr := cmd.Wait()
 		elapsed := time.Since(started).Milliseconds()
 
