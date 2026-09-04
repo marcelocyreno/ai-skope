@@ -41,8 +41,14 @@ type Config struct {
 	// IndexExts get their text content indexed and are readable as text.
 	IndexExts []string `yaml:"indexExts"`
 
-	// RuntimeCommands overrides the binary used for a runtime id.
+	// RuntimeCommands overrides the binary (and flags) used for a runtime id.
 	RuntimeCommands map[string]string `yaml:"runtimeCommands"`
+
+	// PassthroughEnv names environment variables the server hands to agents
+	// unchanged. Agents otherwise start with a scrubbed environment plus the
+	// credentials the provider registry injects, so a key sitting in the
+	// user's shell never leaks into a subprocess by accident.
+	PassthroughEnv []string `yaml:"passthroughEnv"`
 }
 
 // Duration is a YAML-friendly time.Duration ("30s", "5m").
@@ -96,6 +102,7 @@ func Default() Config {
 			".sh", ".bash", ".zsh", ".sql", ".css", ".scss",
 		},
 		RuntimeCommands: map[string]string{},
+		PassthroughEnv:  []string{},
 	}
 }
 
