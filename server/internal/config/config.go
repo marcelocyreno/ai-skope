@@ -27,7 +27,7 @@ type Config struct {
 	MaxFileBytes    int64 `yaml:"maxFileBytes"`
 	MaxIndexBytes   int64 `yaml:"maxIndexBytes"`
 	MaxRequestBytes int64 `yaml:"maxRequestBytes"`
-	MaxContextBytes int    `yaml:"maxContextBytes"`
+	MaxContextBytes int   `yaml:"maxContextBytes"`
 
 	// Timeouts.
 	TurnTimeout   Duration `yaml:"turnTimeout"`

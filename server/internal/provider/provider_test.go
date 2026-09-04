@@ -59,8 +59,8 @@ func TestKeystoreFileIsEncrypted(t *testing.T) {
 
 func TestMask(t *testing.T) {
 	cases := map[string]string{
-		"":                        "",
-		"abc":                     "…bc",
+		"":                         "",
+		"abc":                      "…bc",
 		"sk-ant-api03-longkey1234": "sk-ant…1234",
 	}
 	for in, want := range cases {

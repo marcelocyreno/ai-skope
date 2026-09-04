@@ -13,15 +13,15 @@ import (
 // change to a few fields, not to the process machinery. What has actually been
 // verified, and against which version, is recorded in docs/runtimes/COMPAT.md.
 type Spec struct {
-	ID           string
-	Name         string
-	Group        string // UI grouping; pi/omp/opencode share the provider registry
-	Bin          string
-	VersionArgs  []string
-	EffortLevels []string
-	UsesProvider bool          // models come from the provider registry
-	Models       []store.Model // static catalogue for agents with fixed models
-	PromptViaStdin bool        // never put a prompt on argv: it shows up in ps
+	ID             string
+	Name           string
+	Group          string // UI grouping; pi/omp/opencode share the provider registry
+	Bin            string
+	VersionArgs    []string
+	EffortLevels   []string
+	UsesProvider   bool          // models come from the provider registry
+	Models         []store.Model // static catalogue for agents with fixed models
+	PromptViaStdin bool          // never put a prompt on argv: it shows up in ps
 
 	// Args builds the command line for one turn.
 	Args func(req TurnRequest) []string
@@ -43,8 +43,8 @@ func effortFlag(effort string) string { return strings.ToLower(strings.TrimSpace
 var Specs = []Spec{
 	{
 		ID: "claude-code", Name: "Claude Code", Bin: "claude",
-		VersionArgs:  []string{"--version"},
-		EffortLevels: []string{"low", "medium", "high", "max"},
+		VersionArgs:    []string{"--version"},
+		EffortLevels:   []string{"low", "medium", "high", "max"},
 		PromptViaStdin: true,
 		Models: []store.Model{
 			{Name: "opus-5", Ctx: 1000000},
@@ -70,8 +70,8 @@ var Specs = []Spec{
 	},
 	{
 		ID: "codex", Name: "Codex", Bin: "codex",
-		VersionArgs:  []string{"--version"},
-		EffortLevels: []string{"low", "medium", "high"},
+		VersionArgs:    []string{"--version"},
+		EffortLevels:   []string{"low", "medium", "high"},
 		PromptViaStdin: true,
 		Models: []store.Model{
 			{Name: "gpt-5-codex", Ctx: 400000},
@@ -94,8 +94,8 @@ var Specs = []Spec{
 	},
 	{
 		ID: "opencode", Name: "opencode", Group: "agents", Bin: "opencode",
-		VersionArgs:  []string{"--version"},
-		UsesProvider: true,
+		VersionArgs:    []string{"--version"},
+		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
 			a := []string{"run", "--print-logs"}
@@ -110,8 +110,8 @@ var Specs = []Spec{
 	},
 	{
 		ID: "pi", Name: "pi", Group: "agents", Bin: "pi",
-		VersionArgs:  []string{"--version"},
-		UsesProvider: true,
+		VersionArgs:    []string{"--version"},
+		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
 			a := []string{"--json"}
@@ -126,8 +126,8 @@ var Specs = []Spec{
 	},
 	{
 		ID: "omp", Name: "omp", Group: "agents", Bin: "omp",
-		VersionArgs:  []string{"--version"},
-		UsesProvider: true,
+		VersionArgs:    []string{"--version"},
+		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
 			a := []string{"--json"}

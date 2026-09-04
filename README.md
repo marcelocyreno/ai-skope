@@ -17,14 +17,23 @@ provider API keys are supported as a secondary source.
 |---|---|
 | `design/` | The visual design system: tokens, six palettes, 20 component previews, 12 screens, and an interactive prototype (`design/preview/ai-skope.html`). Start there. |
 | `docs/SPEC.md` | The product as specified so far: anatomy, context types, chats & history rules, model-source hierarchy, settings tiers, visual system, implementation assumptions, open questions. |
-| `docs/SERVER-PLAN.md` | The plan for the Go server: architecture, security model, v1 HTTP/SSE API, runtime adapters, provider registry, file index, storage, packaging, milestones M0–M5. |
+| `server/` | The **AI Skope Server** (`aiss`), written in Go: HTTP + SSE API, runtime adapters, provider keychain, folder allow-list and file index, chats and notes. Built and tested, including an end-to-end script. |
+| `docs/SERVER-PLAN.md` | The plan the server was built from: architecture, security model, v1 API, milestones. |
+| `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |
 
 ## Status
 
-Wave 1 — **visual design** — is complete. No extension code and no server code
-exist yet; both are planned in the documents above.
+- **Wave 1 — visual design:** complete (`design/`).
+- **Wave 2 — the server:** complete (`server/`). API, runtimes, providers,
+  files, chats and notes, with unit, integration and end-to-end tests. The
+  exact command line of each real coding agent still needs verifying against
+  installed versions — see `docs/runtimes/COMPAT.md`.
+- **Next — the extension:** not started. `docs/SPEC.md` carries the decisions.
 
 ```
-cd design && node build.mjs      # rebuild components/, screens/ and the prototype
+cd design && node build.mjs        # rebuild the design kit and prototype
 open design/preview/ai-skope.html
+
+cd server && make test && make e2e # server tests, then a live end-to-end run
+make build && ./aiss start && ./aiss pair
 ```

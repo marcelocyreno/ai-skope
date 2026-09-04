@@ -27,6 +27,16 @@ func NewRegistry(db *store.DB, keys Keystore) *Registry {
 // Keystore exposes the backing secret store (used by `aiss doctor`).
 func (r *Registry) Keystore() Keystore { return r.keys }
 
+// KeystoreBackend names where secrets are kept, or "none" when the registry
+// was built without a keystore (embedded uses and tests that never store a
+// key). Callers should not have to nil-check the store to report status.
+func (r *Registry) KeystoreBackend() string {
+	if r.keys == nil {
+		return "none"
+	}
+	return r.keys.Backend()
+}
+
 // List returns every provider, with masked keys only.
 func (r *Registry) List() ([]store.Provider, error) { return r.db.Providers() }
 

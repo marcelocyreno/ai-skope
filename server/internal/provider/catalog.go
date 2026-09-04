@@ -11,8 +11,8 @@ type Kind struct {
 	NeedsKey   bool
 	KeyEnv     []string // env vars set for a runtime that may use this provider
 	BaseURLEnv []string
-	ModelsPath string   // relative to BaseURL
-	Style      string   // openai | anthropic | google | ollama
+	ModelsPath string // relative to BaseURL
+	Style      string // openai | anthropic | google | ollama
 }
 
 // Catalog is every provider kind the server understands. "openai-compatible"
