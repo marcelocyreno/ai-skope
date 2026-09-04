@@ -1,0 +1,2052 @@
+<title>AI Skope</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ============================================================
+   AI Skope — design tokens
+   Direction: "optical instrument". Cool graphite neutrals with a
+   blue-teal bias; one warm amber accent reserved for AIM — picked
+   elements, selected text, pending context, send. Teal is for
+   keyboard focus and links, never for emphasis.
+
+   Theme states (all three must resolve):
+     1. bare :root ............. light (also the default "system" state on a light OS)
+     2. prefers-color-scheme ... dark unless the root is stamped data-theme="light"
+     3. [data-theme="dark"] .... explicit choice wins in both directions
+   Tokens are also scoped to any element carrying data-theme, so a
+   screen can show a light and a dark canvas side by side.
+   ============================================================ */
+
+:root, [data-theme="light"] {
+  color-scheme: light;
+
+  /* surfaces — step *lighter* as they come forward in dark, darker in light */
+  --bg:        #EEF1F4;   /* canvas behind both panes */
+  --surface:   #FFFFFF;   /* AI pane, popovers, cards */
+  --surface-2: #F5F7F9;   /* user bubbles, composer field, inputs */
+  --surface-3: #E9EDF1;   /* hover fills, segmented track */
+  --inverse:   #1B2026;   /* floating instrument toolbar */
+  --inverse-ink: #F2F5F7;
+
+  /* ink */
+  --ink:   #161A1F;
+  --ink-2: #5C6672;
+  --ink-3: #8A94A0;
+
+  /* lines */
+  --line:   #D9DFE5;
+  --line-2: #E7EBEF;
+
+  /* aim accent (amber) */
+  --accent:      #D97A0B;
+  --accent-ink:  #8A4D05;               /* amber text on light grounds (AA) */
+  --accent-soft: rgba(217,122,11,.12);
+  --accent-line: rgba(217,122,11,.45);
+  --accent-on:   #FFFFFF;
+
+  /* focus / links (teal) */
+  --focus:      #1F8FA8;
+  --focus-soft: rgba(31,143,168,.20);
+
+  /* semantic — model status only, never used as accent */
+  --ok:   #2E9D5C;  --ok-soft:   rgba(46,157,92,.14);
+  --warn: #C98A00;  --warn-soft: rgba(201,138,0,.14);
+  --bad:  #C8453E;  --bad-soft:  rgba(200,69,62,.12);
+
+  /* elevation — only floating things cast shadows */
+  --shadow-pop:   0 12px 32px rgba(16,24,32,.16), 0 1px 3px rgba(16,24,32,.10);
+  --shadow-float: 0 6px 18px rgba(16,24,32,.16);
+  --mask:         rgba(16,24,32,.32);   /* picker dim mask */
+
+  /* type */
+  --font-ui:   "Manrope", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --t-11: 11px; --t-12: 12px; --t-13: 13px; --t-14: 14px;
+  --t-16: 16px; --t-18: 18px; --t-22: 22px;
+  --lh-body: 1.5;
+
+  /* shape & space */
+  --r-ctl: 6px;   /* buttons, chips, inputs */
+  --r-card: 10px; /* bubbles, notes, cards */
+  --r-pop: 14px;  /* popovers, panels */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px;
+
+  /* layout */
+  --pane-w: 400px;  --pane-min: 320px;  --pane-max: 640px;
+  --topbar-h: 48px; --tabs-h: 40px;
+
+  /* motion */
+  --ease: cubic-bezier(.2,.7,.2,1);
+  --dur: 160ms;
+}
+
+/* ---- dark palette (shared by states 2 and 3) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
+    --inverse: #EAEEF2; --inverse-ink: #161A1F;
+    --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
+    --line: #2A3138; --line-2: #222830;
+    --accent: #F2A23A; --accent-ink: #F6B658;
+    --accent-soft: rgba(242,162,58,.16); --accent-line: rgba(242,162,58,.50);
+    --accent-on: #1A1204;
+    --focus: #3FB4CE; --focus-soft: rgba(63,180,206,.24);
+    --ok: #4CC479; --ok-soft: rgba(76,196,121,.16);
+    --warn: #E2A93A; --warn-soft: rgba(226,169,58,.16);
+    --bad: #E9645B; --bad-soft: rgba(233,100,91,.16);
+    --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+    --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+    --mask: rgba(4,6,8,.5);
+  }
+}
+:root[data-theme="dark"], [data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
+  --inverse: #EAEEF2; --inverse-ink: #161A1F;
+  --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
+  --line: #2A3138; --line-2: #222830;
+  --accent: #F2A23A; --accent-ink: #F6B658;
+  --accent-soft: rgba(242,162,58,.16); --accent-line: rgba(242,162,58,.50);
+  --accent-on: #1A1204;
+  --focus: #3FB4CE; --focus-soft: rgba(63,180,206,.24);
+  --ok: #4CC479; --ok-soft: rgba(76,196,121,.16);
+  --warn: #E2A93A; --warn-soft: rgba(226,169,58,.16);
+  --bad: #E9645B; --bad-soft: rgba(233,100,91,.16);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+  --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+  --mask: rgba(4,6,8,.5);
+}
+
+/* ---- base ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-14);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-ctl); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* ============================================================
+   AI Skope — component styles (prefix: sk-)
+   Depends on tokens.css. Every color comes from a token so both
+   themes resolve as a set.
+   ============================================================ */
+
+/* ---------- icons ---------- */
+.sk-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.sk-ico.sm { width: 13px; height: 13px; }
+.sk-ico.lg { width: 20px; height: 20px; }
+
+/* ---------- split canvas ---------- */
+.sk-canvas { display: flex; height: 100vh; width: 100%; background: var(--bg); overflow: hidden; position: relative; }
+.sk-canvas.is-fixed { height: 100%; }
+.sk-content { flex: 1 1 auto; min-width: 0; position: relative; overflow: auto; background: var(--surface); }
+.sk-divider { flex: none; width: 6px; cursor: col-resize; background: var(--bg); border-left: 1px solid var(--line); position: relative; }
+.sk-divider::after { content: ""; position: absolute; left: 1px; top: 50%; width: 2px; height: 28px; margin-top: -14px; border-radius: 2px; background: var(--line); transition: background var(--dur) var(--ease); }
+.sk-divider:hover::after, .sk-divider.is-dragging::after { background: var(--accent); }
+.sk-pane { container-type: inline-size; flex: none; width: var(--pane-w); min-width: var(--pane-min); max-width: var(--pane-max); display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); position: relative; overflow: hidden; }
+
+/* ---------- top bar ---------- */
+.sk-topbar { flex: none; height: var(--topbar-h); display: flex; align-items: center; gap: var(--s-2); padding: 0 var(--s-2) 0 var(--s-3); border-bottom: 1px solid var(--line); }
+.sk-brand { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.sk-brand .sk-ico { width: 18px; height: 18px; color: var(--ink); }
+.sk-brand-name { font-family: var(--font-ui); font-weight: 700; font-size: var(--t-14); letter-spacing: -0.01em; white-space: nowrap; }
+.sk-topbar-spacer { flex: 1; }
+
+/* model chip */
+.sk-chip-model { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); max-width: 100%; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.sk-chip-model:hover { background: var(--surface-3); }
+.sk-chip-model[aria-expanded="true"] { border-color: var(--ink-3); }
+.sk-chip-model .sk-ico { width: 14px; height: 14px; color: var(--ink-2); }
+.sk-chip-model .name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-chip-model .lat { font-family: var(--font-mono); font-weight: 400; font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
+/* latency lives in the switcher and the chip tooltip — never in the chip, so the model name always wins */
+.sk-chip-model .lat { display: none; }
+.sk-chip-model .eff { flex: none; }
+@container (max-width: 440px) { .sk-chip-model .eff { display: none; } }
+@container (max-width: 350px) { .sk-brand-name { display: none; } }
+.sk-chip-model .chev { width: 12px; height: 12px; color: var(--ink-3); }
+.sk-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; box-shadow: 0 0 0 2px var(--ok-soft); }
+.sk-dot.is-degraded { background: var(--warn); box-shadow: 0 0 0 2px var(--warn-soft); }
+.sk-dot.is-offline { background: var(--bad); box-shadow: 0 0 0 2px var(--bad-soft); }
+.sk-dot.is-thinking { background: var(--ok); animation: sk-pulse 1.4s ease-in-out infinite; }
+@keyframes sk-pulse { 0%,100% { box-shadow: 0 0 0 2px var(--ok-soft); } 50% { box-shadow: 0 0 0 5px var(--ok-soft); } }
+
+/* icon button */
+.sk-iconbtn { width: 32px; height: 32px; display: inline-grid; place-items: center; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-2); transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.sk-iconbtn:hover { background: var(--surface-2); color: var(--ink); }
+.sk-iconbtn[aria-pressed="true"], .sk-iconbtn.is-active { background: var(--accent-soft); color: var(--accent-ink); }
+.sk-iconbtn .sk-ico { width: 18px; height: 18px; }
+.sk-iconbtn.sm { width: 28px; height: 28px; } .sk-iconbtn.sm .sk-ico { width: 16px; height: 16px; }
+
+/* ---------- tabs ---------- */
+.sk-tabs { flex: none; height: var(--tabs-h); display: flex; align-items: stretch; padding: 0 var(--s-2); border-bottom: 1px solid var(--line); }
+.sk-tab { display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; border: 0; background: none; color: var(--ink-2); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); position: relative; transition: color var(--dur) var(--ease); }
+.sk-tab:hover { color: var(--ink); }
+.sk-tab[aria-selected="true"] { color: var(--ink); }
+.sk-tab[aria-selected="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--ink); border-radius: 2px 2px 0 0; }
+.sk-tab .sk-ico { width: 15px; height: 15px; }
+.sk-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--surface-3); color: var(--ink-2); font-family: var(--font-mono); font-size: var(--t-11); font-weight: 500; }
+.sk-tab[aria-selected="true"] .sk-badge { background: var(--ink); color: var(--surface); }
+
+/* ---------- chat thread ---------- */
+.sk-body { flex: 1 1 auto; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.sk-thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--s-4) 14px var(--s-3); display: flex; flex-direction: column; gap: 14px; }
+.sk-day { align-self: center; font-family: var(--font-ui); font-size: var(--t-11); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 2px 0; }
+.sk-msg { display: flex; flex-direction: column; gap: 6px; max-width: 88%; position: relative; }
+.sk-msg.user { align-self: flex-end; align-items: flex-end; }
+.sk-msg.ai { align-self: stretch; max-width: 100%; }
+.sk-bubble { padding: 9px 12px; border-radius: 12px 12px 4px 12px; background: var(--surface-2); color: var(--ink); font-size: var(--t-14); line-height: var(--lh-body); overflow-wrap: anywhere; }
+.sk-bubble p { margin: 0; } .sk-bubble p + p { margin-top: 6px; }
+.sk-ai-head { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-family: var(--font-ui); font-size: var(--t-11); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.sk-ai-head .sk-ico { width: 13px; height: 13px; color: var(--ink-2); }
+.sk-ai-body { font-size: var(--t-14); line-height: var(--lh-body); color: var(--ink); max-width: 62ch; overflow-wrap: anywhere; }
+.sk-ai-body p { margin: 0; } .sk-ai-body p + p, .sk-ai-body ul + p, .sk-ai-body p + ul { margin-top: 8px; }
+.sk-ai-body ul { margin: 0; padding-left: 18px; } .sk-ai-body li + li { margin-top: 3px; }
+.sk-ai-body code { font-size: var(--t-12); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line-2); }
+.sk-ai-body strong { font-weight: 600; }
+.sk-time { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-msg:hover .sk-time, .sk-msg:focus-within .sk-time { opacity: 1; }
+.sk-msg-ctx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.sk-cursor { display: inline-block; width: 2px; height: 1em; vertical-align: -0.15em; margin-left: 2px; background: var(--accent); animation: sk-blink 1s steps(2, start) infinite; }
+@keyframes sk-blink { to { visibility: hidden; } }
+.sk-tool { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--ink-2); font-size: var(--t-12); font-family: var(--font-ui); font-weight: 500; }
+.sk-tool code { font-size: var(--t-11); color: var(--accent-ink); }
+.sk-spin { width: 12px; height: 12px; border-radius: 50%; border: 1.75px solid var(--line); border-top-color: var(--accent); animation: sk-spin .9s linear infinite; flex: none; }
+@keyframes sk-spin { to { transform: rotate(360deg); } }
+.sk-err { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-ctl); background: var(--bad-soft); color: var(--ink); font-size: var(--t-13); }
+.sk-err .sk-ico { color: var(--bad); }
+.sk-err .act { margin-left: auto; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--focus); background: none; border: 0; padding: 4px 6px; border-radius: var(--r-ctl); white-space: nowrap; }
+.sk-err .act:hover { background: var(--surface); }
+
+/* ---------- context chips ---------- */
+.sk-ctx { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 26px; padding: 0 6px 0 7px; border-radius: var(--r-ctl); background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--ink); font-size: var(--t-12); }
+.sk-ctx .sk-ico { width: 13px; height: 13px; color: var(--accent-ink); }
+.sk-ctx .sel { font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.sk-ctx .dim { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
+.sk-ctx .q { font-style: italic; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.sk-ctx .q::before { content: "“"; color: var(--accent-ink); font-style: normal; }
+.sk-ctx .q::after { content: "”"; color: var(--accent-ink); font-style: normal; }
+.sk-ctx-x { width: 18px; height: 18px; display: inline-grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: var(--ink-3); margin-right: -2px; }
+.sk-ctx-x:hover { background: var(--accent-line); color: var(--ink); }
+.sk-ctx-x .sk-ico { width: 11px; height: 11px; color: currentColor; }
+
+/* ---------- composer ---------- */
+.sk-composer { flex: none; border-top: 1px solid var(--line); padding: 10px 12px 10px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); }
+.sk-tray { display: flex; flex-wrap: wrap; gap: 6px; }
+.sk-tray:empty { display: none; }
+.sk-field { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--surface-2); display: flex; flex-direction: column; transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.sk-field:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-soft); }
+.sk-field textarea { display: block; width: 100%; resize: none; border: 0; background: transparent; padding: 10px 12px 4px; font-family: var(--font-body); font-size: var(--t-14); line-height: 20px; min-height: calc(20px * 3 + 14px); max-height: calc(20px * 8 + 14px); color: var(--ink); outline: none; }
+.sk-field textarea::placeholder { color: var(--ink-3); }
+.sk-field textarea:disabled { color: var(--ink-3); }
+.sk-toolrow { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; }
+.sk-toolrow .grow { flex: 1; }
+.sk-toolrow .sk-chip-model { margin-left: 4px; }
+.sk-send { width: 32px; height: 32px; border: 0; border-radius: 50%; display: inline-grid; place-items: center; background: var(--accent); color: var(--accent-on); transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+.sk-send:hover { transform: translateY(-1px); }
+.sk-send:disabled { background: var(--surface-3); color: var(--ink-3); cursor: not-allowed; transform: none; }
+.sk-send .sk-ico { width: 16px; height: 16px; stroke-width: 2; }
+.sk-hint { display: flex; gap: 10px; align-items: center; padding: 0 2px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
+.sk-hint .grow { flex: 1; }
+.sk-hint .clear { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; margin-right: -6px; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-3); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-11); }
+.sk-hint .clear .sk-ico { width: 12px; height: 12px; }
+.sk-hint .clear:hover { color: var(--ink); background: var(--surface-2); }
+.sk-hint .clear:disabled { opacity: .4; cursor: default; background: transparent; color: var(--ink-3); }
+.sk-hint kbd { font-family: var(--font-mono); font-size: 10px; padding: 0 4px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); color: var(--ink-2); }
+
+/* ---------- status strip ---------- */
+.sk-strip { display: flex; align-items: center; gap: 8px; padding: 7px 12px; font-size: var(--t-12); font-family: var(--font-ui); font-weight: 500; color: var(--ink); border-top: 1px solid var(--line); }
+.sk-strip .sk-ico { width: 14px; height: 14px; }
+.sk-strip.is-offline { background: var(--bad-soft); } .sk-strip.is-offline .sk-ico { color: var(--bad); }
+.sk-strip.is-degraded { background: var(--warn-soft); } .sk-strip.is-degraded .sk-ico { color: var(--warn); }
+.sk-strip.is-ok { background: var(--ok-soft); } .sk-strip.is-ok .sk-ico { color: var(--ok); }
+.sk-strip .cnt { font-family: var(--font-mono); font-weight: 400; color: var(--ink-2); }
+.sk-strip .act { margin-left: auto; background: none; border: 0; padding: 3px 6px; border-radius: var(--r-ctl); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--focus); white-space: nowrap; }
+.sk-strip .act:hover { background: var(--surface); }
+
+/* ---------- buttons ---------- */
+.sk-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--r-ctl); border: 1px solid transparent; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); white-space: nowrap; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.sk-btn.sm { height: 28px; padding: 0 10px; font-size: var(--t-12); }
+.sk-btn.primary { background: var(--ink); color: var(--surface); }
+.sk-btn.primary:hover { background: var(--ink-2); }
+.sk-btn.secondary { background: var(--surface); border-color: var(--line); color: var(--ink); }
+.sk-btn.secondary:hover { background: var(--surface-2); }
+.sk-btn.ghost { background: transparent; color: var(--ink-2); }
+.sk-btn.ghost:hover { background: var(--surface-2); color: var(--ink); }
+.sk-btn.aim { background: var(--accent); color: var(--accent-on); }
+.sk-btn.aim:hover { filter: brightness(1.05); }
+.sk-btn.danger { background: transparent; border-color: var(--line); color: var(--bad); }
+.sk-btn.danger:hover { background: var(--bad-soft); }
+.sk-btn:disabled { opacity: .5; cursor: not-allowed; }
+.sk-btn .sk-ico { width: 15px; height: 15px; }
+
+/* ---------- popover / model switcher ---------- */
+.sk-pop { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pop); box-shadow: var(--shadow-pop); overflow: hidden; }
+.sk-switcher { width: 364px; display: flex; flex-direction: column; }
+.sk-switcher .src { padding: 10px 12px 0; }
+.sk-switcher .src .sk-seg { display: flex; width: 100%; }
+.sk-switcher .src .sk-seg button { flex: 1; justify-content: center; }
+.sk-switcher .srv { display: block; padding: 7px 12px 9px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-switcher .srv .sk-dot { display: inline-block; vertical-align: middle; margin: -1px 6px 0 0; width: 6px; height: 6px; }
+.sk-switcher .srv .sk-ico { vertical-align: middle; margin-right: 6px; }
+.sk-switcher .search { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink-3); }
+.sk-switcher .search input { flex: 1; border: 0; background: transparent; outline: none; font-family: var(--font-body); font-size: var(--t-13); color: var(--ink); }
+.sk-switcher .search input::placeholder { color: var(--ink-3); }
+.sk-switcher .list { max-height: 380px; overflow-y: auto; padding: 6px; }
+.sk-group { justify-content: space-between; padding: 8px 8px 4px; font-family: var(--font-ui); font-size: var(--t-11); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.sk-group .sk-ico { width: 12px; height: 12px; }
+.sk-group > span { display: inline-flex; align-items: center; gap: 6px; }
+.sk-seg.mini button { height: 20px; padding: 0 7px; font-size: 10px; letter-spacing: 0; text-transform: none; }
+.sk-model .prov { color: var(--ink-3); font-weight: 500; }
+.sk-switcher .effort { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--line); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--ink-2); }
+.sk-switcher .effort small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 10px; color: var(--ink-3); }
+.sk-model { width: 100%; display: grid; grid-template-columns: 8px 1fr auto auto; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: var(--r-ctl); background: transparent; text-align: left; color: var(--ink); }
+.sk-model:hover { background: var(--surface-2); }
+.sk-model[aria-checked="true"] { background: var(--surface-2); }
+.sk-model .nm { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sk-model .nm span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-model .meta { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
+.sk-model .chk { width: 14px; height: 14px; color: var(--ink); visibility: hidden; }
+.sk-model[aria-checked="true"] .chk { visibility: visible; }
+.sk-model.is-off { color: var(--ink-3); } .sk-model.is-off .nm { color: var(--ink-3); }
+.sk-tag { font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 1px 5px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); }
+.sk-switcher .foot { border-top: 1px solid var(--line); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: var(--t-12); color: var(--ink-2); }
+.sk-switcher .foot a { color: var(--focus); text-decoration: none; font-family: var(--font-ui); font-weight: 600; }
+.sk-switcher .foot a:hover { text-decoration: underline; }
+
+/* file picker (server-side) */
+.sk-file { grid-template-columns: 30px 1fr auto; }
+.sk-file .ft { display: inline-grid; place-items: center; width: 30px; height: 18px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: .02em; }
+.sk-file .ft.dir { background: transparent; color: var(--ink-2); } .sk-file .ft.dir .sk-ico { width: 15px; height: 15px; }
+
+/* ---------- selection toolbar ---------- */
+.sk-seltool { display: inline-flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); box-shadow: var(--shadow-float); }
+.sk-seltool button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: inherit; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); white-space: nowrap; }
+.sk-seltool button:hover { background: rgba(127,127,127,.22); }
+.sk-seltool button.aim { color: var(--accent); }
+.sk-seltool .sk-ico { width: 14px; height: 14px; }
+.sk-seltool .sep { width: 1px; height: 16px; background: rgba(127,127,127,.35); margin: 0 2px; }
+.sk-seltool::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; background: var(--inverse); transform: rotate(45deg); border-radius: 2px; }
+.sk-seltool { position: relative; }
+
+/* ---------- picker (aim) overlay ---------- */
+.sk-aim { position: absolute; pointer-events: none; border: 2px solid var(--accent); border-radius: 3px; box-shadow: 0 0 0 9999px var(--mask); animation: sk-breathe 1.8s ease-in-out infinite; }
+.sk-aim.no-mask { box-shadow: none; }
+@keyframes sk-breathe { 0%,100% { outline: 0 solid transparent; } 50% { outline: 4px solid var(--accent-soft); } }
+.sk-aim i { position: absolute; width: 10px; height: 10px; border-color: var(--accent); border-style: solid; border-width: 0; }
+.sk-aim i:nth-child(1) { left: -2px; top: -2px; border-left-width: 3px; border-top-width: 3px; }
+.sk-aim i:nth-child(2) { right: -2px; top: -2px; border-right-width: 3px; border-top-width: 3px; }
+.sk-aim i:nth-child(3) { left: -2px; bottom: -2px; border-left-width: 3px; border-bottom-width: 3px; }
+.sk-aim i:nth-child(4) { right: -2px; bottom: -2px; border-right-width: 3px; border-bottom-width: 3px; }
+.sk-aim-tag { position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 8px; height: 24px; padding: 0 8px; border-radius: 5px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-mono); font-size: var(--t-11); white-space: nowrap; box-shadow: var(--shadow-float); }
+.sk-aim-tag b { color: var(--accent); font-weight: 500; }
+.sk-aim-tag .dim { opacity: .65; }
+.sk-aim.is-top .sk-aim-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
+.sk-aim-hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
+.sk-aim-hint .sk-ico { width: 16px; height: 16px; color: var(--accent); }
+.sk-aim-hint kbd { font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.25); }
+.is-picking, .is-picking * { cursor: crosshair !important; }
+.is-picking ::selection { background: transparent; }
+
+/* text selection tint inside the content pane */
+.sk-content ::selection { background: var(--accent-soft); color: inherit; }
+.sk-content .sk-hl { background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-line); border-radius: 2px; }
+
+/* ---------- toast ---------- */
+.sk-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
+.sk-toast .sk-ico { color: var(--accent); }
+.sk-toast code { font-weight: 400; color: var(--accent); }
+.sk-toast .undo { display: inline-flex; align-items: center; gap: 4px; margin: -4px -6px -4px 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(127,127,127,.22); color: var(--accent); font: inherit; }
+.sk-toast .undo:hover { background: rgba(127,127,127,.34); }
+
+/* ---------- notes ---------- */
+.sk-notes { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.sk-notes-search { flex: none; display: flex; align-items: center; gap: 8px; margin: 10px 12px 4px; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--surface-2); color: var(--ink-3); }
+.sk-notes-search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-family: var(--font-body); font-size: var(--t-13); color: var(--ink); }
+.sk-notes-search input::placeholder { color: var(--ink-3); }
+.sk-notes-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.sk-note { border: 1px solid var(--line); border-radius: var(--r-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 7px; background: var(--surface); transition: border-color var(--dur) var(--ease); }
+.sk-note:hover { border-color: var(--ink-3); }
+.sk-note .src { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: var(--t-12); color: var(--ink-2); }
+.sk-note .src .fav { width: 16px; height: 16px; border-radius: 4px; display: inline-grid; place-items: center; font-family: var(--font-ui); font-weight: 700; font-size: 9px; color: var(--surface); background: var(--ink-2); flex: none; }
+.sk-note .src .ttl { font-family: var(--font-ui); font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-note .src .url { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sk-note .src .when { margin-left: auto; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
+.sk-quote { border-left: 2px solid var(--accent); background: var(--accent-soft); padding: 6px 10px; border-radius: 0 var(--r-ctl) var(--r-ctl) 0; font-size: var(--t-13); font-style: italic; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sk-note .txt { font-size: var(--t-13); line-height: var(--lh-body); color: var(--ink); }
+.sk-note .txt p { margin: 0; }
+.sk-note .acts { display: flex; gap: 2px; margin: -2px 0 -4px -6px; opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-note:hover .acts, .sk-note:focus-within .acts { opacity: 1; }
+.sk-note-new { flex: none; border-top: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- settings panel ---------- */
+.sk-settings { position: absolute; inset: 0; background: var(--surface); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 220ms var(--ease); z-index: 20; }
+.sk-settings.is-open { transform: none; }
+.sk-settings .hd { flex: none; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 6px; border-bottom: 1px solid var(--line); }
+.sk-settings .hd h2 { margin: 0; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-14); letter-spacing: -0.01em; }
+.sk-settings .bd { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 0 24px; }
+.sk-set-section { padding: 14px 14px 6px; }
+.sk-set-section h3 { margin: 0 0 8px; font-family: var(--font-ui); font-size: var(--t-11); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.sk-row { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 6px 0; border-bottom: 1px solid var(--line-2); }
+.sk-row:last-child { border-bottom: 0; }
+.sk-row .lbl { flex: 1; min-width: 0; }
+.sk-row .lbl b { display: block; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); color: var(--ink); }
+.sk-row .lbl small { display: block; font-size: var(--t-12); color: var(--ink-2); margin-top: 1px; }
+.sk-seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--surface-3); }
+.sk-seg button { height: 26px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-2); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); display: inline-flex; align-items: center; gap: 5px; }
+.sk-seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16,24,32,.12); }
+.sk-seg .sk-ico { width: 13px; height: 13px; }
+.sk-switch { width: 36px; height: 20px; border-radius: 999px; border: 0; background: var(--surface-3); position: relative; flex: none; transition: background var(--dur) var(--ease); }
+.sk-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(16,24,32,.25); transition: transform var(--dur) var(--ease); }
+.sk-switch[aria-checked="true"] { background: var(--ink); }
+.sk-switch[aria-checked="true"]::after { transform: translateX(16px); }
+.sk-input, .sk-select { height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--surface-2); color: var(--ink); font-size: var(--t-13); font-family: var(--font-body); outline: none; }
+.sk-input:focus, .sk-select:focus { border-color: var(--focus); box-shadow: 0 0 0 3px var(--focus-soft); }
+.sk-input.mono { font-family: var(--font-mono); font-size: var(--t-12); }
+.sk-select { appearance: none; padding-right: 26px; background-image: none; }
+.sk-selectwrap { position: relative; display: inline-flex; }
+.sk-selectwrap .sk-ico { position: absolute; right: 8px; top: 50%; width: 12px; height: 12px; margin-top: -6px; pointer-events: none; color: var(--ink-3); }
+.sk-provider { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line-2); }
+.sk-provider:last-child { border-bottom: 0; }
+.sk-provider .glyph { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+.sk-provider .glyph .sk-ico { width: 14px; height: 14px; }
+.sk-provider b { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); display: block; }
+.sk-provider small { display: block; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
+.sk-shortcut { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--line-2); font-size: var(--t-13); }
+.sk-shortcut:last-child { border-bottom: 0; }
+.sk-shortcut kbd { font-family: var(--font-mono); font-size: var(--t-11); padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); margin-left: 3px; }
+
+/* ---------- chat history ---------- */
+.sk-hist-group h3 { display: flex; align-items: baseline; gap: 8px; }
+.sk-hist-group h3 .url { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-chat { width: 100%; display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 10px; padding: 7px 8px; margin: 0 -8px; width: calc(100% + 16px); border: 0; border-radius: var(--r-ctl); background: transparent; text-align: left; color: var(--ink); transition: background var(--dur) var(--ease); }
+.sk-chat:hover { background: var(--surface-2); }
+.sk-chat.is-current { background: var(--surface-2); }
+.sk-chat .fav { width: 20px; height: 20px; border-radius: 5px; display: inline-grid; place-items: center; font-family: var(--font-ui); font-weight: 700; font-size: 10px; color: var(--surface); background: var(--ink-2); }
+.sk-chat .body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sk-chat .ttl { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-chat .meta { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; overflow: hidden; }
+.sk-chat .meta .sk-ico { width: 11px; height: 11px; }
+.sk-chat .del { opacity: 0; }
+.sk-chat:hover .del, .sk-chat:focus-within .del { opacity: 1; }
+.sk-hist-empty { padding: 32px 16px; text-align: center; color: var(--ink-3); font-size: var(--t-13); }
+
+/* ---------- empty / first run ---------- */
+.sk-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; }
+.sk-empty .ring { width: 72px; height: 72px; color: var(--ink-3); }
+.sk-empty .ring .sk-ico { width: 72px; height: 72px; stroke-width: 1; }
+.sk-empty .ring .sk-ico .aim { stroke: var(--accent); }
+.sk-empty h2 { margin: 0; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-18); letter-spacing: -0.015em; text-wrap: balance; }
+.sk-empty p { margin: 0; color: var(--ink-2); font-size: var(--t-13); max-width: 30ch; text-wrap: balance; }
+.sk-suggest { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 280px; margin-top: 6px; }
+.sk-suggest button { display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-ctl); background: var(--surface); color: var(--ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); text-align: left; transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease); }
+.sk-suggest button:hover { background: var(--surface-2); border-color: var(--ink-3); }
+.sk-suggest .sk-ico { width: 15px; height: 15px; color: var(--ink-2); }
+.sk-suggest button.aim .sk-ico { color: var(--accent-ink); }
+
+/* ---------- add-a-source sheet ---------- */
+.sk-sheet-seg { padding: 12px 14px 4px; }
+.sk-sheet-seg .sk-seg { display: flex; width: 100%; }
+.sk-sheet-seg .sk-seg button { flex: 1; justify-content: center; }
+.sk-form { display: flex; flex-direction: column; gap: 12px; padding: 10px 14px; }
+.sk-form label.lbl { display: flex; flex-direction: column; gap: 5px; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--ink-2); }
+.sk-form .sk-input, .sk-form .sk-selectwrap, .sk-form .sk-select { width: 100%; }
+.sk-callout { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: var(--r-ctl); background: var(--surface-2); font-size: var(--t-12); color: var(--ink-2); line-height: 1.45; }
+.sk-callout .sk-ico { flex: none; margin-top: 1px; color: var(--ink-2); }
+.sk-callout b { color: var(--ink); font-weight: 600; }
+.sk-chks { display: flex; flex-wrap: wrap; gap: 6px; }
+.sk-chk { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); }
+.sk-chk .sk-ico { width: 13px; height: 13px; }
+.sk-chk[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.sk-found { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.sk-found .hd { display: flex; align-items: center; gap: 7px; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); }
+.sk-found .list { display: flex; flex-wrap: wrap; gap: 4px 10px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-2); }
+.sk-sheet-foot { flex: none; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.sk-rt { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line-2); }
+.sk-rt:last-child { border-bottom: 0; }
+.sk-rt .glyph { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+.sk-rt .glyph .sk-ico { width: 14px; height: 14px; }
+.sk-rt b { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); display: block; }
+.sk-rt small { display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
+.sk-rt small .sk-dot { width: 6px; height: 6px; }
+
+/* ---------- full settings page (extension options tab) ---------- */
+.sk-options { position: absolute; inset: 0; z-index: 40; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; overflow: hidden; }
+.sk-tabstrip { flex: none; height: 38px; display: flex; align-items: flex-end; gap: 2px; padding: 6px 10px 0; background: var(--surface-3); border-bottom: 1px solid var(--line); }
+.sk-tabstrip .tab { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 8px 8px 0 0; font-family: var(--font-ui); font-weight: 500; font-size: var(--t-12); color: var(--ink-2); max-width: 260px; white-space: nowrap; }
+.sk-tabstrip .tab.on { background: var(--bg); color: var(--ink); font-weight: 600; }
+.sk-tabstrip .tab .fav { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.sk-tabstrip .tab .sk-ico { width: 14px; height: 14px; }
+.sk-tabstrip .tab .x { width: 20px; height: 20px; display: inline-grid; place-items: center; border: 0; border-radius: 4px; background: transparent; color: var(--ink-3); margin-right: -6px; }
+.sk-tabstrip .tab .x:hover { background: var(--surface-2); color: var(--ink); }
+.sk-tabstrip .tab .x .sk-ico { width: 12px; height: 12px; }
+.sk-opt-shell { flex: 1 1 auto; min-height: 0; overflow-y: auto; scroll-behavior: smooth; }
+.sk-opt-shell::before { content: ""; display: block; }
+.sk-opt-nav { position: sticky; top: 0; float: left; width: 220px; padding: 32px 0 0 32px; display: flex; flex-direction: column; gap: 2px; }
+.sk-opt-nav .brand { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-16); letter-spacing: -0.01em; flex-wrap: wrap; }
+.sk-opt-nav .brand .sk-ico { width: 20px; height: 20px; }
+.sk-opt-nav .brand small { flex-basis: 100%; margin-left: 28px; font-family: var(--font-mono); font-weight: 400; font-size: var(--t-11); color: var(--ink-3); }
+.sk-opt-nav a { display: block; padding: 7px 10px; border-radius: var(--r-ctl); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); color: var(--ink-2); text-decoration: none; }
+.sk-opt-nav a:hover { background: var(--surface-2); color: var(--ink); }
+.sk-opt-nav a.on { background: var(--surface); color: var(--ink); box-shadow: inset 2px 0 0 var(--ink); }
+.sk-opt-nav .srv { margin-top: 18px; padding: 10px; border-radius: var(--r-card); border: 1px solid var(--line); background: var(--surface); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; }
+.sk-opt-nav .srv small { grid-column: 2; font-weight: 400; color: var(--ink-3); font-size: var(--t-11); }
+.sk-opt-main { margin-left: 284px; max-width: 760px; padding: 32px 32px 80px 0; display: flex; flex-direction: column; gap: 20px; }
+.sk-opt-section { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px 14px; scroll-margin-top: 20px; }
+.sk-opt-section h2 { margin: 0 0 6px; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-18); letter-spacing: -0.015em; }
+.sk-opt-section h3 { margin: 12px 0 4px; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-13); display: flex; align-items: center; gap: 8px; }
+.sk-opt-section .lead { margin: 0 0 12px; color: var(--ink-2); font-size: var(--t-13); max-width: 64ch; }
+.sk-opt-section .sk-row { gap: 10px; }
+.sk-opt-section .sk-row .grow { flex: 1; }
+.sk-tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-card); margin: 8px 0; }
+.sk-table { width: 100%; border-collapse: collapse; font-size: var(--t-13); }
+.sk-table th { text-align: left; padding: 8px 12px; font-family: var(--font-ui); font-size: var(--t-11); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sk-table td { padding: 9px 12px; border-bottom: 1px solid var(--line-2); vertical-align: middle; white-space: nowrap; }
+.sk-table tr:last-child td { border-bottom: 0; }
+.sk-table td b { font-family: var(--font-ui); font-weight: 600; display: block; }
+.sk-table td small { display: block; font-size: var(--t-11); color: var(--ink-3); }
+.sk-table td.mono, .sk-table .mono { font-family: var(--font-mono); font-size: var(--t-12); color: var(--ink-2); white-space: normal; overflow-wrap: anywhere; }
+.sk-table .glyph { width: 24px; height: 24px; border-radius: 6px; display: inline-grid; place-items: center; background: var(--surface-2); color: var(--ink-2); }
+.sk-table .glyph .sk-ico { width: 14px; height: 14px; }
+.sk-table td:last-child { text-align: right; }
+.sk-table .kbds kbd { font-family: var(--font-mono); font-size: var(--t-11); padding: 1px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface-2); color: var(--ink-2); margin-right: 3px; }
+.sk-chks .sk-chk .sk-ctx-x { margin: 0 -4px 0 2px; }
+/* setup checklist */
+.sk-setup { border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: var(--r-card); padding: 12px 14px; margin: 0 0 18px; display: flex; flex-direction: column; gap: 8px; }
+.sk-setup .hd { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-13); }
+.sk-setup .hd .sk-ico { color: var(--accent-ink); }
+.sk-setup .hd .mono { margin-left: auto; font-size: var(--t-11); color: var(--ink-2); }
+.sk-setup .step { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.sk-setup .step .sk-ico { width: 18px; height: 18px; color: var(--ok); flex: none; }
+.sk-setup .step i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--accent); flex: none; }
+.sk-setup .step span { flex: 1; min-width: 0; }
+.sk-setup .step b { display: block; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); }
+.sk-setup .step small { display: block; font-size: var(--t-12); color: var(--ink-2); }
+.sk-setup .step.done b { color: var(--ink-2); }
+/* dialog (only on the full page, where there is room) */
+.sk-dialog-scrim { position: absolute; inset: 0; z-index: 50; background: var(--mask); display: grid; place-items: center; }
+.sk-dialog { width: 440px; max-height: 90%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pop); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; overflow: hidden; }
+.sk-dialog .hd { flex: none; height: var(--topbar-h); display: flex; align-items: center; gap: 6px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--line); }
+.sk-dialog .hd h2 { margin: 0; font-family: var(--font-ui); font-weight: 700; font-size: var(--t-14); }
+.sk-dialog .bd { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+/* ---------- palette swatches (Settings → Color, demo rail) ---------- */
+.sk-swatches { display: inline-flex; gap: 8px; align-items: center; }
+.sk-swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); padding: 0; background: linear-gradient(135deg, var(--surface-2) 0 50%, var(--accent) 50% 100%); cursor: pointer; position: relative; }
+.sk-swatch[aria-pressed="true"]::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--ink); }
+.sk-swatch.sm { width: 16px; height: 16px; } .sk-swatch.sm[aria-pressed="true"]::after { inset: -4px; }
+
+/* ---------- pane-level overlays ---------- */
+.sk-anchor { position: absolute; z-index: 30; }
+.sk-scrim { position: absolute; inset: 0; z-index: 25; }
+
+/* ---------- content pane scroll wrapper & views ---------- */
+.sk-content { overflow: hidden; }
+.sk-scroll { position: absolute; inset: 0; overflow: auto; }
+.sk-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.sk-view[hidden] { display: none; }
+[hidden] { display: none !important; }
+
+/* ============================================================
+   AI Skope — palettes ("theme colors")
+   Loaded after tokens.css. A palette overrides COLOR tokens only;
+   type, space, radius and motion never change with palette.
+
+   Default palette "graphite" lives in tokens.css — no data-palette
+   attribute (or data-palette="graphite") means graphite.
+
+   Selector contract (matches the three theme states):
+     light          [data-palette="x"]
+     explicit dark  [data-palette="x"][data-theme="dark"]
+     system dark    :root:not([data-theme="light"])[data-palette="x"]  (in the dark media query)
+   Every palette lists its light block first, then its dark blocks.
+   The same rule applies to all: --accent is the aim color (≥ 3:1 on
+   --surface), --accent-ink is amber-as-text (≥ 4.5:1 on --surface),
+   --focus is never the accent hue, status colors stay their own.
+   ============================================================ */
+
+/* ---------- Nocturne — midnight indigo · lavender ink · brass aim (dark is the hero) ---------- */
+[data-palette="nocturne"] {
+  color-scheme: light;
+  --bg: #EEEDF6; --surface: #FBFBFE; --surface-2: #F2F1FA; --surface-3: #E6E5F2;
+  --inverse: #1E2140; --inverse-ink: #F2F1FA;
+  --ink: #1A1C33; --ink-2: #5B5D7E; --ink-3: #8A8CA8;
+  --line: #D9D8E8; --line-2: #E7E6F1;
+  --accent: #A9781A; --accent-ink: #7A5510; --accent-soft: rgba(169,120,26,.13); --accent-line: rgba(169,120,26,.45); --accent-on: #FFFFFF;
+  --focus: #4A63C8; --focus-soft: rgba(74,99,200,.20);
+  --ok: #2E9A5E; --ok-soft: rgba(46,154,94,.14);
+  --warn: #D07A15; --warn-soft: rgba(208,122,21,.14);
+  --bad: #C94A47; --bad-soft: rgba(201,74,71,.12);
+  --shadow-pop: 0 12px 32px rgba(26,28,51,.18), 0 1px 3px rgba(26,28,51,.10);
+  --shadow-float: 0 6px 18px rgba(26,28,51,.18);
+  --mask: rgba(26,28,51,.34);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="nocturne"] {
+    color-scheme: dark;
+    --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
+    --inverse: #ECEAF7; --inverse-ink: #14172B;
+    --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
+    --line: #2A3054; --line-2: #232847;
+    --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
+    --focus: #7C9CF0; --focus-soft: rgba(124,156,240,.24);
+    --ok: #5CC98A; --ok-soft: rgba(92,201,138,.16);
+    --warn: #F09A4A; --warn-soft: rgba(240,154,74,.16);
+    --bad: #EF6B6B; --bad-soft: rgba(239,107,107,.16);
+    --shadow-pop: 0 16px 40px rgba(2,4,16,.6), 0 1px 2px rgba(2,4,16,.6);
+    --shadow-float: 0 8px 22px rgba(2,4,16,.55);
+    --mask: rgba(6,8,20,.55);
+  }
+}
+[data-palette="nocturne"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
+  --inverse: #ECEAF7; --inverse-ink: #14172B;
+  --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
+  --line: #2A3054; --line-2: #232847;
+  --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
+  --focus: #7C9CF0; --focus-soft: rgba(124,156,240,.24);
+  --ok: #5CC98A; --ok-soft: rgba(92,201,138,.16);
+  --warn: #F09A4A; --warn-soft: rgba(240,154,74,.16);
+  --bad: #EF6B6B; --bad-soft: rgba(239,107,107,.16);
+  --shadow-pop: 0 16px 40px rgba(2,4,16,.6), 0 1px 2px rgba(2,4,16,.6);
+  --shadow-float: 0 8px 22px rgba(2,4,16,.55);
+  --mask: rgba(6,8,20,.55);
+}
+
+/* ---------- Sage — green-grey neutrals · terracotta aim ---------- */
+[data-palette="sage"] {
+  color-scheme: light;
+  --bg: #EEF1EC; --surface: #FCFDFB; --surface-2: #F3F6F1; --surface-3: #E6EBE3;
+  --inverse: #222A24; --inverse-ink: #F2F5F0;
+  --ink: #1B211C; --ink-2: #5C685E; --ink-3: #88948A;
+  --line: #D6DDD5; --line-2: #E4E9E2;
+  --accent: #C25A26; --accent-ink: #96421A; --accent-soft: rgba(194,90,38,.12); --accent-line: rgba(194,90,38,.45); --accent-on: #FFFFFF;
+  --focus: #237F80; --focus-soft: rgba(35,127,128,.20);
+  --ok: #2F9457; --ok-soft: rgba(47,148,87,.14);
+  --warn: #B98314; --warn-soft: rgba(185,131,20,.14);
+  --bad: #BF2E4E; --bad-soft: rgba(191,46,78,.12);
+  --shadow-pop: 0 12px 32px rgba(27,33,28,.16), 0 1px 3px rgba(27,33,28,.10);
+  --shadow-float: 0 6px 18px rgba(27,33,28,.16);
+  --mask: rgba(27,33,28,.32);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="sage"] {
+    color-scheme: dark;
+    --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
+    --inverse: #E8EDE6; --inverse-ink: #161A17;
+    --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
+    --line: #2B342C; --line-2: #232B24;
+    --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
+    --focus: #52B8B4; --focus-soft: rgba(82,184,180,.24);
+    --ok: #5BC282; --ok-soft: rgba(91,194,130,.16);
+    --warn: #E0AB3C; --warn-soft: rgba(224,171,60,.16);
+    --bad: #EE5A72; --bad-soft: rgba(238,90,114,.16);
+    --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+    --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+    --mask: rgba(4,7,5,.5);
+  }
+}
+[data-palette="sage"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
+  --inverse: #E8EDE6; --inverse-ink: #161A17;
+  --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
+  --line: #2B342C; --line-2: #232B24;
+  --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
+  --focus: #52B8B4; --focus-soft: rgba(82,184,180,.24);
+  --ok: #5BC282; --ok-soft: rgba(91,194,130,.16);
+  --warn: #E0AB3C; --warn-soft: rgba(224,171,60,.16);
+  --bad: #EE5A72; --bad-soft: rgba(238,90,114,.16);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+  --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+  --mask: rgba(4,7,5,.5);
+}
+
+/* ---------- Ember — warm charcoal · coral-ember aim ---------- */
+[data-palette="ember"] {
+  color-scheme: light;
+  --bg: #F1EEEB; --surface: #FFFDFB; --surface-2: #F6F2EE; --surface-3: #EBE5E0;
+  --inverse: #26221F; --inverse-ink: #F6F2EE;
+  --ink: #1E1B19; --ink-2: #66605B; --ink-3: #948D87;
+  --line: #DFD8D2; --line-2: #EBE5E0;
+  --accent: #D0402C; --accent-ink: #A02E1E; --accent-soft: rgba(208,64,44,.12); --accent-line: rgba(208,64,44,.45); --accent-on: #FFFFFF;
+  --focus: #2B7FA8; --focus-soft: rgba(43,127,168,.20);
+  --ok: #2E9B5E; --ok-soft: rgba(46,155,94,.14);
+  --warn: #C48A17; --warn-soft: rgba(196,138,23,.14);
+  --bad: #C21F5B; --bad-soft: rgba(194,31,91,.12);
+  --shadow-pop: 0 12px 32px rgba(30,27,25,.16), 0 1px 3px rgba(30,27,25,.10);
+  --shadow-float: 0 6px 18px rgba(30,27,25,.16);
+  --mask: rgba(30,27,25,.32);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="ember"] {
+    color-scheme: dark;
+    --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
+    --inverse: #EFE9E4; --inverse-ink: #1A1614;
+    --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
+    --line: #352E2A; --line-2: #2B2522;
+    --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
+    --focus: #5FB3DC; --focus-soft: rgba(95,179,220,.24);
+    --ok: #58C384; --ok-soft: rgba(88,195,132,.16);
+    --warn: #E4AE3F; --warn-soft: rgba(228,174,63,.16);
+    --bad: #F04A86; --bad-soft: rgba(240,74,134,.16);
+    --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+    --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+    --mask: rgba(8,5,4,.5);
+  }
+}
+[data-palette="ember"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
+  --inverse: #EFE9E4; --inverse-ink: #1A1614;
+  --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
+  --line: #352E2A; --line-2: #2B2522;
+  --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
+  --focus: #5FB3DC; --focus-soft: rgba(95,179,220,.24);
+  --ok: #58C384; --ok-soft: rgba(88,195,132,.16);
+  --warn: #E4AE3F; --warn-soft: rgba(228,174,63,.16);
+  --bad: #F04A86; --bad-soft: rgba(240,74,134,.16);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.6);
+  --shadow-float: 0 8px 22px rgba(0,0,0,.5);
+  --mask: rgba(8,5,4,.5);
+}
+
+/* ---------- Arctic — ice-blue near-whites / deep steel · cooler amber aim ---------- */
+[data-palette="arctic"] {
+  color-scheme: light;
+  --bg: #EAF1F7; --surface: #FFFFFF; --surface-2: #F3F7FB; --surface-3: #E4ECF3;
+  --inverse: #14263A; --inverse-ink: #F0F5FA;
+  --ink: #10202E; --ink-2: #4E6579; --ink-3: #7E93A6;
+  --line: #D2DEE8; --line-2: #E1EAF1;
+  --accent: #C9741A; --accent-ink: #925310; --accent-soft: rgba(201,116,26,.12); --accent-line: rgba(201,116,26,.45); --accent-on: #FFFFFF;
+  --focus: #1A7BC8; --focus-soft: rgba(26,123,200,.20);
+  --ok: #1F9D62; --ok-soft: rgba(31,157,98,.14);
+  --warn: #B0870F; --warn-soft: rgba(176,135,15,.14);
+  --bad: #C8403C; --bad-soft: rgba(200,64,60,.12);
+  --shadow-pop: 0 12px 32px rgba(16,32,46,.16), 0 1px 3px rgba(16,32,46,.10);
+  --shadow-float: 0 6px 18px rgba(16,32,46,.16);
+  --mask: rgba(16,32,46,.32);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="arctic"] {
+    color-scheme: dark;
+    --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
+    --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+    --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
+    --line: #263645; --line-2: #1F2D3A;
+    --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
+    --focus: #4FB3F0; --focus-soft: rgba(79,179,240,.24);
+    --ok: #4CC783; --ok-soft: rgba(76,199,131,.16);
+    --warn: #EE8A3A; --warn-soft: rgba(238,138,58,.16);
+    --bad: #F05A5A; --bad-soft: rgba(240,90,90,.16);
+    --shadow-pop: 0 16px 40px rgba(0,4,8,.6), 0 1px 2px rgba(0,4,8,.6);
+    --shadow-float: 0 8px 22px rgba(0,4,8,.55);
+    --mask: rgba(3,8,14,.52);
+  }
+}
+[data-palette="arctic"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
+  --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+  --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
+  --line: #263645; --line-2: #1F2D3A;
+  --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
+  --focus: #4FB3F0; --focus-soft: rgba(79,179,240,.24);
+  --ok: #4CC783; --ok-soft: rgba(76,199,131,.16);
+  --warn: #EE8A3A; --warn-soft: rgba(238,138,58,.16);
+  --bad: #F05A5A; --bad-soft: rgba(240,90,90,.16);
+  --shadow-pop: 0 16px 40px rgba(0,4,8,.6), 0 1px 2px rgba(0,4,8,.6);
+  --shadow-float: 0 8px 22px rgba(0,4,8,.55);
+  --mask: rgba(3,8,14,.52);
+}
+
+/* ---------- Mono — strict neutral greys · electric-blue aim · violet focus ---------- */
+[data-palette="mono"] {
+  color-scheme: light;
+  --bg: #EFEFEF; --surface: #FFFFFF; --surface-2: #F5F5F5; --surface-3: #E8E8E8;
+  --inverse: #1A1A1A; --inverse-ink: #F5F5F5;
+  --ink: #171717; --ink-2: #5F5F5F; --ink-3: #8C8C8C;
+  --line: #DADADA; --line-2: #E8E8E8;
+  --accent: #2F6BFF; --accent-ink: #1E4FCC; --accent-soft: rgba(47,107,255,.12); --accent-line: rgba(47,107,255,.45); --accent-on: #FFFFFF;
+  --focus: #7C3AED; --focus-soft: rgba(124,58,237,.20);
+  --ok: #2E9D5C; --ok-soft: rgba(46,157,92,.14);
+  --warn: #C98A00; --warn-soft: rgba(201,138,0,.14);
+  --bad: #C8453E; --bad-soft: rgba(200,69,62,.12);
+  --shadow-pop: 0 12px 32px rgba(0,0,0,.14), 0 1px 3px rgba(0,0,0,.08);
+  --shadow-float: 0 6px 18px rgba(0,0,0,.14);
+  --mask: rgba(0,0,0,.32);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="mono"] {
+    color-scheme: dark;
+    --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
+    --inverse: #EDEDED; --inverse-ink: #161616;
+    --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
+    --line: #2C2C2C; --line-2: #242424;
+    --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;
+    --focus: #A78BFA; --focus-soft: rgba(167,139,250,.24);
+    --ok: #4CC479; --ok-soft: rgba(76,196,121,.16);
+    --warn: #E2A93A; --warn-soft: rgba(226,169,58,.16);
+    --bad: #E9645B; --bad-soft: rgba(233,100,91,.16);
+    --shadow-pop: 0 16px 40px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.6);
+    --shadow-float: 0 8px 22px rgba(0,0,0,.55);
+    --mask: rgba(0,0,0,.52);
+  }
+}
+[data-palette="mono"][data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
+  --inverse: #EDEDED; --inverse-ink: #161616;
+  --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
+  --line: #2C2C2C; --line-2: #242424;
+  --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;
+  --focus: #A78BFA; --focus-soft: rgba(167,139,250,.24);
+  --ok: #4CC479; --ok-soft: rgba(76,196,121,.16);
+  --warn: #E2A93A; --warn-soft: rgba(226,169,58,.16);
+  --bad: #E9645B; --bad-soft: rgba(233,100,91,.16);
+  --shadow-pop: 0 16px 40px rgba(0,0,0,.6), 0 1px 2px rgba(0,0,0,.6);
+  --shadow-float: 0 8px 22px rgba(0,0,0,.55);
+  --mask: rgba(0,0,0,.52);
+}
+
+/* ---- demo rail (preview only) ---- */
+html, body { height: 100%; overflow: hidden; }
+.sk-canvas.is-fixed { height: 100%; }
+.rail { position: fixed; left: 16px; bottom: 14px; z-index: 50; display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); box-shadow: var(--shadow-pop); font-family: var(--font-ui); font-size: 12px; font-weight: 600; max-width: calc(100% - var(--pane-w) - 40px); overflow-x: auto; }
+.rail .lbl { padding: 0 6px 0 10px; font-family: var(--font-mono); font-weight: 400; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
+.rail button { height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: inherit; font: inherit; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.rail button:hover { background: rgba(127,127,127,.22); }
+.rail button[aria-pressed="true"] { background: var(--accent); color: var(--accent-on); }
+.rail .sep { width: 1px; height: 18px; background: rgba(127,127,127,.35); margin: 0 4px; }
+.rail .sk-ico { width: 13px; height: 13px; }
+.rail .sk-swatch[aria-pressed="true"]::after { border-color: var(--inverse-ink); }
+.rail .sk-swatches { padding: 0 8px 0 2px; }
+</style>
+<style>
+/* Example page palette (pg-*) — its own system, deliberately not the extension's. */
+.pg { --pg-bg:#FBFBFA; --pg-ink:#1E2229; --pg-ink2:#626B75; --pg-line:#E4E6E9; --pg-brand:#2A4B8D; --pg-brand-ink:#FFFFFF; --pg-card:#FFFFFF; --pg-soft:#EEF2FA;
+      background: var(--pg-bg); color: var(--pg-ink); font-family: "Helvetica Neue", Arial, system-ui, sans-serif; min-height: 100%; line-height: 1.5; font-size: 15px; position: relative; }
+[data-theme="dark"] .pg { --pg-bg:#13161B; --pg-ink:#E6E9ED; --pg-ink2:#98A1AC; --pg-line:#2B3139; --pg-brand:#7DA2E8; --pg-brand-ink:#0F1420; --pg-card:#1A1E24; --pg-soft:#1F2733; }
+@media (prefers-color-scheme: dark) { :where(:root:not([data-theme="light"])) .pg { --pg-bg:#13161B; --pg-ink:#E6E9ED; --pg-ink2:#98A1AC; --pg-line:#2B3139; --pg-brand:#7DA2E8; --pg-brand-ink:#0F1420; --pg-card:#1A1E24; --pg-soft:#1F2733; } }
+[data-theme="light"] .pg { --pg-bg:#FBFBFA; --pg-ink:#1E2229; --pg-ink2:#626B75; --pg-line:#E4E6E9; --pg-brand:#2A4B8D; --pg-brand-ink:#FFFFFF; --pg-card:#FFFFFF; --pg-soft:#EEF2FA; }
+.pg a { color: inherit; text-decoration: none; }
+.pg-nav { display: flex; align-items: center; gap: 28px; padding: 0 40px; height: 60px; border-bottom: 1px solid var(--pg-line); background: var(--pg-bg); position: sticky; top: 0; z-index: 2; }
+.pg-logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
+.pg-logo-mark { width: 22px; height: 22px; border-radius: 6px; background: var(--pg-brand); display: inline-block; }
+.pg-links { display: flex; gap: 22px; font-size: 14px; color: var(--pg-ink2); }
+.pg-links a.on { color: var(--pg-ink); font-weight: 600; }
+.pg-nav-cta { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 14px; }
+.pg-btn { display: inline-block; height: 36px; line-height: 36px; padding: 0 14px; border-radius: 6px; background: var(--pg-brand); color: var(--pg-brand-ink); font-weight: 600; font-size: 14px; text-align: center; }
+.pg-btn.ghost { background: transparent; border: 1px solid var(--pg-line); color: var(--pg-ink); line-height: 34px; }
+.pg-example { position: absolute; top: 68px; right: 16px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--pg-ink2); border: 1px dashed var(--pg-line); padding: 3px 8px; border-radius: 4px; }
+.pg-hero { max-width: 760px; margin: 0 auto; padding: 56px 40px 32px; text-align: center; }
+.pg-eyebrow { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--pg-brand); }
+.pg h1 { margin: 0 0 14px; font-size: 40px; line-height: 1.12; letter-spacing: -0.025em; font-weight: 700; text-wrap: balance; }
+.pg-lede { margin: 0 auto 22px; max-width: 58ch; color: var(--pg-ink2); font-size: 17px; }
+.pg-toggle { display: inline-flex; padding: 3px; border: 1px solid var(--pg-line); border-radius: 999px; background: var(--pg-card); }
+.pg-toggle button { height: 30px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--pg-ink2); font-weight: 600; font-size: 13px; }
+.pg-toggle button.on { background: var(--pg-ink); color: var(--pg-bg); }
+.pg-toggle button span { color: var(--pg-brand); margin-left: 4px; }
+.pg-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 1040px; margin: 0 auto; padding: 8px 40px 40px; }
+.pg-tier { position: relative; background: var(--pg-card); border: 1px solid var(--pg-line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+.pg-tier.featured { border-color: var(--pg-brand); box-shadow: 0 0 0 3px var(--pg-soft); }
+.pg-pop { position: absolute; top: -11px; left: 20px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--pg-brand); color: var(--pg-brand-ink); padding: 3px 8px; border-radius: 999px; }
+.pg-tier h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.pg-price { margin: 0; display: flex; align-items: baseline; gap: 6px; }
+.pg-price b { font-size: 34px; letter-spacing: -0.03em; font-weight: 700; }
+.pg-price span { color: var(--pg-ink2); font-size: 14px; }
+.pg-tier-desc { margin: 0; color: var(--pg-ink2); font-size: 14px; }
+.pg-tier ul { margin: 6px 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.pg-tier li::before { content: "✓"; color: var(--pg-brand); font-weight: 700; margin-right: 8px; }
+.pg-tier .pg-btn { margin-top: auto; }
+.pg-compare, .pg-faq { max-width: 1040px; margin: 0 auto; padding: 8px 40px 40px; }
+.pg-compare h2, .pg-faq h2 { font-size: 24px; letter-spacing: -0.02em; margin: 0 0 16px; }
+.pg-tablewrap { overflow-x: auto; border: 1px solid var(--pg-line); border-radius: 10px; background: var(--pg-card); }
+.pg-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pg-table th, .pg-table td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--pg-line); }
+.pg-table th { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--pg-ink2); font-weight: 600; background: var(--pg-soft); }
+.pg-table tr:last-child td { border-bottom: 0; }
+.pg-table td:first-child { font-weight: 600; }
+.pg-faq details { border-bottom: 1px solid var(--pg-line); padding: 12px 0; }
+.pg-faq summary { cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; display: flex; justify-content: space-between; }
+.pg-faq summary::after { content: "+"; color: var(--pg-ink2); }
+.pg-faq details[open] summary::after { content: "–"; }
+.pg-faq p { margin: 8px 0 0; color: var(--pg-ink2); font-size: 14px; max-width: 70ch; }
+.pg-faq code { font-family: Menlo, monospace; font-size: 13px; background: var(--pg-soft); padding: 1px 5px; border-radius: 4px; }
+.pg-foot { padding: 24px 40px 40px; color: var(--pg-ink2); font-size: 12px; border-top: 1px solid var(--pg-line); }
+</style>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <!-- AI Skope icon sprite. 24-unit grid, stroke = currentColor, 1.75 default. -->
+  <symbol id="i-reticle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-reticle-big" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5" class="aim"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-ibeam" viewBox="0 0 24 24"><path d="M8 4h2.5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 10.5 20H8M16 4h-2.5A1.5 1.5 0 0 0 12 5.5v13a1.5 1.5 0 0 0 1.5 1.5H16M12 8h6M12 12h6M12 16h6" /></symbol>
+  <symbol id="i-select-text" viewBox="0 0 24 24"><path d="M4 7V5.5A1.5 1.5 0 0 1 5.5 4H7M17 4h1.5A1.5 1.5 0 0 1 20 5.5V7M20 17v1.5a1.5 1.5 0 0 1-1.5 1.5H17M7 20H5.5A1.5 1.5 0 0 1 4 18.5V17"/><path d="M8 9h8M8 12.5h8M8 16h5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m21 11.5-8.5 8.5a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/></symbol>
+  <symbol id="i-chat-clear" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="m9.5 9.5 5 5M14.5 9.5l-5 5"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></symbol>
+  <symbol id="i-chat-new" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="M12 9v6M9 12h6"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 8v4.5l3 2"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17.2v.3"/></symbol>
+  <symbol id="i-offline" viewBox="0 0 24 24"><path d="M2 8.5A15 15 0 0 1 12 5c1.7 0 3.4.3 5 .9M22 8.5a15 15 0 0 0-2.5-1.7M5 12.5a10 10 0 0 1 4.5-2.4M19 12.5a10 10 0 0 0-1.5-1M8.5 16.5a5 5 0 0 1 5.4-.9M12 20h.01M3 3l18 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2 2.2.8-2.2.8L19 22l-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+  <symbol id="i-summarize" viewBox="0 0 24 24"><path d="M4 6h16M4 10h12M4 14h16M4 18h8"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></symbol>
+  <symbol id="i-panel-right" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></symbol>
+  <symbol id="i-panel-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="14" r="4"/><path d="m11 11 9-9M17 5l2 2M14 8l2 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 7.8 8 9 4.6-1.2 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M9 14h6M18 14h.01"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 13v6H5V6h6"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <!-- runtime glyphs (agents the AI Skope Server drives) -->
+  <symbol id="r-claude-code" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M12 15h5"/></symbol>
+  <symbol id="r-codex" viewBox="0 0 24 24"><path d="M8 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H16"/><path d="M9.5 12h5"/></symbol>
+  <symbol id="r-pi" viewBox="0 0 24 24"><path d="M4 7h16M8 7v10M16 7v10"/></symbol>
+  <symbol id="r-omp" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="r-opencode" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="m9.5 10-2 2 2 2M14.5 10l2 2-2 2"/></symbol>
+  <!-- provider glyphs -->
+  <symbol id="p-anthropic" viewBox="0 0 24 24"><path d="M4 19 10.5 4h3L20 19h-3l-1.6-4H8.6L7 19zM9.6 12.5h4.8L12 6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="p-openai" viewBox="0 0 24 24"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><path d="M12 8.2l3.3 1.9v3.8L12 15.8l-3.3-1.9v-3.8z"/></symbol>
+  <symbol id="p-google" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12h7M12 12V5"/></symbol>
+  <symbol id="p-local" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+</svg>
+
+<div class="sk-canvas is-fixed" data-skope data-state="chat">
+  <div class="sk-content">
+    <div class="sk-scroll" data-role="scroll">
+      <!-- Example third-party page rendered in the Content Pane. Clearly fictional
+     ("Northwind Analytics"). Uses its own pg-* palette so it reads as a real
+     website, not as part of the extension's UI. -->
+<div class="pg">
+  <nav class="pg-nav">
+    <div class="pg-logo"><span class="pg-logo-mark"></span>Northwind Analytics</div>
+    <div class="pg-links"><a href="#">Product</a><a href="#">Docs</a><a href="#" class="on">Pricing</a><a href="#">Customers</a></div>
+    <div class="pg-nav-cta"><a href="#" class="pg-link">Sign in</a><a href="#" class="pg-btn">Start free</a></div>
+  </nav>
+  <div class="pg-example">Example page</div>
+  <header class="pg-hero">
+    <p class="pg-eyebrow">Pricing</p>
+    <h1 data-sk="h1.pg-h1">Plans that scale with your event volume</h1>
+    <p class="pg-lede" data-sk="p.pg-lede">Every plan includes unlimited seats, SQL access and 13 months of history. Switch or cancel any time — billing is prorated to the day.</p>
+    <div class="pg-toggle" data-sk="div.pg-toggle"><button class="on">Monthly</button><button>Annual <span>−20%</span></button></div>
+  </header>
+  <section class="pg-tiers" data-sk="section.pg-tiers">
+    <article class="pg-tier" data-sk="article.pg-tier:nth-child(1)">
+      <h2>Starter</h2><p class="pg-price"><b>$0</b><span>/ month</span></p>
+      <p class="pg-tier-desc">For side projects and early prototypes.</p>
+      <ul><li>Up to 1M events / mo</li><li>3 dashboards</li><li>7-day retention</li><li>Community support</li></ul>
+      <a href="#" class="pg-btn ghost">Get started</a>
+    </article>
+    <article class="pg-tier featured" data-sk="article.pg-tier.featured">
+      <span class="pg-pop">Most popular</span>
+      <h2>Growth</h2><p class="pg-price"><b>$149</b><span>/ month</span></p>
+      <p class="pg-tier-desc">For product teams shipping weekly.</p>
+      <ul><li>Up to 25M events / mo</li><li>Unlimited dashboards</li><li>13-month retention</li><li>Funnels, retention &amp; paths</li><li>Slack alerts</li></ul>
+      <a href="#" class="pg-btn">Start 14-day trial</a>
+    </article>
+    <article class="pg-tier" data-sk="article.pg-tier:nth-child(3)">
+      <h2>Enterprise</h2><p class="pg-price"><b>Custom</b></p>
+      <p class="pg-tier-desc">For regulated or high-volume workloads.</p>
+      <ul><li>Unlimited events</li><li>SSO &amp; SCIM</li><li>Custom retention</li><li>Dedicated VPC</li><li>99.95% SLA</li></ul>
+      <a href="#" class="pg-btn ghost">Talk to sales</a>
+    </article>
+  </section>
+  <section class="pg-compare" data-sk="section.pg-compare">
+    <h2 data-sk="h2.pg-compare-title">Compare plans</h2>
+    <div class="pg-tablewrap">
+    <table class="pg-table" data-sk="table.pg-table">
+      <thead><tr><th>Feature</th><th>Starter</th><th>Growth</th><th>Enterprise</th></tr></thead>
+      <tbody>
+        <tr data-sk="tr:nth-child(1)"><td>Events per month</td><td>1M</td><td>25M</td><td>Unlimited</td></tr>
+        <tr data-sk="tr:nth-child(2)"><td>Data retention</td><td>7 days</td><td>13 months</td><td>Custom</td></tr>
+        <tr data-sk="tr:nth-child(3)"><td>Seats</td><td>Unlimited</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr data-sk="tr:nth-child(4)"><td>SQL access</td><td>—</td><td>✓</td><td>✓</td></tr>
+        <tr data-sk="tr:nth-child(5)"><td>Data warehouse export</td><td>—</td><td>Daily</td><td>Hourly</td></tr>
+        <tr data-sk="tr:nth-child(6)"><td>Single sign-on</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr data-sk="tr:nth-child(7)"><td>Support</td><td>Community</td><td>Email, 1 business day</td><td>Dedicated, 1 hour</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <section class="pg-faq" data-sk="section.pg-faq">
+    <h2>Questions</h2>
+    <details open data-sk="details:nth-child(2)"><summary>What counts as an event?</summary><p>Any call to <code>track()</code>, plus page views and identify calls. Internal system events and failed requests are not billed.</p></details>
+    <details data-sk="details:nth-child(3)"><summary>What happens if I go over my event limit?</summary><p>We keep ingesting for the rest of the month and email you. You can upgrade at any point; overage is never billed automatically.</p></details>
+    <details data-sk="details:nth-child(4)"><summary>Do you offer discounts for startups or non-profits?</summary><p>Yes — Growth is free for 12 months for companies under 2 years old with less than $2M raised, and 50% off for registered non-profits.</p></details>
+  </section>
+  <footer class="pg-foot">© 2026 Northwind Analytics, Inc. · Fictional example content used for design review.</footer>
+</div>
+
+      <div class="sk-aim" data-role="aim" hidden aria-hidden="true">
+        <i></i><i></i><i></i><i></i>
+        <span class="sk-aim-tag"><b data-role="aim-sel">article.pg-tier.featured</b><span class="dim" data-role="aim-dim">320 × 412</span></span>
+      </div>
+      <div class="sk-anchor" data-role="selanchor" hidden><div class="sk-seltool" role="toolbar" aria-label="Selected text">
+  <button type="button" class="aim" data-act="add"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add to chat</button>
+  <span class="sep"></span>
+  <button type="button" data-act="ask"><svg class="sk-ico" aria-hidden="true"><use href="#i-chat"/></svg>Ask…</button>
+  <button type="button" data-act="note"><svg class="sk-ico" aria-hidden="true"><use href="#i-note"/></svg>Save note</button>
+</div>
+</div>
+    </div>
+    <div class="sk-aim-hint" data-role="aimhint" hidden>
+      <svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>
+      Click an element to add it to the chat <kbd>esc</kbd> cancel
+    </div>
+    <div class="sk-toast" data-role="toast" hidden></div>
+  </div>
+  <div class="sk-divider" data-role="divider" role="separator" aria-orientation="vertical" aria-label="Resize AI pane"></div>
+  <aside class="sk-pane" data-role="pane" aria-label="AI Skope">
+    <header class="sk-topbar">
+  <div class="sk-brand">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>
+    <span class="sk-brand-name">AI Skope</span>
+  </div>
+  <div class="sk-topbar-spacer"></div>
+  <button class="sk-iconbtn" data-role="new-btn" aria-label="New chat" title="New chat — keeps this one in History">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-chat-new"/></svg>
+  </button>
+  <button class="sk-iconbtn" data-role="hist-btn" aria-label="Chat history" title="History">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-history"/></svg>
+  </button>
+  <button class="sk-iconbtn" data-role="settings-btn" aria-label="Settings" title="Settings">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-gear"/></svg>
+  </button>
+</header>
+
+    <nav class="sk-tabs" role="tablist" aria-label="AI Skope sections">
+  <button class="sk-tab" role="tab" aria-selected="true" data-tab="chat">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-chat"/></svg>Chat
+  </button>
+  <button class="sk-tab" role="tab" aria-selected="false" data-tab="notes">
+    <svg class="sk-ico" aria-hidden="true"><use href="#i-note"/></svg>Notes
+    <span class="sk-badge" data-role="notes-count">3</span>
+  </button>
+</nav>
+
+    <div class="sk-body">
+      <section class="sk-view" data-role="view-chat" role="tabpanel">
+        <div class="sk-thread" data-role="thread" aria-live="polite">
+  <div class="sk-day">Today</div>
+
+  <div class="sk-msg user">
+    <div class="sk-msg-ctx">
+      <span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier.featured</span><span class="dim">320 × 412</span></span>
+    </div>
+    <div class="sk-bubble"><p>Is the Growth plan enough for about 40M events a month? What would we actually pay?</p></div>
+    <span class="sk-time">14:02</span>
+  </div>
+
+  <div class="sk-msg ai">
+    <div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope · Opus 5</div>
+    <div class="sk-tool"><svg class="sk-ico sm" aria-hidden="true"><use href="#i-check"/></svg>Read <code>table.pg-table</code> · 7 rows</div>
+    <div class="sk-ai-body">
+      <p>Not on its own. Growth caps at <strong>25M events / mo</strong>, so 40M puts you 15M over. Two things the page says matter here:</p>
+      <ul>
+        <li>Overage is <strong>never billed automatically</strong> — they keep ingesting for the rest of the month and email you to upgrade.</li>
+        <li>The next tier is <strong>Enterprise</strong>, which is custom-priced and adds SSO, custom retention and a 99.95% SLA.</li>
+      </ul>
+      <p>So the honest answer is: $149/mo until they ask you to move up, then a sales conversation. There's no published price at 40M.</p>
+    </div>
+    <span class="sk-time">14:02</span>
+  </div>
+
+  <div class="sk-msg user">
+    <div class="sk-msg-ctx">
+      <span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">Growth is free for 12 months for companies under 2 years old with less than $2M raised</span></span>
+    </div>
+    <div class="sk-bubble"><p>Do we qualify for this?</p></div>
+    <span class="sk-time">14:05</span>
+  </div>
+
+  <div class="sk-msg ai">
+    <div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope · Opus 5</div>
+    <div class="sk-ai-body">
+      <p>Two conditions, both from the FAQ: incorporated <strong>less than 2 years ago</strong>, and <strong>under $2M raised</strong>. Nothing on this page says whether a seed round counts as "raised", and I can't see your company details from here.</p>
+      <p>If you tell me your incorporation date and total funding, I'll check both. I can also draft the note to sales asking how they treat SAFEs.</p>
+    </div>
+    <span class="sk-time">14:05</span>
+  </div>
+</div>
+
+        <div class="sk-empty" data-role="empty" hidden>
+  <div class="ring"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle-big"/></svg></div>
+  <h2>Aim at anything on this page</h2>
+  <p>Pick an element or select text, then ask. Answers stay grounded in what's on screen.</p>
+  <div class="sk-suggest">
+    <button type="button" data-suggest="summarize"><svg class="sk-ico" aria-hidden="true"><use href="#i-summarize"/></svg>Summarize this page</button>
+    <button type="button" class="aim" data-suggest="pick"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>Pick an element to ask about</button>
+    <button type="button" data-suggest="local"><svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg>Ask about a local file or repo</button>
+    <button type="button" data-suggest="select"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg>Explain the selected text</button>
+  </div>
+</div>
+
+      </section>
+      <section class="sk-view sk-notes" data-role="view-notes" role="tabpanel" hidden>
+        <div class="sk-notes-search">
+  <svg class="sk-ico" aria-hidden="true"><use href="#i-search"/></svg>
+  <input type="search" placeholder="Search notes" aria-label="Search notes">
+</div>
+<div class="sk-notes-list" data-role="notes-list">
+  <article class="sk-note">
+    <div class="src"><span class="fav">N</span><span class="ttl">Northwind Analytics — Pricing</span><span class="url">northwind.example/pricing</span><span class="when">14:06</span></div>
+    <blockquote class="sk-quote">Growth is free for 12 months for companies under 2 years old with less than $2M raised, and 50% off for registered non-profits.</blockquote>
+    <div class="txt"><p>Ask finance whether the seed SAFE counts as "raised". If not, we're under the cap until March.</p></div>
+    <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
+  </article>
+  <article class="sk-note">
+    <div class="src"><span class="fav">N</span><span class="ttl">Northwind Analytics — Pricing</span><span class="url">northwind.example/pricing</span><span class="when">13:48</span></div>
+    <div class="txt"><p>Enterprise SLA is 99.95% — ask what the credit schedule looks like below that, and whether "dedicated VPC" means single-tenant.</p></div>
+    <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
+  </article>
+  <article class="sk-note">
+    <div class="src"><span class="fav" style="background:#635BFF">S</span><span class="ttl">Usage-based billing — Stripe Docs</span><span class="url">docs.stripe.com/billing/subscriptions/usage-based</span><span class="when">Yesterday</span></div>
+    <blockquote class="sk-quote">Report usage to Stripe throughout the billing period; the invoice is generated at the end of the period from the total.</blockquote>
+    <div class="txt"><p>Compare with Northwind's "never billed automatically" policy when we write our own overage terms.</p></div>
+    <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
+  </article>
+</div>
+<form class="sk-note-new" data-role="note-new">
+  <div class="sk-field">
+    <textarea data-role="note-input" rows="2" placeholder="New note about this page…" aria-label="New note" style="min-height:54px"></textarea>
+    <div class="sk-toolrow">
+      <span class="sk-hint" style="padding:0 4px"><svg class="sk-ico sm" aria-hidden="true"><use href="#i-reticle"/></svg>Northwind Analytics — Pricing</span>
+      <span class="grow"></span>
+      <button type="submit" class="sk-btn primary sm">Save note</button>
+    </div>
+  </div>
+</form>
+
+      </section>
+    </div>
+    <div class="sk-strip is-offline" data-role="strip" role="status" hidden>
+  <svg class="sk-ico" aria-hidden="true"><use href="#i-offline"/></svg>
+  <span><span data-role="strip-model">AI Skope Server</span> <span data-role="strip-verb">isn't reachable</span> — retrying in <span class="cnt" data-role="strip-count">4s</span></span>
+  <button type="button" class="act" data-role="strip-switch">Use API keys</button>
+</div>
+
+    <form class="sk-composer" data-role="composer" autocomplete="off">
+  <div class="sk-tray" data-role="tray" aria-label="Context attached to your next message"></div>
+  <div class="sk-field">
+    <textarea data-role="input" rows="3" placeholder="Ask about this page… pick an element or select text to add context" aria-label="Message"></textarea>
+    <div class="sk-toolrow">
+      <button type="button" class="sk-iconbtn" data-role="pick-btn" aria-pressed="false" aria-label="Pick an element from the page" title="Pick element  ⌘⇧K">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>
+      </button>
+      <button type="button" class="sk-iconbtn" data-role="select-btn" aria-pressed="false" aria-label="Select text on the page" title="Select text  ⌘⇧S">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg>
+      </button>
+      <button type="button" class="sk-iconbtn" data-role="file-btn" aria-label="Add a file from this computer" title="Add file — via AI Skope Server">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg>
+      </button>
+      <button type="button" class="sk-chip-model" data-role="model-chip" aria-haspopup="listbox" aria-expanded="false" title="Change model">
+        <svg class="sk-ico" data-role="model-glyph" aria-hidden="true"><use href="#r-claude-code"/></svg>
+        <span class="name" data-role="model-name">Opus 5</span>
+        <span class="eff sk-tag" data-role="model-eff">High</span>
+        <span class="sk-dot" data-role="model-dot" aria-label="online"></span>
+        <span class="lat" data-role="model-lat">124 ms</span>
+        <svg class="sk-ico chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>
+      <span class="grow"></span>
+      <button type="submit" class="sk-send" data-role="send" aria-label="Send">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="sk-hint"><span><kbd>⏎</kbd> send</span><span><kbd>⇧⏎</kbd> new line</span><span><kbd>⌘⇧K</kbd> pick element</span><span class="grow"></span><button type="button" class="clear" data-role="clear-link"><svg class="sk-ico" aria-hidden="true"><use href="#i-chat-clear"/></svg>Clear chat</button></div>
+</form>
+
+    <div class="sk-scrim" data-role="scrim" hidden></div>
+    <div class="sk-anchor sk-pop sk-switcher" data-role="switcher" hidden>
+      <div class="src"><div class="sk-seg" role="group" aria-label="Model source" data-role="src-seg">
+  <button type="button" data-source="aiss" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>AI Skope Server</button>
+  <button type="button" data-source="keys" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API keys</button>
+</div></div>
+<div class="srv" data-role="srv-line"><span class="sk-dot"></span>localhost:7331 · connected · 5 runtimes · v0.3</div>
+<div class="search">
+  <svg class="sk-ico" aria-hidden="true"><use href="#i-search"/></svg>
+  <input type="text" data-role="switcher-filter" placeholder="Find a model or runtime" aria-label="Find a model">
+</div>
+<div class="list" role="listbox" aria-label="Models" data-role="switcher-list">
+  <div class="sk-group"><span><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg>Claude Code</span></div>
+  <button type="button" class="sk-model" role="option" aria-checked="true"><span class="sk-dot"></span><span class="nm"><span>Opus 5</span><span class="sk-tag">default</span></span><span class="meta">124 ms · 1M ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span>Sonnet 5</span></span><span class="meta">88 ms · 1M ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <div class="sk-group"><span><svg class="sk-ico" aria-hidden="true"><use href="#r-codex"/></svg>Codex</span></div>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span>GPT-5 Codex</span></span><span class="meta">230 ms · 400K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span>GPT-5</span></span><span class="meta">210 ms · 400K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <div class="sk-group"><span><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi · omp · opencode</span><span class="sk-seg mini" role="group" aria-label="Runtime"><button type="button" aria-pressed="true">pi</button><button type="button" aria-pressed="false">omp</button><button type="button" aria-pressed="false">opencode</button></span></div>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span><span class="prov">z.ai /</span> GLM 5.3</span></span><span class="meta">310 ms · 200K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span><span class="prov">z.ai /</span> GLM 5.3 Flash</span></span><span class="meta">95 ms · 128K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span><span class="prov">fireworks.ai /</span> Kimi K2</span></span><span class="meta">180 ms · 256K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot is-degraded"></span><span class="nm"><span><span class="prov">fireworks.ai /</span> DeepSeek V3.2</span></span><span class="meta">640 ms · slow</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+  <button type="button" class="sk-model" role="option" aria-checked="false"><span class="sk-dot"></span><span class="nm"><span><span class="prov">ollama /</span> qwen3 8B</span><span class="sk-tag">on device</span></span><span class="meta">12 ms · 32K ctx</span><svg class="sk-ico chk" aria-hidden="true"><use href="#i-check"/></svg></button>
+</div>
+<div class="effort" data-role="effort-row"><span>Effort<small>Claude Code · Opus 5</small></span><span class="sk-seg mini" role="group" aria-label="Effort"><button type="button" aria-pressed="false">Low</button><button type="button" aria-pressed="false">Medium</button><button type="button" aria-pressed="true">High</button><button type="button" aria-pressed="false">Max</button></span></div>
+<div class="foot"><span data-role="switcher-foot">Status checked <span class="mono">8s</span> ago</span><a href="#" data-role="manage-providers">Manage sources →</a></div>
+
+    </div>
+    <div class="sk-anchor sk-pop sk-switcher sk-filepick" data-role="filepick" hidden>
+<div class="srv"><span class="sk-dot"></span>AI Skope Server · ~/dev · ~/Documents/notes · ~/Downloads</div>
+<div class="search"><svg class="sk-ico" aria-hidden="true"><use href="#i-search"/></svg><input type="text" data-role="filepick-filter" placeholder="Find a file or folder" aria-label="Find a file or folder"></div>
+<div class="list" role="listbox" aria-label="Files" data-role="filepick-list">
+  <div class="sk-group"><span>Recent</span></div>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft">MD</span><span class="nm"><span>README.md</span></span><span class="meta">~/dev/finme · 12 KB</span></button>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft">MD</span><span class="nm"><span>export-format.md</span></span><span class="meta">~/dev/finme/docs · 4 KB</span></button>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft">MD</span><span class="nm"><span>northwind-eval.md</span></span><span class="meta">~/Documents/notes · 3 KB</span></button>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft">HTML</span><span class="nm"><span>index.html</span></span><span class="meta">~/dev/finme/site · 21 KB</span></button>
+  <div class="sk-group"><span>~/dev/finme</span></div>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft dir"><svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg></span><span class="nm"><span>docs/</span></span><span class="meta">8 files</span></button>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft dir"><svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg></span><span class="nm"><span>src/</span></span><span class="meta">42 files</span></button>
+  <button type="button" class="sk-model sk-file" role="option"><span class="ft">YAML</span><span class="nm"><span>config.yaml</span></span><span class="meta">~/dev/finme · 1 KB</span></button>
+</div>
+<div class="foot"><span>Only folders you allowed</span><a href="#" data-role="manage-folders">Manage folders →</a></div>
+</div>
+
+    <div class="sk-settings" data-role="settings" role="dialog" aria-label="Settings" aria-hidden="true">
+  <div class="hd">
+    <button type="button" class="sk-iconbtn" data-role="settings-back" aria-label="Back to chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+    <h2>Settings</h2>
+    <span class="sk-topbar-spacer"></span>
+    <button type="button" class="sk-btn ghost sm" data-role="open-options" data-section="general">All settings <svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button>
+  </div>
+  <div class="bd">
+    <section class="sk-set-section">
+      <h3>Appearance</h3>
+      <div class="sk-row"><div class="lbl"><b>Theme</b><small>Follows Chrome unless you choose one.</small></div>
+        <div class="sk-seg" data-role="theme-seg" role="group" aria-label="Theme">
+          <button type="button" aria-pressed="false" data-theme-pick="light"><svg class="sk-ico" aria-hidden="true"><use href="#i-sun"/></svg>Light</button>
+          <button type="button" aria-pressed="false" data-theme-pick="dark"><svg class="sk-ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button>
+          <button type="button" aria-pressed="true" data-theme-pick="system"><svg class="sk-ico" aria-hidden="true"><use href="#i-monitor"/></svg>System</button>
+        </div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Color</b><small data-role="palette-name">Graphite</small></div>
+        <div class="sk-swatches" data-role="palette-seg" role="group" aria-label="Color palette"><button type="button" class="sk-swatch" data-palette-pick="graphite" data-palette="graphite" data-theme="dark" aria-pressed="true" aria-label="Graphite" title="Graphite"></button><button type="button" class="sk-swatch" data-palette-pick="nocturne" data-palette="nocturne" data-theme="dark" aria-pressed="false" aria-label="Nocturne" title="Nocturne"></button><button type="button" class="sk-swatch" data-palette-pick="sage" data-palette="sage" data-theme="dark" aria-pressed="false" aria-label="Sage" title="Sage"></button><button type="button" class="sk-swatch" data-palette-pick="ember" data-palette="ember" data-theme="dark" aria-pressed="false" aria-label="Ember" title="Ember"></button><button type="button" class="sk-swatch" data-palette-pick="arctic" data-palette="arctic" data-theme="dark" aria-pressed="false" aria-label="Arctic" title="Arctic"></button><button type="button" class="sk-swatch" data-palette-pick="mono" data-palette="mono" data-theme="dark" aria-pressed="false" aria-label="Mono" title="Mono"></button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Text size</b></div>
+        <div class="sk-seg" role="group" aria-label="Text size"><button type="button" aria-pressed="false">Small</button><button type="button" aria-pressed="true">Default</button><button type="button" aria-pressed="false">Large</button></div>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Pane</h3>
+      <div class="sk-row"><div class="lbl"><b>Side</b></div>
+        <div class="sk-seg" role="group" aria-label="Pane side"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-left"/></svg>Left</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-right"/></svg>Right</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Open automatically</b><small>Show the pane when Chrome starts.</small></div>
+        <button type="button" class="sk-switch" role="switch" aria-checked="false" aria-label="Open automatically"></button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Models</h3>
+      <div class="sk-row"><div class="lbl"><b>Source</b><small>Server drives local agents and reads files; keys call providers directly.</small></div>
+        <div class="sk-seg" role="group" aria-label="Model source"><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Server</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API keys</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>AI Skope Server</b><small><span class="sk-dot" style="display:inline-block;vertical-align:middle;margin-right:5px"></span>connected · v0.3 · 5 runtimes · 3 folders</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="server">Manage</button>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Providers &amp; keys</b><small>z.ai, fireworks.ai, ollama via server · 3 direct keys</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="providers">Manage</button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Page access</h3>
+      <div class="sk-row"><div class="lbl"><b>Send page content to the model</b><small>Only what you pick or select unless you allow the whole page.</small></div>
+        <div class="sk-seg" role="group" aria-label="Page content"><button type="button" aria-pressed="true">Ask</button><button type="button" aria-pressed="false">Always</button><button type="button" aria-pressed="false">Never</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Blocked on 2 sites</b><small>Never read or sent.</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="privacy">Manage</button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <div class="sk-row" style="border:0"><div class="lbl"><b>AI Skope 0.1.0</b><small>Design preview · Shortcuts, data and more in All settings</small></div></div>
+    </section>
+  </div>
+</div>
+
+    <div class="sk-settings sk-history" data-role="history" role="dialog" aria-label="Chat history" aria-hidden="true">
+<div class="hd">
+    <button type="button" class="sk-iconbtn" data-role="hist-back" aria-label="Back to chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+    <h2>Chats</h2>
+    <span class="sk-topbar-spacer"></span>
+    <button type="button" class="sk-btn secondary sm" data-role="hist-new"><svg class="sk-ico" aria-hidden="true"><use href="#i-chat-new"/></svg>New chat</button>
+  </div>
+  <div class="sk-notes-search" style="margin:10px 12px 2px"><svg class="sk-ico" aria-hidden="true"><use href="#i-search"/></svg><input type="search" data-role="hist-search" placeholder="Search chats" aria-label="Search chats"></div>
+  <div class="bd" data-role="hist-list">
+    <section class="sk-set-section sk-hist-group"><h3>This page <span class="url">northwind.example/pricing</span></h3>
+      <button type="button" class="sk-chat is-current"><span class="fav">N</span><span class="body"><span class="ttl">Is the Growth plan enough for about 40M events a month?</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg>Opus 5 · 4 messages · 14:05</span></span><span class="sk-tag">open</span></button>
+      <button type="button" class="sk-chat"><span class="fav">N</span><span class="body"><span class="ttl">What counts as an event?</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg>Haiku 4.5 · 2 messages · 13:40</span></span><span class="del sk-iconbtn sm" role="button" aria-label="Delete chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
+    </section>
+    <section class="sk-set-section sk-hist-group"><h3>This site <span class="url">northwind.example</span></h3>
+      <button type="button" class="sk-chat"><span class="fav">N</span><span class="body"><span class="ttl">How do identify calls dedupe across devices?</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg>Sonnet 5 · 6 messages · Yesterday</span></span><span class="del sk-iconbtn sm" role="button" aria-label="Delete chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
+    </section>
+    <section class="sk-set-section sk-hist-group"><h3>Everywhere</h3>
+      <button type="button" class="sk-chat"><span class="fav" style="background:#635BFF">S</span><span class="body"><span class="ttl">Metered billing vs. tiered — which fits us?</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg>Opus 5 · 8 messages · Yesterday</span></span><span class="del sk-iconbtn sm" role="button" aria-label="Delete chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
+      <button type="button" class="sk-chat"><span class="fav" style="background:#57606A">G</span><span class="body"><span class="ttl">Explain this diff to me</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-openai"/></svg>GPT-5 · 3 messages · Mon</span></span><span class="del sk-iconbtn sm" role="button" aria-label="Delete chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
+      <button type="button" class="sk-chat"><span class="fav" style="background:#F26522">Y</span><span class="body"><span class="ttl">Summarize the thread</span><span class="meta"><svg class="sk-ico" aria-hidden="true"><use href="#p-local"/></svg>qwen3 8B · 2 messages · Mon</span></span><span class="del sk-iconbtn sm" role="button" aria-label="Delete chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></span></button>
+    </section>
+  </div>
+</div>
+
+    <div class="sk-settings sk-addsrc" data-role="addsrc" role="dialog" aria-label="Add a source" aria-hidden="true">
+<div class="hd">
+    <button type="button" class="sk-iconbtn" data-role="addsrc-back" aria-label="Back to settings"><svg class="sk-ico" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+    <h2>Add a source</h2>
+  </div>
+  <div class="sk-sheet-seg"><div class="sk-seg" role="group" aria-label="Kind of source" data-role="addsrc-seg">
+    <button type="button" data-view="runtime" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg>Runtime</button>
+    <button type="button" data-view="provider" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Provider</button>
+    <button type="button" data-view="direct" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API key</button>
+  </div></div>
+  <div class="bd" style="padding-top:0">
+    <div class="sk-form" data-view="runtime" hidden>
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The server looks for coding agents installed on this computer. Enable one and its models appear in the switcher.</span></div>
+  <div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg></span><div><b>Claude Code</b><small><span class="sk-dot"></span>2.1 · /opt/homebrew/bin/claude</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Claude Code"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-codex"/></svg></span><div><b>Codex</b><small><span class="sk-dot"></span>0.9 · ~/.npm/bin/codex</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Codex"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg></span><div><b>pi</b><small><span class="sk-dot"></span>0.14 · ~/.local/bin/pi</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="pi"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg></span><div><b>omp</b><small><span class="sk-dot is-offline"></span>not found on PATH</small></div><button type="button" class="sk-btn secondary sm">Install guide</button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg></span><div><b>opencode</b><small><span class="sk-dot"></span>1.2 · /opt/homebrew/bin/opencode</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="opencode"></button></div>
+  </div>
+  <label class="lbl">Custom command<input class="sk-input mono" type="text" placeholder="my-agent --stdio" aria-label="Custom command"></label>
+</div>
+
+    <div class="sk-form" data-view="provider">
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
+  <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
+  <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
+</div>
+
+    <div class="sk-form" data-view="direct" hidden>
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg><span>Stored in Chrome's extension storage on this device. Calls go <b>straight to the provider</b> — no server, no local files.</span></div>
+  <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>Anthropic</option><option>OpenAI</option><option>Google</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" placeholder="sk-ant-…" aria-label="API key"></label>
+</div>
+
+  </div>
+  <div class="sk-sheet-foot"><button type="button" class="sk-btn ghost" data-role="addsrc-cancel">Cancel</button><button type="button" class="sk-btn primary" data-role="addsrc-add">Add to server</button></div>
+</div>
+
+  </aside>
+  <div class="sk-options" data-role="options" hidden>
+  <div class="sk-tabstrip" aria-hidden="true"><span class="tab"><span class="fav" style="background:#2A4B8D"></span>Northwind Analytics — Pricing</span><span class="tab on"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope · Settings<button type="button" class="x" data-role="options-close" aria-label="Close settings tab"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span></div>
+  <div class="sk-opt-shell">
+    <nav class="sk-opt-nav" data-role="options-nav" aria-label="Settings sections">
+      <div class="brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span>AI Skope</span><small>Settings · 0.1.0</small></div>
+      <a href="#" data-section="general" class="on">General</a>
+      <a href="#" data-section="server">Server &amp; runtimes</a>
+      <a href="#" data-section="folders">Folders</a>
+      <a href="#" data-section="providers">Providers &amp; keys</a>
+      <a href="#" data-section="privacy">Privacy</a>
+      <a href="#" data-section="shortcuts">Shortcuts</a>
+      <a href="#" data-section="about">About</a>
+      <div class="srv"><span class="sk-dot"></span>Server connected<small class="mono">localhost:7331 · v0.3</small></div>
+    </nav>
+    <main class="sk-opt-main" data-role="options-main">
+      <section class="sk-opt-section" data-section="general">
+        <div class="sk-setup">
+          <div class="hd"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><b>Set up AI Skope</b><span class="mono">2 of 3</span></div>
+          <div class="step done"><svg class="sk-ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Install the AI Skope Server</b><small>Running · v0.3 at localhost:7331</small></span></div>
+          <div class="step done"><svg class="sk-ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Allow a folder</b><small>~/dev, ~/Documents/notes, ~/Downloads</small></span></div>
+          <div class="step"><i></i><span><b>Choose a default runtime</b><small>Which agent answers when you open a new chat.</small></span><button type="button" class="sk-btn primary sm">Choose</button></div>
+        </div>
+        <h2>General</h2>
+        <div class="sk-row"><div class="lbl"><b>Theme</b><small>Follows Chrome unless you choose one.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-sun"/></svg>Light</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-monitor"/></svg>System</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Color</b></div><div class="sk-swatches" role="group" aria-label="Color palette"><button type="button" class="sk-swatch" data-palette-pick="graphite" data-palette="graphite" data-theme="dark" aria-pressed="true" aria-label="Graphite" title="Graphite"></button><button type="button" class="sk-swatch" data-palette-pick="nocturne" data-palette="nocturne" data-theme="dark" aria-pressed="false" aria-label="Nocturne" title="Nocturne"></button><button type="button" class="sk-swatch" data-palette-pick="sage" data-palette="sage" data-theme="dark" aria-pressed="false" aria-label="Sage" title="Sage"></button><button type="button" class="sk-swatch" data-palette-pick="ember" data-palette="ember" data-theme="dark" aria-pressed="false" aria-label="Ember" title="Ember"></button><button type="button" class="sk-swatch" data-palette-pick="arctic" data-palette="arctic" data-theme="dark" aria-pressed="false" aria-label="Arctic" title="Arctic"></button><button type="button" class="sk-swatch" data-palette-pick="mono" data-palette="mono" data-theme="dark" aria-pressed="false" aria-label="Mono" title="Mono"></button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Text size</b></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false">Small</button><button type="button" aria-pressed="true">Default</button><button type="button" aria-pressed="false">Large</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Pane side</b></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-left"/></svg>Left</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-right"/></svg>Right</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Default pane width</b><small>Drag the divider to resize any time.</small></div><input class="sk-input mono" type="text" value="400 px" style="width:96px;text-align:right" aria-label="Default width"></div>
+        <div class="sk-row"><div class="lbl"><b>Open automatically</b><small>Show the pane when Chrome starts.</small></div><button type="button" class="sk-switch" role="switch" aria-checked="false" aria-label="Open automatically"></button></div>
+        <div class="sk-row"><div class="lbl"><b>Model source</b><small>The server drives local coding agents and can read files on this computer. API keys call providers directly.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Server</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API keys</button></div></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="server">
+        <h2>Server &amp; runtimes</h2>
+        <div class="sk-row"><div class="lbl"><b>Server address</b><small><span class="sk-dot" style="display:inline-block;vertical-align:middle;margin-right:5px"></span>connected · v0.3 · uptime 3 h 12 m</small></div><input class="sk-input mono" type="text" value="http://localhost:7331" style="width:260px" aria-label="Server URL"><button type="button" class="sk-btn secondary sm">Restart</button><button type="button" class="sk-btn ghost sm">Logs <svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button></div>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th></th><th>Runtime</th><th>Path</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg></span></td><td><b>Claude Code</b><small class="mono">2.1</small></td><td class="mono">/opt/homebrew/bin/claude</td><td>Opus 5, Sonnet 5, Haiku 4.5</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Claude Code"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-codex"/></svg></span></td><td><b>Codex</b><small class="mono">0.9</small></td><td class="mono">~/.npm/bin/codex</td><td>GPT-5 Codex, GPT-5</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Codex"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg></span></td><td><b>pi</b><small class="mono">0.14</small></td><td class="mono">~/.local/bin/pi</td><td>5 models via z.ai, fireworks.ai, ollama</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="pi"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg></span></td><td><b>omp</b><small class="mono">—</small></td><td class="mono">not found on PATH</td><td>—</td><td><button type="button" class="sk-btn secondary sm">Install guide</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg></span></td><td><b>opencode</b><small class="mono">1.2</small></td><td class="mono">/opt/homebrew/bin/opencode</td><td>5 models via z.ai, fireworks.ai, ollama</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="opencode"></button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><input class="sk-input mono" type="text" placeholder="Custom command, e.g. my-agent --stdio" style="flex:1" aria-label="Custom command"><button type="button" class="sk-btn secondary sm"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add runtime</button></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="folders">
+        <h2>Folders</h2>
+        <p class="lead">Folders the server may read so you can ask about local HTML and Markdown files, repos and notes. Nothing outside these folders is ever opened.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th>Folder</th><th>Indexed</th><th>Access</th><th>Last indexed</th><th></th></tr></thead>
+          <tbody><tr><td class="mono"><b>~/dev</b></td><td>1,284 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option selected>Read + watch</option><option>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">2 min ago</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr><tr><td class="mono"><b>~/Documents/notes</b></td><td>96 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option>Read + watch</option><option selected>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">1 h ago</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr><tr><td class="mono"><b>~/Downloads</b></td><td>412 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option>Read + watch</option><option selected>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">Yesterday</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm"><svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg>Add folder</button><span class="grow"></span><small class="mono" style="color:var(--ink-3)">Ignoring node_modules, .git, build outputs</small></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="providers">
+        <h2>Providers &amp; keys</h2>
+        <h3>Via AI Skope Server <span class="sk-tag">recommended</span></h3>
+        <p class="lead">Keys stored by the server on this computer; the extension never sees them. Each provider is offered to the runtimes you choose.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th>Provider</th><th>Key</th><th>Available to</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-8f3a…c21e</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…7Kd0</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm" data-role="options-add-source"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add a source</button></div>
+        <h3 style="margin-top:20px">Direct API keys</h3>
+        <p class="lead">Stored in Chrome's extension storage on this device. Calls go straight to the provider — no server, no local files.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th></th><th>Provider</th><th>Key</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg></span></td><td><b>Anthropic</b></td><td class="mono">sk-ant-…4Qf8</td><td>3 models</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-openai"/></svg></span></td><td><b>OpenAI</b></td><td class="mono">sk-…9Lm2</td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-google"/></svg></span></td><td><b>Google</b></td><td class="mono">AIza…Xr1c</td><td>1 model</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr></tbody>
+        </table></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="privacy">
+        <h2>Privacy</h2>
+        <div class="sk-row"><div class="lbl"><b>Send page content to the model</b><small>Only what you pick or select is sent unless you allow the whole page.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="true">Ask</button><button type="button" aria-pressed="false">Always</button><button type="button" aria-pressed="false">Never</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Blocked sites</b><small>AI Skope never reads or sends anything here.</small></div></div>
+        <div class="sk-chks"><span class="sk-chk" aria-pressed="true">*.bank.example <button type="button" class="sk-ctx-x" aria-label="Remove"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span><span class="sk-chk" aria-pressed="true">mail.google.com <button type="button" class="sk-ctx-x" aria-label="Remove"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span><button type="button" class="sk-chk"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add site</button></div>
+        <div class="sk-row"><div class="lbl"><b>Keep chat history</b><small>Stored locally, per site.</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Keep chat history"></button></div>
+        <div class="sk-row"><div class="lbl"><b>Delete chats older than</b></div><span class="sk-selectwrap"><select class="sk-select" aria-label="Retention"><option>Never</option><option selected>90 days</option><option>30 days</option><option>7 days</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn secondary sm">Export chats &amp; notes</button><button type="button" class="sk-btn danger sm">Clear all data</button></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="shortcuts">
+        <h2>Shortcuts</h2>
+        <div class="sk-tablewrap"><table class="sk-table"><thead><tr><th>Action</th><th>Keys</th><th></th></tr></thead><tbody><tr><td>Toggle AI Skope</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>A</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Pick element</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Add selection to chat</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>S</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Add file</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>F</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Switch model</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>New chat</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>N</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Focus the composer</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>L</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr></tbody></table></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="about">
+        <h2>About</h2>
+        <div class="sk-row"><div class="lbl"><b>AI Skope 0.1.0</b><small>Extension · design preview</small></div><button type="button" class="sk-btn secondary sm">Check for updates</button></div>
+        <div class="sk-row"><div class="lbl"><b>AI Skope Server 0.3</b><small class="mono">/opt/homebrew/bin/aiss · started 3 h ago</small></div><button type="button" class="sk-btn secondary sm">Update server</button></div>
+        <div class="sk-row" style="border:0"><div class="lbl"><small>Open source · Report a problem · Privacy policy</small></div></div>
+      </section>
+    </main>
+  </div>
+  <div class="sk-dialog-scrim" data-role="dialog-scrim" hidden>
+    <div class="sk-dialog" role="dialog" aria-label="Add a source" data-role="dialog">
+      <div class="hd">
+    
+    <h2>Add a source</h2><span class="sk-topbar-spacer"></span><button type="button" class="sk-iconbtn" data-dialog-close aria-label="Close"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button>
+  </div>
+  <div class="sk-sheet-seg"><div class="sk-seg" role="group" aria-label="Kind of source">
+    <button type="button" data-view="runtime" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg>Runtime</button>
+    <button type="button" data-view="provider" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Provider</button>
+    <button type="button" data-view="direct" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API key</button>
+  </div></div>
+  <div class="bd" style="padding-top:0">
+    <div class="sk-form" data-view="runtime" hidden>
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The server looks for coding agents installed on this computer. Enable one and its models appear in the switcher.</span></div>
+  <div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg></span><div><b>Claude Code</b><small><span class="sk-dot"></span>2.1 · /opt/homebrew/bin/claude</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Claude Code"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-codex"/></svg></span><div><b>Codex</b><small><span class="sk-dot"></span>0.9 · ~/.npm/bin/codex</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Codex"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg></span><div><b>pi</b><small><span class="sk-dot"></span>0.14 · ~/.local/bin/pi</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="pi"></button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg></span><div><b>omp</b><small><span class="sk-dot is-offline"></span>not found on PATH</small></div><button type="button" class="sk-btn secondary sm">Install guide</button></div>
+    <div class="sk-rt"><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg></span><div><b>opencode</b><small><span class="sk-dot"></span>1.2 · /opt/homebrew/bin/opencode</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="opencode"></button></div>
+  </div>
+  <label class="lbl">Custom command<input class="sk-input mono" type="text" placeholder="my-agent --stdio" aria-label="Custom command"></label>
+</div>
+
+    <div class="sk-form" data-view="provider">
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
+  <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
+  <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
+</div>
+
+    <div class="sk-form" data-view="direct" hidden>
+  <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg><span>Stored in Chrome's extension storage on this device. Calls go <b>straight to the provider</b> — no server, no local files.</span></div>
+  <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>Anthropic</option><option>OpenAI</option><option>Google</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" placeholder="sk-ant-…" aria-label="API key"></label>
+</div>
+
+  </div>
+  <div class="sk-sheet-foot"><button type="button" class="sk-btn ghost" data-dialog-close>Cancel</button><button type="button" class="sk-btn primary" data-dialog-close>Add to server</button></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<nav class="rail" aria-label="Design states">
+  <span class="lbl">State</span>
+  <button type="button" data-state="chat" aria-pressed="true">Chat</button>
+  <button type="button" data-state="picking">Picking</button>
+  <button type="button" data-state="selection">Selection</button>
+  <button type="button" data-state="notes">Notes</button>
+  <button type="button" data-state="history">History</button>
+  <button type="button" data-state="switcher">Switcher</button>
+  <button type="button" data-state="settings">Settings</button>
+  <button type="button" data-state="add-source">Add source</button>
+  <button type="button" data-state="options">All settings</button>
+  <button type="button" data-state="add-file">Add file</button>
+  <button type="button" data-state="offline">Offline</button>
+  <button type="button" data-state="first-run">First run</button>
+  <span class="sep"></span>
+  <span class="lbl">Theme</span>
+  <button type="button" data-theme-set="light"><svg class="sk-ico" aria-hidden="true"><use href="#i-sun"/></svg>Light</button>
+  <button type="button" data-theme-set="dark"><svg class="sk-ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button>
+  <button type="button" data-theme-set="system" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-monitor"/></svg>System</button>
+  <span class="sep"></span>
+  <span class="lbl">Color</span>
+  <span class="sk-swatches" data-rail-palettes><button type="button" class="sk-swatch sm" data-palette-set="graphite" data-palette="graphite" data-theme="dark" aria-pressed="true" aria-label="Graphite" title="Graphite"></button><button type="button" class="sk-swatch sm" data-palette-set="nocturne" data-palette="nocturne" data-theme="dark" aria-pressed="false" aria-label="Nocturne" title="Nocturne"></button><button type="button" class="sk-swatch sm" data-palette-set="sage" data-palette="sage" data-theme="dark" aria-pressed="false" aria-label="Sage" title="Sage"></button><button type="button" class="sk-swatch sm" data-palette-set="ember" data-palette="ember" data-theme="dark" aria-pressed="false" aria-label="Ember" title="Ember"></button><button type="button" class="sk-swatch sm" data-palette-set="arctic" data-palette="arctic" data-theme="dark" aria-pressed="false" aria-label="Arctic" title="Arctic"></button><button type="button" class="sk-swatch sm" data-palette-set="mono" data-palette="mono" data-theme="dark" aria-pressed="false" aria-label="Mono" title="Mono"></button></span>
+</nav>
+
+<script>
+/* AI Skope — prototype behaviour. One instance per [data-skope] canvas so a
+   page can host several (e.g. a light and a dark canvas side by side).
+   Prototype only: no backend, canned replies, nothing persisted. */
+(function () {
+  const ICON = (id, cls = "sk-ico") => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function initSkope(root, initialState) {
+    const $ = (r) => root.querySelector(`[data-role="${r}"]`);
+    const el = {
+      scroll: $("scroll"), aim: $("aim"), aimSel: $("aim-sel"), aimDim: $("aim-dim"), aimHint: $("aimhint"), toast: $("toast"),
+      selAnchor: $("selanchor"), divider: $("divider"), pane: $("pane"),
+      chip: $("model-chip"), glyph: $("model-glyph"), mName: $("model-name"), mEff: $("model-eff"), mDot: $("model-dot"), mLat: $("model-lat"),
+      settingsBtn: $("settings-btn"), newBtn: $("new-btn"), histBtn: $("hist-btn"), history: $("history"), histBack: $("hist-back"), histNew: $("hist-new"), histList: $("hist-list"), histSearch: $("hist-search"), settings: $("settings"), settingsBack: $("settings-back"), themeSeg: $("theme-seg"),
+      viewChat: $("view-chat"), viewNotes: $("view-notes"), thread: $("thread"), empty: $("empty"),
+      strip: $("strip"), stripModel: $("strip-model"), stripCount: $("strip-count"), stripSwitch: $("strip-switch"),
+      composer: $("composer"), tray: $("tray"), input: $("input"), pickBtn: $("pick-btn"), selectBtn: $("select-btn"), send: $("send"),
+      scrim: $("scrim"), switcher: $("switcher"), filter: $("switcher-filter"), list: $("switcher-list"), manage: $("manage-providers"), srvLine: $("srv-line"), effortRow: $("effort-row"), stripVerb: $("strip-verb"), paletteSeg: $("palette-seg"), paletteName: $("palette-name"), addsrc: $("addsrc"), addsrcSeg: $("addsrc-seg"), addsrcBack: $("addsrc-back"), addsrcCancel: $("addsrc-cancel"), addsrcAdd: $("addsrc-add"), addServer: $("add-server-src"), addDirect: $("add-direct-src"), fileBtn: $("file-btn"), clearLink: $("clear-link"), options: $("options"), optionsClose: $("options-close"), optionsNav: $("options-nav"), optionsMain: $("options-main"), optionsAdd: $("options-add-source"), dialogScrim: $("dialog-scrim"), dialog: $("dialog"), filepick: $("filepick"), fileFilter: $("filepick-filter"), fileList: $("filepick-list"), manageFolders: $("manage-folders"),
+      notesList: $("notes-list"), noteNew: $("note-new"), noteInput: $("note-input"), notesCount: $("notes-count"),
+    };
+    const tabs = [...root.querySelectorAll("[data-tab]")];
+    const state = { tab: "chat", picking: false, selecting: false, offline: false, chips: [], selText: "", timer: null,
+      model: { name: "Opus 5", glyph: "r-claude-code", status: "ok", lat: "124 ms", label: "Opus 5 · High" } };
+
+    /* ---------- helpers ---------- */
+    let toastT;
+    function toast(html) {
+      el.toast.innerHTML = ICON("i-reticle") + html; el.toast.hidden = false;
+      clearTimeout(toastT); toastT = setTimeout(() => (el.toast.hidden = true), 2400);
+    }
+    const scrollBottom = () => { el.thread.scrollTop = el.thread.scrollHeight; };
+    function autosize(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+
+    /* ---------- tabs ---------- */
+    function setTab(name) {
+      state.tab = name;
+      tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
+      el.viewChat.hidden = name !== "chat"; el.viewNotes.hidden = name !== "notes";
+      el.composer.hidden = name !== "chat";
+      el.strip.hidden = !(state.offline && name === "chat");
+    }
+    tabs.forEach((t) => t.addEventListener("click", () => setTab(t.dataset.tab)));
+
+    /* ---------- model source / switcher ----------
+       Source "aiss": the local AI Skope Server drives coding agents (runtimes);
+       each runtime exposes its models; some runtimes share a provider registry
+       (pi / omp / opencode) and support an effort level.
+       Source "keys": the extension calls providers directly with API keys. */
+    const RUNTIMES = [
+      { id: "claude-code", name: "Claude Code", glyph: "r-claude-code", effort: ["Low", "Medium", "High", "Max"], models: [
+        { name: "Opus 5", lat: "124 ms", ctx: "1M ctx", status: "ok", def: true }, { name: "Sonnet 5", lat: "88 ms", ctx: "1M ctx", status: "ok" }, { name: "Haiku 4.5", lat: "41 ms", ctx: "200K ctx", status: "ok" } ] },
+      { id: "codex", name: "Codex", glyph: "r-codex", effort: ["Low", "Medium", "High"], models: [
+        { name: "GPT-5 Codex", lat: "230 ms", ctx: "400K ctx", status: "ok" }, { name: "GPT-5", lat: "210 ms", ctx: "400K ctx", status: "ok" } ] },
+      { id: "agents", name: "pi · omp · opencode", variants: ["pi", "omp", "opencode"], glyphs: { pi: "r-pi", omp: "r-omp", opencode: "r-opencode" }, effort: ["Low", "Medium", "High"], models: [
+        { provider: "z.ai", name: "GLM 5.3", lat: "310 ms", ctx: "200K ctx", status: "ok" }, { provider: "z.ai", name: "GLM 5.3 Flash", lat: "95 ms", ctx: "128K ctx", status: "ok" },
+        { provider: "fireworks.ai", name: "Kimi K2", lat: "180 ms", ctx: "256K ctx", status: "ok" }, { provider: "fireworks.ai", name: "DeepSeek V3.2", lat: "640 ms", ctx: "slow", status: "degraded" },
+        { provider: "ollama", name: "qwen3 8B", lat: "12 ms", ctx: "32K ctx", status: "ok", tag: "on device" } ] },
+    ];
+    const PROVIDERS = [
+      { id: "anthropic", name: "Anthropic", glyph: "p-anthropic", models: [ { name: "Opus 5", lat: "124 ms", ctx: "1M ctx", status: "ok", def: true }, { name: "Sonnet 5", lat: "88 ms", ctx: "1M ctx", status: "ok" }, { name: "Haiku 4.5", lat: "41 ms", ctx: "200K ctx", status: "ok" } ] },
+      { id: "openai", name: "OpenAI", glyph: "p-openai", models: [ { name: "GPT-5", lat: "210 ms", ctx: "400K ctx", status: "ok" }, { name: "o4-mini", lat: "640 ms", ctx: "slow", status: "degraded" } ] },
+      { id: "google", name: "Google", glyph: "p-google", models: [ { name: "Gemini 2.5 Pro", lat: "170 ms", ctx: "1M ctx", status: "ok" } ] },
+      { id: "local", name: "Local · Ollama", glyph: "p-local", models: [ { name: "qwen3 8B", lat: "12 ms", ctx: "32K ctx", status: "ok", tag: "on device" }, { name: "llama3.3 70B", lat: "—", ctx: "not running", status: "offline" } ] },
+    ];
+    const sel = { source: "aiss", group: "claude-code", variant: "pi", model: "Opus 5", effort: "High" };
+    const groupsFor = (src) => (src === "aiss" ? RUNTIMES : PROVIDERS);
+    const curGroup = () => groupsFor(sel.source).find((g) => g.id === sel.group);
+    const curModel = () => { const g = curGroup(); return g && g.models.find((m) => m.name === sel.model); };
+    const glyphOf = (g) => (g.variants ? g.glyphs[sel.variant] : g.glyph);
+    const dotCls = (st) => "sk-dot" + (st === "degraded" ? " is-degraded" : st === "offline" ? " is-offline" : "");
+    function applySelection() {
+      const g = curGroup(), m = curModel(); if (!g || !m) return;
+      const eff = sel.source === "aiss" && g.effort ? sel.effort : null;
+      state.model = { name: m.name, glyph: glyphOf(g), status: m.status, lat: m.lat, label: eff ? `${m.name} · ${eff}` : m.name };
+      el.glyph.querySelector("use").setAttribute("href", "#" + state.model.glyph);
+      el.mName.textContent = m.name; el.mLat.textContent = m.lat; el.mEff.hidden = !eff; el.mEff.textContent = eff || "";
+      root.querySelectorAll(".sk-ai-head").forEach((h) => { h.lastChild.textContent = "AI Skope · " + m.name; });
+      const via = sel.source === "aiss" ? `${g.variants ? sel.variant : g.name} · ` : "";
+      el.chip.title = `${via}${m.provider ? m.provider + " / " : ""}${m.name}${eff ? " · " + eff : ""}${sel.source === "aiss" ? " · via AI Skope Server" : " · API key"}`;
+      setOffline(m.status === "offline");
+    }
+    function renderSwitcher(q = "") {
+      q = q.trim().toLowerCase();
+      el.switcher.querySelectorAll("[data-source]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.source === sel.source)));
+      el.srvLine.innerHTML = sel.source === "aiss"
+        ? `<span class="sk-dot${state.offline ? " is-offline" : ""}"></span>localhost:7331 · ${state.offline ? "not reachable" : "connected"} · 5 runtimes · v0.3`
+        : `<svg class="sk-ico" style="width:11px;height:11px" aria-hidden="true"><use href="#i-key"/></svg>3 providers · keys stored on this device`;
+      const groups = groupsFor(sel.source).map((g) => ({ g, models: g.models.filter((m) => !q || m.name.toLowerCase().includes(q) || (m.provider || "").includes(q) || g.name.toLowerCase().includes(q) || (g.variants || []).some((v) => v.includes(q))) })).filter((x) => x.models.length);
+      el.list.innerHTML = groups.length ? groups.map(({ g, models }) =>
+        `<div class="sk-group"><span>${ICON(glyphOf(g))}${esc(g.name)}</span>${g.variants ? `<span class="sk-seg mini" role="group" aria-label="Runtime">${g.variants.map((v) => `<button type="button" data-variant="${v}" aria-pressed="${v === sel.variant}">${v}</button>`).join("")}</span>` : ""}</div>` +
+        models.map((m) => `<button type="button" class="sk-model${m.status === "offline" ? " is-off" : ""}" role="option" aria-checked="${g.id === sel.group && m.name === sel.model}" data-pick-group="${g.id}" data-pick-model="${esc(m.name)}"><span class="${dotCls(m.status)}"></span><span class="nm"><span>${m.provider ? `<span class="prov">${esc(m.provider)} /</span> ` : ""}${esc(m.name)}</span>${m.def ? '<span class="sk-tag">default</span>' : ""}${m.tag ? `<span class="sk-tag">${esc(m.tag)}</span>` : ""}</span><span class="meta">${esc(m.lat)} · ${esc(m.ctx)}</span>${ICON("i-check", "sk-ico chk")}</button>`).join("")
+      ).join("") : `<div class="sk-hist-empty">Nothing matches "${esc(q)}".</div>`;
+      const g = curGroup(), showEff = sel.source === "aiss" && g && g.effort;
+      el.effortRow.hidden = !showEff;
+      if (showEff) el.effortRow.innerHTML = `<span>Effort<small>${esc(g.variants ? sel.variant : g.name)} · ${esc(sel.model)}</small></span><span class="sk-seg mini" role="group" aria-label="Effort">${g.effort.map((e) => `<button type="button" data-effort="${e}" aria-pressed="${e === sel.effort}">${e}</button>`).join("")}</span>`;
+    }
+    function placeAbove(pop) {
+      const pr = el.pane.getBoundingClientRect(), cr = el.composer.getBoundingClientRect();
+      pop.style.bottom = pr.bottom - cr.top + 6 + "px"; pop.style.left = "8px";
+    }
+    function openSwitcher(open) {
+      if (open) { openFilePick(false); placeAbove(el.switcher); }
+      el.switcher.hidden = !open; el.scrim.hidden = !open && el.filepick.hidden; el.chip.setAttribute("aria-expanded", String(open));
+      if (open) { el.filter.value = ""; renderSwitcher(); setTimeout(() => el.filter.focus(), 0); }
+    }
+    const FILES = [
+      { g: "Recent", name: "README.md", dir: "~/dev/finme", size: "12 KB", ft: "MD" }, { g: "Recent", name: "export-format.md", dir: "~/dev/finme/docs", size: "4 KB", ft: "MD" },
+      { g: "Recent", name: "northwind-eval.md", dir: "~/Documents/notes", size: "3 KB", ft: "MD" }, { g: "Recent", name: "index.html", dir: "~/dev/finme/site", size: "21 KB", ft: "HTML" },
+      { g: "~/dev/finme", name: "docs/", dir: "~/dev/finme", size: "8 files", dirEntry: true }, { g: "~/dev/finme", name: "src/", dir: "~/dev/finme", size: "42 files", dirEntry: true },
+      { g: "~/dev/finme", name: "config.yaml", dir: "~/dev/finme", size: "1 KB", ft: "YAML" },
+    ];
+    function renderFiles(q = "") {
+      q = q.trim().toLowerCase();
+      const hit = FILES.filter((f) => !q || f.name.toLowerCase().includes(q) || f.dir.toLowerCase().includes(q));
+      const groups = [...new Set(hit.map((f) => f.g))];
+      el.fileList.innerHTML = groups.length ? groups.map((g) => `<div class="sk-group"><span>${esc(g)}</span></div>` + hit.filter((f) => f.g === g).map((f, i) => `<button type="button" class="sk-model sk-file" role="option" data-file="${esc(f.name)}" data-dir="${esc(f.dir)}" data-size="${esc(f.size)}"><span class="ft${f.dirEntry ? " dir" : ""}">${f.dirEntry ? ICON("i-folder") : esc(f.ft)}</span><span class="nm"><span>${esc(f.name)}</span></span><span class="meta">${f.dirEntry ? esc(f.size) : esc(f.dir) + " · " + esc(f.size)}</span></button>`).join("")).join("")
+        : `<div class="sk-hist-empty">Nothing matches "${esc(q)}" in the allowed folders.</div>`;
+    }
+    function openFilePick(open) {
+      if (open) { openSwitcher(false); placeAbove(el.filepick); el.fileFilter.value = ""; renderFiles(); }
+      el.filepick.hidden = !open; el.scrim.hidden = !open && el.switcher.hidden; el.fileBtn.setAttribute("aria-pressed", String(open));
+      if (open) setTimeout(() => el.fileFilter.focus(), 0);
+    }
+    el.fileBtn.addEventListener("click", () => openFilePick(el.filepick.hidden));
+    el.fileFilter.addEventListener("input", (e) => renderFiles(e.target.value));
+    el.fileList.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-file]"); if (!b) return;
+      addChip({ type: "file", name: b.dataset.file, dir: b.dataset.dir, size: b.dataset.size });
+      toast(`Added <code>${esc(b.dataset.file)}</code> from ${esc(b.dataset.dir)}`); openFilePick(false); el.input.focus();
+    });
+    el.manageFolders.addEventListener("click", (e) => { e.preventDefault(); openFilePick(false); openOptions(true, "folders"); });
+    el.chip.addEventListener("click", () => openSwitcher(el.switcher.hidden));
+    el.scrim.addEventListener("click", () => { openSwitcher(false); openFilePick(false); });
+    el.filter.addEventListener("input", (e) => renderSwitcher(e.target.value));
+    el.switcher.addEventListener("click", (e) => {
+      const src = e.target.closest("[data-source]"), v = e.target.closest("[data-variant]"), eff = e.target.closest("[data-effort]"), pick = e.target.closest("[data-pick-model]");
+      if (src) { if (src.dataset.source !== sel.source) { sel.source = src.dataset.source; const g = groupsFor(sel.source)[0]; sel.group = g.id; sel.model = (g.models.find((m) => m.def) || g.models[0]).name; applySelection(); } renderSwitcher(el.filter.value); }
+      else if (v) { sel.variant = v.dataset.variant; applySelection(); renderSwitcher(el.filter.value); }
+      else if (eff) { sel.effort = eff.dataset.effort; applySelection(); renderSwitcher(el.filter.value); }
+      else if (pick) { sel.group = pick.dataset.pickGroup; sel.model = pick.dataset.pickModel; applySelection(); openSwitcher(false); if (curModel().status !== "offline") toast(`Switched to <code>${esc(state.model.label)}</code>`); }
+    });
+    el.manage.addEventListener("click", (e) => { e.preventDefault(); openSwitcher(false); openOptions(true, "providers"); });
+    el.stripSwitch.addEventListener("click", () => {
+      if (sel.source === "aiss") { sel.source = "keys"; sel.group = "anthropic"; sel.model = "Opus 5"; applySelection(); toast("Using API keys until the server is back"); }
+      else openSwitcher(true);
+    });
+
+    /* ---------- offline ---------- */
+    function setOffline(off) {
+      state.offline = off;
+      const aiss = sel.source === "aiss";
+      el.stripModel.textContent = aiss ? "AI Skope Server" : state.model.name;
+      el.stripVerb.textContent = aiss ? "isn't reachable" : "is offline";
+      el.stripSwitch.textContent = aiss ? "Use API keys" : "Switch model";
+      const m = curModel(); el.mDot.className = off ? "sk-dot is-offline" : dotCls(m ? m.status : "ok");
+      el.strip.hidden = !(off && state.tab === "chat");
+      el.send.disabled = off;
+      el.input.placeholder = off ? "Waiting for the model to come back…" : "Ask about this page… pick an element or select text to add context";
+      clearInterval(state.timer);
+      if (off) {
+        let n = 4;
+        el.stripCount.textContent = n + "s";
+        state.timer = setInterval(() => { n = n <= 1 ? 4 : n - 1; el.stripCount.textContent = n + "s"; }, 1000);
+      }
+    }
+
+    /* ---------- settings ---------- */
+    function openPanel(panel, open) {
+      [el.settings, el.history, el.addsrc].forEach((p) => { const on = open && p === panel; p.classList.toggle("is-open", on); p.setAttribute("aria-hidden", String(!on)); });
+    }
+    const openSettings = (open) => openPanel(el.settings, open);
+    const openHistory = (open) => { if (open) { el.histSearch.value = ""; renderHistory(); } openPanel(el.history, open); };
+    function openAddSource(view) {
+      el.addsrcSeg.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+      el.addsrc.querySelectorAll(".sk-form[data-view]").forEach((f) => (f.hidden = f.dataset.view !== view));
+      el.addsrcAdd.textContent = view === "direct" ? "Save key" : view === "runtime" ? "Done" : "Add to server";
+      openPanel(el.addsrc, true);
+    }
+    el.addsrcSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) openAddSource(b.dataset.view); });
+    if (el.addServer) el.addServer.addEventListener("click", () => openAddSource("provider"));
+    if (el.addDirect) el.addDirect.addEventListener("click", () => openAddSource("direct"));
+    /* full settings page — an extension options tab, shown here as an overlay with a tab strip */
+    function openOptions(open, section = "general") {
+      el.options.hidden = !open; el.dialogScrim.hidden = true;
+      if (!open) return;
+      openPanel(null, false); openSwitcher(false); openFilePick(false);
+      el.optionsNav.querySelectorAll("[data-section]").forEach((a) => a.classList.toggle("on", a.dataset.section === section));
+      const target = el.optionsMain.querySelector(`[data-section="${section}"]`);
+      if (target) { el.options.querySelector(".sk-opt-shell").scrollTop = 0; setTimeout(() => target.scrollIntoView({ block: "start" }), 0); }
+    }
+    root.querySelectorAll("[data-role='open-options']").forEach((b) => b.addEventListener("click", () => openOptions(true, b.dataset.section || "general")));
+    el.optionsClose.addEventListener("click", () => openOptions(false));
+    el.optionsNav.addEventListener("click", (e) => { const a = e.target.closest("[data-section]"); if (a) { e.preventDefault(); openOptions(true, a.dataset.section); } });
+    el.optionsAdd.addEventListener("click", () => { el.dialogScrim.hidden = false; });
+    el.dialogScrim.addEventListener("click", (e) => {
+      if (e.target === el.dialogScrim || e.target.closest("[data-dialog-close]")) { const add = e.target.closest(".sk-btn.primary"); el.dialogScrim.hidden = true; if (add) toast(`Added <code>z.ai</code> to the server — 4 models for pi, opencode`); return; }
+      const v = e.target.closest("[data-view]"); if (v && v.closest(".sk-seg")) { el.dialog.querySelectorAll(".sk-seg [data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b === v))); el.dialog.querySelectorAll(".sk-form[data-view]").forEach((f) => (f.hidden = f.dataset.view !== v.dataset.view)); }
+      const c = e.target.closest(".sk-chk"); if (c && c.tagName === "BUTTON") c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"));
+    });
+    el.options.querySelectorAll(".sk-seg:not([data-role]) button").forEach((b) => b.addEventListener("click", () => { b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); }));
+    el.options.querySelectorAll("[data-palette-pick]").forEach((b) => b.addEventListener("click", () => setPalette(b.dataset.palettePick)));
+    [el.addsrcBack, el.addsrcCancel].forEach((b) => b.addEventListener("click", () => openPanel(el.settings, true)));
+    el.addsrcAdd.addEventListener("click", () => {
+      const view = el.addsrcSeg.querySelector('[aria-pressed="true"]').dataset.view;
+      openPanel(el.settings, true);
+      toast(view === "provider" ? `Added <code>z.ai</code> to the server — 4 models for pi, opencode` : view === "direct" ? "API key saved on this device" : "Runtimes updated");
+    });
+    el.addsrc.querySelectorAll(".sk-chk").forEach((c) => c.addEventListener("click", () => c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"))));
+    el.histBtn.addEventListener("click", () => openHistory(!el.history.classList.contains("is-open")));
+    el.histBack.addEventListener("click", () => openHistory(false));
+    el.settingsBtn.addEventListener("click", () => openSettings(!el.settings.classList.contains("is-open")));
+    el.settingsBack.addEventListener("click", () => openSettings(false));
+    const themeScope = () => root.closest("[data-theme]") || document.documentElement;
+    function setTheme(t) {
+      const scope = themeScope();
+      if (t === "system") { if (scope === document.documentElement) scope.removeAttribute("data-theme"); }
+      else scope.setAttribute("data-theme", t);
+      syncThemeSeg();
+      document.dispatchEvent(new CustomEvent("skope:theme", { detail: t }));
+    }
+    function syncThemeSeg() {
+      const cur = themeScope().getAttribute("data-theme") || "system";
+      el.themeSeg.querySelectorAll("[data-theme-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themePick === cur)));
+    }
+    el.themeSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-theme-pick]"); if (b) setTheme(b.dataset.themePick); });
+    const PALETTES = { graphite: "Graphite", nocturne: "Nocturne", sage: "Sage", ember: "Ember", arctic: "Arctic", mono: "Mono" };
+    function setPalette(id) {
+      const scope = themeScope();
+      if (id === "graphite") scope.removeAttribute("data-palette"); else scope.setAttribute("data-palette", id);
+      syncPalette(); document.dispatchEvent(new CustomEvent("skope:palette", { detail: id }));
+    }
+    function syncPalette() {
+      const cur = themeScope().getAttribute("data-palette") || "graphite";
+      root.querySelectorAll("[data-palette-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.palettePick === cur)));
+      el.paletteName.textContent = PALETTES[cur] || cur;
+    }
+    el.paletteSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-palette-pick]"); if (b) setPalette(b.dataset.palettePick); });
+    document.addEventListener("skope:palette", syncPalette);
+    document.addEventListener("skope:theme", syncThemeSeg);
+    root.querySelectorAll(".sk-seg:not([data-role]) button").forEach((b) => b.addEventListener("click", () => {
+      b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true");
+    }));
+    root.querySelectorAll(".sk-switch").forEach((s) => s.addEventListener("click", () => s.setAttribute("aria-checked", String(s.getAttribute("aria-checked") !== "true"))));
+
+    /* ---------- context chips ---------- */
+    function renderTray() {
+      el.tray.innerHTML = state.chips.map((c, i) => chipHtml(c) + `<button type="button" class="sk-ctx-x" data-rm="${i}" aria-label="Remove">${ICON("i-close")}</button></span>`).join("");
+    }
+    function chipHtml(c) {
+      if (c.type === "el") return `<span class="sk-ctx">${ICON("i-reticle")}<span class="sel">${esc(c.sel)}</span><span class="dim">${esc(c.dim)}</span>`;
+      if (c.type === "file") return `<span class="sk-ctx">${ICON("i-folder")}<span class="sel">${esc(c.name)}</span><span class="dim">${esc(c.dir)} · ${esc(c.size)}</span>`;
+      return `<span class="sk-ctx">${ICON("i-select-text")}<span class="q">${esc(c.text)}</span>`;
+    }
+    function addChip(c) { state.chips.push(c); renderTray(); }
+    el.tray.addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (!b) return; state.chips.splice(+b.dataset.rm, 1); renderTray(); });
+
+    /* ---------- element picker ---------- */
+    function placeAim(target) {
+      const sr = el.scroll.getBoundingClientRect(), r = target.getBoundingClientRect();
+      const top = r.top - sr.top + el.scroll.scrollTop, left = r.left - sr.left + el.scroll.scrollLeft;
+      Object.assign(el.aim.style, { top: top + "px", left: left + "px", width: r.width + "px", height: r.height + "px" });
+      el.aim.classList.toggle("is-top", top - el.scroll.scrollTop < 36);
+      el.aimSel.textContent = target.dataset.sk;
+      el.aimDim.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+      el.aim.hidden = false;
+      return { sel: target.dataset.sk, dim: `${Math.round(r.width)} × ${Math.round(r.height)}` };
+    }
+    let hovered = null;
+    function onMove(e) {
+      const t = e.target.closest && e.target.closest("[data-sk]");
+      if (!t || !el.scroll.contains(t)) { hovered = null; el.aim.hidden = true; return; }
+      hovered = placeAim(t);
+    }
+    function onPickClick(e) {
+      if (!hovered) return;
+      e.preventDefault(); e.stopPropagation();
+      addChip({ type: "el", sel: hovered.sel, dim: hovered.dim });
+      toast(`Added <code>${esc(hovered.sel)}</code> to context`);
+      stopPick(); el.input.focus();
+    }
+    function startPick() {
+      if (state.picking) return;
+      hideSel(); setSelecting(false);
+      state.picking = true; root.classList.add("is-picking");
+      el.pickBtn.setAttribute("aria-pressed", "true"); el.aimHint.hidden = false;
+      el.scroll.addEventListener("mousemove", onMove); el.scroll.addEventListener("click", onPickClick, true);
+    }
+    function stopPick() {
+      if (!state.picking) return;
+      state.picking = false; hovered = null; root.classList.remove("is-picking");
+      el.pickBtn.setAttribute("aria-pressed", "false"); el.aimHint.hidden = true; el.aim.hidden = true;
+      el.scroll.removeEventListener("mousemove", onMove); el.scroll.removeEventListener("click", onPickClick, true);
+    }
+    el.pickBtn.addEventListener("click", () => (state.picking ? stopPick() : startPick()));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { stopPick(); hideSel(); openSwitcher(false); openFilePick(false); if (!el.dialogScrim.hidden) el.dialogScrim.hidden = true; }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k" && root.contains(document.activeElement)) { e.preventDefault(); startPick(); }
+    });
+
+    /* ---------- text selection ---------- */
+    function setSelecting(on) {
+      state.selecting = on; el.selectBtn.setAttribute("aria-pressed", String(on));
+      if (on) { stopPick(); toast("Drag across text on the page, then choose <b>Add to chat</b>"); }
+    }
+    el.selectBtn.addEventListener("click", () => setSelecting(!state.selecting));
+    function showSelAt(rect) {
+      const sr = el.scroll.getBoundingClientRect();
+      el.selAnchor.style.left = rect.left + rect.width / 2 - sr.left + el.scroll.scrollLeft + "px";
+      el.selAnchor.style.top = rect.top - sr.top + el.scroll.scrollTop - 46 + "px";
+      el.selAnchor.style.transform = "translateX(-50%)";
+      el.selAnchor.hidden = false;
+    }
+    function hideSel() {
+      el.selAnchor.hidden = true;
+      el.scroll.querySelectorAll(".sk-hl").forEach((m) => m.replaceWith(...m.childNodes));
+    }
+    el.scroll.addEventListener("mousedown", (e) => { if (!e.target.closest(".sk-seltool")) hideSel(); });
+    el.scroll.addEventListener("mouseup", () => {
+      if (state.picking) return;
+      setTimeout(() => {
+        const s = window.getSelection();
+        if (!s || s.isCollapsed || !el.scroll.contains(s.anchorNode)) return;
+        const text = s.toString().trim(); if (!text) return;
+        state.selText = text; showSelAt(s.getRangeAt(0).getBoundingClientRect());
+      }, 0);
+    });
+    el.selAnchor.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      const text = state.selText;
+      if (b.dataset.act === "note") { addNote(text, ""); setTab("notes"); toast("Saved to Notes"); }
+      else { addChip({ type: "text", text }); toast("Added selection to context"); if (b.dataset.act === "ask") el.input.focus(); }
+      window.getSelection()?.removeAllRanges(); hideSel(); setSelecting(false);
+    });
+
+    /* ---------- divider ---------- */
+    el.divider.addEventListener("mousedown", (e) => {
+      e.preventDefault(); el.divider.classList.add("is-dragging");
+      const move = (ev) => { const w = Math.max(320, Math.min(640, root.getBoundingClientRect().right - ev.clientX)); root.style.setProperty("--pane-w", w + "px"); };
+      const up = () => { el.divider.classList.remove("is-dragging"); document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    });
+
+    /* ---------- composer / canned replies ---------- */
+    const now = () => new Date().toTimeString().slice(0, 5);
+    function userMsg(text, chips) {
+      const ctx = chips.length ? `<div class="sk-msg-ctx">${chips.map((c) => chipHtml(c) + "</span>").join("")}</div>` : "";
+      const d = document.createElement("div"); d.className = "sk-msg user";
+      d.innerHTML = `${ctx}<div class="sk-bubble"><p>${esc(text)}</p></div><span class="sk-time">${now()}</span>`;
+      el.thread.appendChild(d); scrollBottom();
+    }
+    function reply(chips) {
+      const elChip = chips.find((c) => c.type === "el"), txt = chips.find((c) => c.type === "text"), file = chips.find((c) => c.type === "file");
+      const d = document.createElement("div"); d.className = "sk-msg ai";
+      d.innerHTML = `<div class="sk-ai-head">${ICON("i-reticle")}AI Skope · ${esc(state.model.name)}</div>
+        <div class="sk-tool" data-tool><span class="sk-spin"></span>${file ? "Reading" : "Looking at"} <code>${esc(elChip ? elChip.sel : file ? file.dir + "/" + file.name : txt ? "selection" : "document")}</code>…</div>
+        <div class="sk-ai-body"><p><span class="sk-cursor"></span></p></div><span class="sk-time">${now()}</span>`;
+      el.thread.appendChild(d); scrollBottom();
+      const words = (file
+        ? `I read ${file.name} from ${file.dir} through the server. It describes the CSV and JSON export written per statement month and says the JSON is the source of truth for re-imports — the same policy the page above calls "never billed automatically" is worth mirroring in your overage terms.`
+        : elChip
+        ? `Here's what that element says: it's the ${elChip.sel.includes("featured") ? "Growth" : "selected"} plan block — price, the event cap and the five included features. Ask me to compare it against another tier, or pick a second element and I'll diff them.`
+        : txt ? `About that passage: it reads as a conditional offer, not a guarantee — both conditions have to hold at sign-up. Want me to draft the question to sales?`
+        : `This page lists three plans — Starter (free, 1M events), Growth ($149/mo, 25M events) and Enterprise (custom). Retention, SQL access and SSO are the real differences; seats are unlimited on all of them.`).split(" ");
+      setTimeout(() => {
+        const tool = d.querySelector("[data-tool]"); tool.innerHTML = `${ICON("i-check", "sk-ico sm")}Read <code>${esc(elChip ? elChip.sel : file ? file.name : txt ? "selection" : "document")}</code>`;
+        const p = d.querySelector(".sk-ai-body p"); let i = 0;
+        const tick = () => { if (i < words.length) { p.innerHTML = esc(words.slice(0, ++i).join(" ")) + '<span class="sk-cursor"></span>'; scrollBottom(); setTimeout(tick, 28); } else p.innerHTML = esc(words.join(" ")); };
+        tick();
+      }, 900);
+    }
+    el.composer.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = el.input.value.trim(); if (!text || state.offline) return;
+      ensureCurrent(text); showEmpty(false); const chips = state.chips.slice();
+      userMsg(text, chips); state.chips = []; renderTray();
+      el.input.value = ""; autosize(el.input); reply(chips);
+    });
+    el.input.addEventListener("input", () => autosize(el.input));
+    el.input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el.composer.requestSubmit(); } });
+
+    /* ---------- empty / first run ---------- */
+    function showEmpty(on) { el.empty.hidden = !on; el.thread.hidden = on; el.newBtn.disabled = on; el.newBtn.style.opacity = on ? ".45" : ""; el.clearLink.disabled = on; }
+
+    /* ---------- chats: new chat archives, history restores, delete undoes ---------- */
+    const PAGE = { url: "northwind.example/pricing", host: "northwind.example", fav: "N", favBg: "" };
+    const seedThread = (u, a, model) => `<div class="sk-day">Earlier</div><div class="sk-msg user"><div class="sk-bubble"><p>${esc(u)}</p></div></div><div class="sk-msg ai"><div class="sk-ai-head">${ICON("i-reticle")}AI Skope · ${esc(model)}</div><div class="sk-ai-body"><p>${esc(a)}</p></div></div>`;
+    const chats = [
+      { id: 1, title: "Is the Growth plan enough for about 40M events a month?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Opus 5", glyph: "r-claude-code", count: 4, when: "14:05", html: el.thread.innerHTML },
+      { id: 2, title: "What counts as an event?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Haiku 4.5", glyph: "r-claude-code", count: 2, when: "13:40", html: seedThread("What counts as an event?", "Any call to track(), plus page views and identify calls. Internal system events and failed requests are not billed — that's from the FAQ on this page.", "Haiku 4.5") },
+      { id: 3, title: "How do identify calls dedupe across devices?", url: "northwind.example/docs/identify", host: PAGE.host, fav: "N", favBg: "", model: "Sonnet 5", glyph: "r-claude-code", count: 6, when: "Yesterday", html: seedThread("How do identify calls dedupe across devices?", "The docs say identities merge on the first shared trait — usually email — and earlier anonymous events are re-attributed within 24 hours.", "Sonnet 5") },
+      { id: 4, title: "Metered billing vs. tiered — which fits us?", url: "docs.stripe.com/billing/subscriptions/usage-based", host: "docs.stripe.com", fav: "S", favBg: "#635BFF", model: "Opus 5", glyph: "r-claude-code", count: 8, when: "Yesterday", html: seedThread("Metered billing vs. tiered — which fits us?", "Tiered if you want predictable invoices and a published price list; metered if usage swings month to month. Stripe supports both on one subscription.", "Opus 5") },
+      { id: 5, title: "Explain this diff to me", url: "github.com/northwind/ingest/pull/412", host: "github.com", fav: "G", favBg: "#57606A", model: "GPT-5", glyph: "r-codex", count: 3, when: "Mon", html: seedThread("Explain this diff to me", "It moves event batching from the client to the edge worker and adds a 250 ms flush window. The risk is ordering across retries.", "GPT-5") },
+      { id: 6, title: "Summarize the thread", url: "news.ycombinator.com/item?id=41012", host: "news.ycombinator.com", fav: "Y", favBg: "#F26522", model: "qwen3 8B", glyph: "r-pi", count: 2, when: "Mon", html: seedThread("Summarize the thread", "Mostly people comparing self-hosted analytics to hosted ones; the recurring point is retention cost, not features.", "qwen3 8B") },
+      { id: 7, title: "What does the export section of this README say?", url: "~/dev/finme/README.md", host: "local file", fav: "MD", favBg: "#3B6EA5", model: "Opus 5", glyph: "r-claude-code", count: 2, when: "Tue", html: seedThread("What does the export section of this README say?", "It documents a CSV and a JSON export per statement month, written to ~/.finme/export, and notes that the JSON is the source of truth for re-imports.", "Opus 5") },
+    ];
+    let currentId = 1, nextId = 8, deleted = null, lastArchived = null;
+    const clearThread = () => { el.thread.innerHTML = '<div class="sk-day">Today</div>'; state.chips = []; renderTray(); };
+    function saveCurrent() {
+      const c = chats.find((x) => x.id === currentId); if (!c || el.thread.hidden) return;
+      c.html = el.thread.innerHTML; c.count = el.thread.querySelectorAll(".sk-msg").length; c.model = state.model.name; c.glyph = state.model.glyph;
+    }
+    function ensureCurrent(firstText) {
+      if (currentId) return;
+      chats.unshift({ id: nextId, title: firstText.length > 60 ? firstText.slice(0, 57) + "…" : firstText, url: PAGE.url, host: PAGE.host, fav: PAGE.fav, favBg: PAGE.favBg, model: state.model.name, glyph: state.model.glyph, count: 0, when: now(), html: "" });
+      currentId = nextId++;
+    }
+    function newChat(verb = "New chat") {
+      if (el.thread.hidden) return;
+      saveCurrent(); lastArchived = currentId; currentId = null; clearThread(); showEmpty(true); openHistory(false);
+      toast(`${verb} — the last one is in ${ICON("i-history", "sk-ico sm")} History${lastArchived ? ` <button type="button" class="undo" data-undo-new>${ICON("i-undo", "sk-ico sm")}Undo</button>` : ""}`);
+    }
+    el.clearLink.addEventListener("click", () => newChat("Chat cleared"));
+    function openChat(id) {
+      saveCurrent(); const c = chats.find((x) => x.id === id); if (!c) return;
+      currentId = id; el.thread.innerHTML = c.html; showEmpty(false); openHistory(false); scrollBottom();
+    }
+    function deleteChat(id) {
+      const i = chats.findIndex((x) => x.id === id); if (i < 0) return;
+      deleted = { c: chats[i], i, wasCurrent: id === currentId }; chats.splice(i, 1);
+      if (deleted.wasCurrent) { currentId = null; clearThread(); showEmpty(true); }
+      renderHistory(el.histSearch.value);
+      toast(`Chat deleted <button type="button" class="undo" data-undo>${ICON("i-undo", "sk-ico sm")}Undo</button>`);
+    }
+    el.toast.addEventListener("click", (e) => {
+      if (e.target.closest("[data-undo-new]") && lastArchived) { openChat(lastArchived); lastArchived = null; el.toast.hidden = true; return; }
+      if (!e.target.closest("[data-undo]") || !deleted) return;
+      chats.splice(deleted.i, 0, deleted.c);
+      if (deleted.wasCurrent) { currentId = deleted.c.id; el.thread.innerHTML = deleted.c.html; showEmpty(false); }
+      deleted = null; el.toast.hidden = true; renderHistory(el.histSearch.value);
+    });
+    function renderHistory(q = "") {
+      q = q.trim().toLowerCase();
+      const rows = (list, host) => list.map((c) => `<button type="button" class="sk-chat${c.id === currentId ? " is-current" : ""}" data-open="${c.id}">
+        <span class="fav"${c.favBg ? ` style="background:${c.favBg}"` : ""}>${esc(c.fav)}</span>
+        <span class="body"><span class="ttl">${esc(c.title)}</span><span class="meta">${ICON(c.glyph)}${esc(c.model)} · ${c.count} message${c.count === 1 ? "" : "s"} · ${esc(c.when)}${host ? " · " + esc(c.host) : ""}</span></span>
+        ${c.id === currentId ? '<span class="sk-tag">open</span>' : `<span class="del sk-iconbtn sm" role="button" tabindex="0" data-del="${c.id}" aria-label="Delete chat">${ICON("i-trash")}</span>`}
+      </button>`).join("");
+      const hit = chats.filter((c) => !q || c.title.toLowerCase().includes(q) || c.url.includes(q) || c.model.toLowerCase().includes(q));
+      const groups = [
+        ["This page", PAGE.url, hit.filter((c) => c.url === PAGE.url)],
+        ["This site", PAGE.host, hit.filter((c) => c.url !== PAGE.url && c.host === PAGE.host)],
+        ["Everywhere", "", hit.filter((c) => c.host !== PAGE.host), true],
+      ].filter((g) => g[2].length);
+      el.histList.innerHTML = groups.length ? groups.map(([n, u, l, h]) => `<section class="sk-set-section sk-hist-group"><h3>${n}${u ? ` <span class="url">${esc(u)}</span>` : ""}</h3>${rows(l, h)}</section>`).join("")
+        : `<div class="sk-hist-empty">No chats match "${esc(q)}".</div>`;
+    }
+    el.histList.addEventListener("click", (e) => {
+      const d = e.target.closest("[data-del]"); if (d) { e.stopPropagation(); deleteChat(+d.dataset.del); return; }
+      const o = e.target.closest("[data-open]"); if (o) openChat(+o.dataset.open);
+    });
+    el.histSearch.addEventListener("input", (e) => renderHistory(e.target.value));
+    el.newBtn.addEventListener("click", () => newChat());
+    el.histNew.addEventListener("click", () => newChat());
+    el.empty.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-suggest]"); if (!b) return;
+      if (b.dataset.suggest === "pick") startPick();
+      else if (b.dataset.suggest === "select") setSelecting(true);
+      else if (b.dataset.suggest === "local") openFilePick(true);
+      else { el.input.value = "Summarize this page"; autosize(el.input); el.input.focus(); }
+    });
+
+    /* ---------- notes ---------- */
+    function addNote(quote, text) {
+      const a = document.createElement("article"); a.className = "sk-note";
+      a.innerHTML = `<div class="src"><span class="fav">N</span><span class="ttl">Northwind Analytics — Pricing</span><span class="url">northwind.example/pricing</span><span class="when">${now()}</span></div>
+        ${quote ? `<blockquote class="sk-quote">${esc(quote)}</blockquote>` : ""}${text ? `<div class="txt"><p>${esc(text)}</p></div>` : ""}
+        <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note">${ICON("i-copy")}</button><button class="sk-iconbtn sm" aria-label="Open source page">${ICON("i-external")}</button><button class="sk-iconbtn sm" aria-label="Delete note">${ICON("i-trash")}</button></div>`;
+      el.notesList.prepend(a); el.notesCount.textContent = el.notesList.children.length;
+    }
+    el.noteNew.addEventListener("submit", (e) => { e.preventDefault(); const t = el.noteInput.value.trim(); if (!t) return; addNote("", t); el.noteInput.value = ""; toast("Saved to Notes"); });
+    el.notesList.addEventListener("click", (e) => {
+      const b = e.target.closest("[aria-label='Delete note']"); if (!b) return;
+      b.closest(".sk-note").remove(); el.notesCount.textContent = el.notesList.children.length;
+    });
+
+    /* ---------- demo states ---------- */
+    function highlightDemo() {
+      const p = el.scroll.querySelector("p.pg-lede"); if (!p) return;
+      const m = document.createElement("mark"); m.className = "sk-hl"; m.style.background = "var(--accent-soft)";
+      while (p.firstChild) m.appendChild(p.firstChild); p.appendChild(m);
+      state.selText = m.textContent.trim();
+      showSelAt(m.getBoundingClientRect());
+    }
+    function setState(name) {
+      stopPick(); hideSel(); setSelecting(false); openSwitcher(false); openFilePick(false); openPanel(null, false); openOptions(false);
+      if (state.offline) setOffline(false); showEmpty(false); setTab("chat"); el.scroll.scrollTop = 0;
+      root.dataset.state = name;
+      switch (name) {
+        case "picking": startPick(); { const t = el.scroll.querySelector('[data-sk="article.pg-tier.featured"]'); if (t) hovered = placeAim(t); } break;
+        case "selection": highlightDemo(); break;
+        case "notes": setTab("notes"); break;
+        case "switcher": openSwitcher(true); break;
+        case "settings": openSettings(true); break;
+        case "history": openHistory(true); break;
+        case "add-source": openAddSource("provider"); break;
+        case "add-file": openFilePick(true); break;
+        case "options": openOptions(true, "general"); break;
+        case "options-server": openOptions(true, "server"); break;
+        case "offline": setOffline(true); break;
+        case "first-run": showEmpty(true); break;
+      }
+    }
+    root.__skope = { setState, setTheme, setPalette, startPick, setOffline, newChat, openChat };
+    applySelection(); renderSwitcher(); syncThemeSeg(); syncPalette(); renderTray(); autosize(el.input);
+    setState(initialState || "chat");
+    return root.__skope;
+  }
+  window.initSkope = initSkope;
+  document.querySelectorAll("[data-skope]").forEach((c) => initSkope(c, (c.closest("[data-init]") || c).dataset.init || c.dataset.state));
+})();
+</script>
+
+<script>
+(function () {
+  const rail = document.querySelector(".rail"), canvas = document.querySelector("[data-skope]");
+  rail.addEventListener("click", (e) => {
+    const s = e.target.closest("[data-state]"), t = e.target.closest("[data-theme-set]");
+    if (s) { canvas.__skope.setState(s.dataset.state); rail.querySelectorAll("[data-state]").forEach((b) => b.setAttribute("aria-pressed", String(b === s))); }
+    if (t) canvas.__skope.setTheme(t.dataset.themeSet);
+    const p = e.target.closest("[data-palette-set]"); if (p) canvas.__skope.setPalette(p.dataset.paletteSet);
+  });
+  document.addEventListener("skope:palette", (e) => rail.querySelectorAll("[data-palette-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.paletteSet === e.detail))));
+  document.addEventListener("skope:theme", (e) => rail.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeSet === e.detail))));
+})();
+</script>

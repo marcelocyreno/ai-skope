@@ -1,0 +1,82 @@
+<style>
+.pal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.pal { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--bg); color: var(--ink); overflow: hidden; display: flex; flex-direction: column; }
+.pal-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 10px 12px 8px; }
+.pal-hd b { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); }
+.pal-hd small { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
+.pal-sw { display: flex; gap: 3px; padding: 0 12px 10px; }
+.pal-sw i { flex: 1; height: 14px; border-radius: 3px; border: 1px solid var(--line-2); }
+.pal-pane { margin: 0 12px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-card); overflow: hidden; display: flex; flex-direction: column; }
+.pal-pane .sk-topbar { height: 38px; padding: 0 6px 0 10px; }
+.pal-pane .sk-thread { padding: 10px; gap: 8px; overflow: visible; }
+.pal-pane .sk-bubble { font-size: var(--t-12); padding: 6px 9px; }
+.pal-pane .sk-ai-body { font-size: var(--t-12); }
+.pal-pane .pal-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 8px 10px; border-top: 1px solid var(--line); }
+.pal-pane .pal-foot .sk-ctx { height: 22px; font-size: var(--t-11); }
+.pal-pane .pal-foot .sk-send { width: 26px; height: 26px; }
+.pal-pane .pal-foot .sk-send .sk-ico { width: 13px; height: 13px; }
+</style>
+<div class="pal-grid">
+  <div class="pal" data-palette="graphite">
+    <div class="pal-hd"><b>Graphite <span style="font-weight:500;color:var(--ink-3)">· default</span></b><small>#D97A0B / #F2A23A</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+  <div class="pal" data-palette="nocturne">
+    <div class="pal-hd"><b>Nocturne</b><small>#A9781A / #D9A94A</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+  <div class="pal" data-palette="sage">
+    <div class="pal-hd"><b>Sage</b><small>#C25A26 / #E8794A</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+  <div class="pal" data-palette="ember">
+    <div class="pal-hd"><b>Ember</b><small>#D0402C / #F2694F</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+  <div class="pal" data-palette="arctic">
+    <div class="pal-hd"><b>Arctic</b><small>#C9741A / #F2AE3C</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+  <div class="pal" data-palette="mono">
+    <div class="pal-hd"><b>Mono</b><small>#2F6BFF / #6B9BFF</small></div>
+    <div class="pal-sw"><i style="background:var(--bg)"></i><i style="background:var(--surface)"></i><i style="background:var(--surface-2)"></i><i style="background:var(--ink)"></i><i style="background:var(--ink-2)"></i><i style="background:var(--line)"></i><i style="background:var(--accent)"></i><i style="background:var(--focus)"></i><i style="background:var(--ok)"></i><i style="background:var(--warn)"></i><i style="background:var(--bad)"></i></div>
+    <div class="pal-pane">
+      <header class="sk-topbar"><div class="sk-brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sk-brand-name">AI Skope</span></div><div class="sk-topbar-spacer"></div><button class="sk-chip-model"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg><span class="name">Opus 5</span><span class="sk-dot"></span></button></header>
+      <div class="sk-thread"><div class="sk-msg user"><div class="sk-msg-ctx"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span class="sel">article.pg-tier</span></span></div><div class="sk-bubble"><p>Is Growth enough for 40M events?</p></div></div><div class="sk-msg ai"><div class="sk-ai-head"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope</div><div class="sk-ai-body"><p>Not on its own — it caps at <strong>25M</strong>.</p></div></div></div>
+      <div class="pal-foot"><span class="sk-ctx"><svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg><span class="q">never billed automatically</span></span><button class="sk-send" aria-label="Send"><svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+    </div>
+  </div>
+</div>
+<script>
+/* Palette blocks resolve their dark set from data-theme on the SAME element,
+   so copy the enclosing column's theme onto each mini pane. */
+document.querySelectorAll("[data-palette]:not([data-theme])").forEach((el) => {
+  const scope = el.parentElement && el.parentElement.closest("[data-theme]");
+  if (scope) el.setAttribute("data-theme", scope.getAttribute("data-theme"));
+});
+</script>

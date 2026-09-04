@@ -1,0 +1,512 @@
+<script>
+/* AI Skope — prototype behaviour. One instance per [data-skope] canvas so a
+   page can host several (e.g. a light and a dark canvas side by side).
+   Prototype only: no backend, canned replies, nothing persisted. */
+(function () {
+  const ICON = (id, cls = "sk-ico") => `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function initSkope(root, initialState) {
+    const $ = (r) => root.querySelector(`[data-role="${r}"]`);
+    const el = {
+      scroll: $("scroll"), aim: $("aim"), aimSel: $("aim-sel"), aimDim: $("aim-dim"), aimHint: $("aimhint"), toast: $("toast"),
+      selAnchor: $("selanchor"), divider: $("divider"), pane: $("pane"),
+      chip: $("model-chip"), glyph: $("model-glyph"), mName: $("model-name"), mEff: $("model-eff"), mDot: $("model-dot"), mLat: $("model-lat"),
+      settingsBtn: $("settings-btn"), newBtn: $("new-btn"), histBtn: $("hist-btn"), history: $("history"), histBack: $("hist-back"), histNew: $("hist-new"), histList: $("hist-list"), histSearch: $("hist-search"), settings: $("settings"), settingsBack: $("settings-back"), themeSeg: $("theme-seg"),
+      viewChat: $("view-chat"), viewNotes: $("view-notes"), thread: $("thread"), empty: $("empty"),
+      strip: $("strip"), stripModel: $("strip-model"), stripCount: $("strip-count"), stripSwitch: $("strip-switch"),
+      composer: $("composer"), tray: $("tray"), input: $("input"), pickBtn: $("pick-btn"), selectBtn: $("select-btn"), send: $("send"),
+      scrim: $("scrim"), switcher: $("switcher"), filter: $("switcher-filter"), list: $("switcher-list"), manage: $("manage-providers"), srvLine: $("srv-line"), effortRow: $("effort-row"), stripVerb: $("strip-verb"), paletteSeg: $("palette-seg"), paletteName: $("palette-name"), addsrc: $("addsrc"), addsrcSeg: $("addsrc-seg"), addsrcBack: $("addsrc-back"), addsrcCancel: $("addsrc-cancel"), addsrcAdd: $("addsrc-add"), addServer: $("add-server-src"), addDirect: $("add-direct-src"), fileBtn: $("file-btn"), clearLink: $("clear-link"), options: $("options"), optionsClose: $("options-close"), optionsNav: $("options-nav"), optionsMain: $("options-main"), optionsAdd: $("options-add-source"), dialogScrim: $("dialog-scrim"), dialog: $("dialog"), filepick: $("filepick"), fileFilter: $("filepick-filter"), fileList: $("filepick-list"), manageFolders: $("manage-folders"),
+      notesList: $("notes-list"), noteNew: $("note-new"), noteInput: $("note-input"), notesCount: $("notes-count"),
+    };
+    const tabs = [...root.querySelectorAll("[data-tab]")];
+    const state = { tab: "chat", picking: false, selecting: false, offline: false, chips: [], selText: "", timer: null,
+      model: { name: "Opus 5", glyph: "r-claude-code", status: "ok", lat: "124 ms", label: "Opus 5 · High" } };
+
+    /* ---------- helpers ---------- */
+    let toastT;
+    function toast(html) {
+      el.toast.innerHTML = ICON("i-reticle") + html; el.toast.hidden = false;
+      clearTimeout(toastT); toastT = setTimeout(() => (el.toast.hidden = true), 2400);
+    }
+    const scrollBottom = () => { el.thread.scrollTop = el.thread.scrollHeight; };
+    function autosize(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+
+    /* ---------- tabs ---------- */
+    function setTab(name) {
+      state.tab = name;
+      tabs.forEach((t) => t.setAttribute("aria-selected", String(t.dataset.tab === name)));
+      el.viewChat.hidden = name !== "chat"; el.viewNotes.hidden = name !== "notes";
+      el.composer.hidden = name !== "chat";
+      el.strip.hidden = !(state.offline && name === "chat");
+    }
+    tabs.forEach((t) => t.addEventListener("click", () => setTab(t.dataset.tab)));
+
+    /* ---------- model source / switcher ----------
+       Source "aiss": the local AI Skope Server drives coding agents (runtimes);
+       each runtime exposes its models; some runtimes share a provider registry
+       (pi / omp / opencode) and support an effort level.
+       Source "keys": the extension calls providers directly with API keys. */
+    const RUNTIMES = [
+      { id: "claude-code", name: "Claude Code", glyph: "r-claude-code", effort: ["Low", "Medium", "High", "Max"], models: [
+        { name: "Opus 5", lat: "124 ms", ctx: "1M ctx", status: "ok", def: true }, { name: "Sonnet 5", lat: "88 ms", ctx: "1M ctx", status: "ok" }, { name: "Haiku 4.5", lat: "41 ms", ctx: "200K ctx", status: "ok" } ] },
+      { id: "codex", name: "Codex", glyph: "r-codex", effort: ["Low", "Medium", "High"], models: [
+        { name: "GPT-5 Codex", lat: "230 ms", ctx: "400K ctx", status: "ok" }, { name: "GPT-5", lat: "210 ms", ctx: "400K ctx", status: "ok" } ] },
+      { id: "agents", name: "pi · omp · opencode", variants: ["pi", "omp", "opencode"], glyphs: { pi: "r-pi", omp: "r-omp", opencode: "r-opencode" }, effort: ["Low", "Medium", "High"], models: [
+        { provider: "z.ai", name: "GLM 5.3", lat: "310 ms", ctx: "200K ctx", status: "ok" }, { provider: "z.ai", name: "GLM 5.3 Flash", lat: "95 ms", ctx: "128K ctx", status: "ok" },
+        { provider: "fireworks.ai", name: "Kimi K2", lat: "180 ms", ctx: "256K ctx", status: "ok" }, { provider: "fireworks.ai", name: "DeepSeek V3.2", lat: "640 ms", ctx: "slow", status: "degraded" },
+        { provider: "ollama", name: "qwen3 8B", lat: "12 ms", ctx: "32K ctx", status: "ok", tag: "on device" } ] },
+    ];
+    const PROVIDERS = [
+      { id: "anthropic", name: "Anthropic", glyph: "p-anthropic", models: [ { name: "Opus 5", lat: "124 ms", ctx: "1M ctx", status: "ok", def: true }, { name: "Sonnet 5", lat: "88 ms", ctx: "1M ctx", status: "ok" }, { name: "Haiku 4.5", lat: "41 ms", ctx: "200K ctx", status: "ok" } ] },
+      { id: "openai", name: "OpenAI", glyph: "p-openai", models: [ { name: "GPT-5", lat: "210 ms", ctx: "400K ctx", status: "ok" }, { name: "o4-mini", lat: "640 ms", ctx: "slow", status: "degraded" } ] },
+      { id: "google", name: "Google", glyph: "p-google", models: [ { name: "Gemini 2.5 Pro", lat: "170 ms", ctx: "1M ctx", status: "ok" } ] },
+      { id: "local", name: "Local · Ollama", glyph: "p-local", models: [ { name: "qwen3 8B", lat: "12 ms", ctx: "32K ctx", status: "ok", tag: "on device" }, { name: "llama3.3 70B", lat: "—", ctx: "not running", status: "offline" } ] },
+    ];
+    const sel = { source: "aiss", group: "claude-code", variant: "pi", model: "Opus 5", effort: "High" };
+    const groupsFor = (src) => (src === "aiss" ? RUNTIMES : PROVIDERS);
+    const curGroup = () => groupsFor(sel.source).find((g) => g.id === sel.group);
+    const curModel = () => { const g = curGroup(); return g && g.models.find((m) => m.name === sel.model); };
+    const glyphOf = (g) => (g.variants ? g.glyphs[sel.variant] : g.glyph);
+    const dotCls = (st) => "sk-dot" + (st === "degraded" ? " is-degraded" : st === "offline" ? " is-offline" : "");
+    function applySelection() {
+      const g = curGroup(), m = curModel(); if (!g || !m) return;
+      const eff = sel.source === "aiss" && g.effort ? sel.effort : null;
+      state.model = { name: m.name, glyph: glyphOf(g), status: m.status, lat: m.lat, label: eff ? `${m.name} · ${eff}` : m.name };
+      el.glyph.querySelector("use").setAttribute("href", "#" + state.model.glyph);
+      el.mName.textContent = m.name; el.mLat.textContent = m.lat; el.mEff.hidden = !eff; el.mEff.textContent = eff || "";
+      root.querySelectorAll(".sk-ai-head").forEach((h) => { h.lastChild.textContent = "AI Skope · " + m.name; });
+      const via = sel.source === "aiss" ? `${g.variants ? sel.variant : g.name} · ` : "";
+      el.chip.title = `${via}${m.provider ? m.provider + " / " : ""}${m.name}${eff ? " · " + eff : ""}${sel.source === "aiss" ? " · via AI Skope Server" : " · API key"}`;
+      setOffline(m.status === "offline");
+    }
+    function renderSwitcher(q = "") {
+      q = q.trim().toLowerCase();
+      el.switcher.querySelectorAll("[data-source]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.source === sel.source)));
+      el.srvLine.innerHTML = sel.source === "aiss"
+        ? `<span class="sk-dot${state.offline ? " is-offline" : ""}"></span>localhost:7331 · ${state.offline ? "not reachable" : "connected"} · 5 runtimes · v0.3`
+        : `<svg class="sk-ico" style="width:11px;height:11px" aria-hidden="true"><use href="#i-key"/></svg>3 providers · keys stored on this device`;
+      const groups = groupsFor(sel.source).map((g) => ({ g, models: g.models.filter((m) => !q || m.name.toLowerCase().includes(q) || (m.provider || "").includes(q) || g.name.toLowerCase().includes(q) || (g.variants || []).some((v) => v.includes(q))) })).filter((x) => x.models.length);
+      el.list.innerHTML = groups.length ? groups.map(({ g, models }) =>
+        `<div class="sk-group"><span>${ICON(glyphOf(g))}${esc(g.name)}</span>${g.variants ? `<span class="sk-seg mini" role="group" aria-label="Runtime">${g.variants.map((v) => `<button type="button" data-variant="${v}" aria-pressed="${v === sel.variant}">${v}</button>`).join("")}</span>` : ""}</div>` +
+        models.map((m) => `<button type="button" class="sk-model${m.status === "offline" ? " is-off" : ""}" role="option" aria-checked="${g.id === sel.group && m.name === sel.model}" data-pick-group="${g.id}" data-pick-model="${esc(m.name)}"><span class="${dotCls(m.status)}"></span><span class="nm"><span>${m.provider ? `<span class="prov">${esc(m.provider)} /</span> ` : ""}${esc(m.name)}</span>${m.def ? '<span class="sk-tag">default</span>' : ""}${m.tag ? `<span class="sk-tag">${esc(m.tag)}</span>` : ""}</span><span class="meta">${esc(m.lat)} · ${esc(m.ctx)}</span>${ICON("i-check", "sk-ico chk")}</button>`).join("")
+      ).join("") : `<div class="sk-hist-empty">Nothing matches "${esc(q)}".</div>`;
+      const g = curGroup(), showEff = sel.source === "aiss" && g && g.effort;
+      el.effortRow.hidden = !showEff;
+      if (showEff) el.effortRow.innerHTML = `<span>Effort<small>${esc(g.variants ? sel.variant : g.name)} · ${esc(sel.model)}</small></span><span class="sk-seg mini" role="group" aria-label="Effort">${g.effort.map((e) => `<button type="button" data-effort="${e}" aria-pressed="${e === sel.effort}">${e}</button>`).join("")}</span>`;
+    }
+    function placeAbove(pop) {
+      const pr = el.pane.getBoundingClientRect(), cr = el.composer.getBoundingClientRect();
+      pop.style.bottom = pr.bottom - cr.top + 6 + "px"; pop.style.left = "8px";
+    }
+    function openSwitcher(open) {
+      if (open) { openFilePick(false); placeAbove(el.switcher); }
+      el.switcher.hidden = !open; el.scrim.hidden = !open && el.filepick.hidden; el.chip.setAttribute("aria-expanded", String(open));
+      if (open) { el.filter.value = ""; renderSwitcher(); setTimeout(() => el.filter.focus(), 0); }
+    }
+    const FILES = [
+      { g: "Recent", name: "README.md", dir: "~/dev/finme", size: "12 KB", ft: "MD" }, { g: "Recent", name: "export-format.md", dir: "~/dev/finme/docs", size: "4 KB", ft: "MD" },
+      { g: "Recent", name: "northwind-eval.md", dir: "~/Documents/notes", size: "3 KB", ft: "MD" }, { g: "Recent", name: "index.html", dir: "~/dev/finme/site", size: "21 KB", ft: "HTML" },
+      { g: "~/dev/finme", name: "docs/", dir: "~/dev/finme", size: "8 files", dirEntry: true }, { g: "~/dev/finme", name: "src/", dir: "~/dev/finme", size: "42 files", dirEntry: true },
+      { g: "~/dev/finme", name: "config.yaml", dir: "~/dev/finme", size: "1 KB", ft: "YAML" },
+    ];
+    function renderFiles(q = "") {
+      q = q.trim().toLowerCase();
+      const hit = FILES.filter((f) => !q || f.name.toLowerCase().includes(q) || f.dir.toLowerCase().includes(q));
+      const groups = [...new Set(hit.map((f) => f.g))];
+      el.fileList.innerHTML = groups.length ? groups.map((g) => `<div class="sk-group"><span>${esc(g)}</span></div>` + hit.filter((f) => f.g === g).map((f, i) => `<button type="button" class="sk-model sk-file" role="option" data-file="${esc(f.name)}" data-dir="${esc(f.dir)}" data-size="${esc(f.size)}"><span class="ft${f.dirEntry ? " dir" : ""}">${f.dirEntry ? ICON("i-folder") : esc(f.ft)}</span><span class="nm"><span>${esc(f.name)}</span></span><span class="meta">${f.dirEntry ? esc(f.size) : esc(f.dir) + " · " + esc(f.size)}</span></button>`).join("")).join("")
+        : `<div class="sk-hist-empty">Nothing matches "${esc(q)}" in the allowed folders.</div>`;
+    }
+    function openFilePick(open) {
+      if (open) { openSwitcher(false); placeAbove(el.filepick); el.fileFilter.value = ""; renderFiles(); }
+      el.filepick.hidden = !open; el.scrim.hidden = !open && el.switcher.hidden; el.fileBtn.setAttribute("aria-pressed", String(open));
+      if (open) setTimeout(() => el.fileFilter.focus(), 0);
+    }
+    el.fileBtn.addEventListener("click", () => openFilePick(el.filepick.hidden));
+    el.fileFilter.addEventListener("input", (e) => renderFiles(e.target.value));
+    el.fileList.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-file]"); if (!b) return;
+      addChip({ type: "file", name: b.dataset.file, dir: b.dataset.dir, size: b.dataset.size });
+      toast(`Added <code>${esc(b.dataset.file)}</code> from ${esc(b.dataset.dir)}`); openFilePick(false); el.input.focus();
+    });
+    el.manageFolders.addEventListener("click", (e) => { e.preventDefault(); openFilePick(false); openOptions(true, "folders"); });
+    el.chip.addEventListener("click", () => openSwitcher(el.switcher.hidden));
+    el.scrim.addEventListener("click", () => { openSwitcher(false); openFilePick(false); });
+    el.filter.addEventListener("input", (e) => renderSwitcher(e.target.value));
+    el.switcher.addEventListener("click", (e) => {
+      const src = e.target.closest("[data-source]"), v = e.target.closest("[data-variant]"), eff = e.target.closest("[data-effort]"), pick = e.target.closest("[data-pick-model]");
+      if (src) { if (src.dataset.source !== sel.source) { sel.source = src.dataset.source; const g = groupsFor(sel.source)[0]; sel.group = g.id; sel.model = (g.models.find((m) => m.def) || g.models[0]).name; applySelection(); } renderSwitcher(el.filter.value); }
+      else if (v) { sel.variant = v.dataset.variant; applySelection(); renderSwitcher(el.filter.value); }
+      else if (eff) { sel.effort = eff.dataset.effort; applySelection(); renderSwitcher(el.filter.value); }
+      else if (pick) { sel.group = pick.dataset.pickGroup; sel.model = pick.dataset.pickModel; applySelection(); openSwitcher(false); if (curModel().status !== "offline") toast(`Switched to <code>${esc(state.model.label)}</code>`); }
+    });
+    el.manage.addEventListener("click", (e) => { e.preventDefault(); openSwitcher(false); openOptions(true, "providers"); });
+    el.stripSwitch.addEventListener("click", () => {
+      if (sel.source === "aiss") { sel.source = "keys"; sel.group = "anthropic"; sel.model = "Opus 5"; applySelection(); toast("Using API keys until the server is back"); }
+      else openSwitcher(true);
+    });
+
+    /* ---------- offline ---------- */
+    function setOffline(off) {
+      state.offline = off;
+      const aiss = sel.source === "aiss";
+      el.stripModel.textContent = aiss ? "AI Skope Server" : state.model.name;
+      el.stripVerb.textContent = aiss ? "isn't reachable" : "is offline";
+      el.stripSwitch.textContent = aiss ? "Use API keys" : "Switch model";
+      const m = curModel(); el.mDot.className = off ? "sk-dot is-offline" : dotCls(m ? m.status : "ok");
+      el.strip.hidden = !(off && state.tab === "chat");
+      el.send.disabled = off;
+      el.input.placeholder = off ? "Waiting for the model to come back…" : "Ask about this page… pick an element or select text to add context";
+      clearInterval(state.timer);
+      if (off) {
+        let n = 4;
+        el.stripCount.textContent = n + "s";
+        state.timer = setInterval(() => { n = n <= 1 ? 4 : n - 1; el.stripCount.textContent = n + "s"; }, 1000);
+      }
+    }
+
+    /* ---------- settings ---------- */
+    function openPanel(panel, open) {
+      [el.settings, el.history, el.addsrc].forEach((p) => { const on = open && p === panel; p.classList.toggle("is-open", on); p.setAttribute("aria-hidden", String(!on)); });
+    }
+    const openSettings = (open) => openPanel(el.settings, open);
+    const openHistory = (open) => { if (open) { el.histSearch.value = ""; renderHistory(); } openPanel(el.history, open); };
+    function openAddSource(view) {
+      el.addsrcSeg.querySelectorAll("[data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+      el.addsrc.querySelectorAll(".sk-form[data-view]").forEach((f) => (f.hidden = f.dataset.view !== view));
+      el.addsrcAdd.textContent = view === "direct" ? "Save key" : view === "runtime" ? "Done" : "Add to server";
+      openPanel(el.addsrc, true);
+    }
+    el.addsrcSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) openAddSource(b.dataset.view); });
+    if (el.addServer) el.addServer.addEventListener("click", () => openAddSource("provider"));
+    if (el.addDirect) el.addDirect.addEventListener("click", () => openAddSource("direct"));
+    /* full settings page — an extension options tab, shown here as an overlay with a tab strip */
+    function openOptions(open, section = "general") {
+      el.options.hidden = !open; el.dialogScrim.hidden = true;
+      if (!open) return;
+      openPanel(null, false); openSwitcher(false); openFilePick(false);
+      el.optionsNav.querySelectorAll("[data-section]").forEach((a) => a.classList.toggle("on", a.dataset.section === section));
+      const target = el.optionsMain.querySelector(`[data-section="${section}"]`);
+      if (target) { el.options.querySelector(".sk-opt-shell").scrollTop = 0; setTimeout(() => target.scrollIntoView({ block: "start" }), 0); }
+    }
+    root.querySelectorAll("[data-role='open-options']").forEach((b) => b.addEventListener("click", () => openOptions(true, b.dataset.section || "general")));
+    el.optionsClose.addEventListener("click", () => openOptions(false));
+    el.optionsNav.addEventListener("click", (e) => { const a = e.target.closest("[data-section]"); if (a) { e.preventDefault(); openOptions(true, a.dataset.section); } });
+    el.optionsAdd.addEventListener("click", () => { el.dialogScrim.hidden = false; });
+    el.dialogScrim.addEventListener("click", (e) => {
+      if (e.target === el.dialogScrim || e.target.closest("[data-dialog-close]")) { const add = e.target.closest(".sk-btn.primary"); el.dialogScrim.hidden = true; if (add) toast(`Added <code>z.ai</code> to the server — 4 models for pi, opencode`); return; }
+      const v = e.target.closest("[data-view]"); if (v && v.closest(".sk-seg")) { el.dialog.querySelectorAll(".sk-seg [data-view]").forEach((b) => b.setAttribute("aria-pressed", String(b === v))); el.dialog.querySelectorAll(".sk-form[data-view]").forEach((f) => (f.hidden = f.dataset.view !== v.dataset.view)); }
+      const c = e.target.closest(".sk-chk"); if (c && c.tagName === "BUTTON") c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"));
+    });
+    el.options.querySelectorAll(".sk-seg:not([data-role]) button").forEach((b) => b.addEventListener("click", () => { b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); }));
+    el.options.querySelectorAll("[data-palette-pick]").forEach((b) => b.addEventListener("click", () => setPalette(b.dataset.palettePick)));
+    [el.addsrcBack, el.addsrcCancel].forEach((b) => b.addEventListener("click", () => openPanel(el.settings, true)));
+    el.addsrcAdd.addEventListener("click", () => {
+      const view = el.addsrcSeg.querySelector('[aria-pressed="true"]').dataset.view;
+      openPanel(el.settings, true);
+      toast(view === "provider" ? `Added <code>z.ai</code> to the server — 4 models for pi, opencode` : view === "direct" ? "API key saved on this device" : "Runtimes updated");
+    });
+    el.addsrc.querySelectorAll(".sk-chk").forEach((c) => c.addEventListener("click", () => c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"))));
+    el.histBtn.addEventListener("click", () => openHistory(!el.history.classList.contains("is-open")));
+    el.histBack.addEventListener("click", () => openHistory(false));
+    el.settingsBtn.addEventListener("click", () => openSettings(!el.settings.classList.contains("is-open")));
+    el.settingsBack.addEventListener("click", () => openSettings(false));
+    const themeScope = () => root.closest("[data-theme]") || document.documentElement;
+    function setTheme(t) {
+      const scope = themeScope();
+      if (t === "system") { if (scope === document.documentElement) scope.removeAttribute("data-theme"); }
+      else scope.setAttribute("data-theme", t);
+      syncThemeSeg();
+      document.dispatchEvent(new CustomEvent("skope:theme", { detail: t }));
+    }
+    function syncThemeSeg() {
+      const cur = themeScope().getAttribute("data-theme") || "system";
+      el.themeSeg.querySelectorAll("[data-theme-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themePick === cur)));
+    }
+    el.themeSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-theme-pick]"); if (b) setTheme(b.dataset.themePick); });
+    const PALETTES = { graphite: "Graphite", nocturne: "Nocturne", sage: "Sage", ember: "Ember", arctic: "Arctic", mono: "Mono" };
+    function setPalette(id) {
+      const scope = themeScope();
+      if (id === "graphite") scope.removeAttribute("data-palette"); else scope.setAttribute("data-palette", id);
+      syncPalette(); document.dispatchEvent(new CustomEvent("skope:palette", { detail: id }));
+    }
+    function syncPalette() {
+      const cur = themeScope().getAttribute("data-palette") || "graphite";
+      root.querySelectorAll("[data-palette-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.palettePick === cur)));
+      el.paletteName.textContent = PALETTES[cur] || cur;
+    }
+    el.paletteSeg.addEventListener("click", (e) => { const b = e.target.closest("[data-palette-pick]"); if (b) setPalette(b.dataset.palettePick); });
+    document.addEventListener("skope:palette", syncPalette);
+    document.addEventListener("skope:theme", syncThemeSeg);
+    root.querySelectorAll(".sk-seg:not([data-role]) button").forEach((b) => b.addEventListener("click", () => {
+      b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true");
+    }));
+    root.querySelectorAll(".sk-switch").forEach((s) => s.addEventListener("click", () => s.setAttribute("aria-checked", String(s.getAttribute("aria-checked") !== "true"))));
+
+    /* ---------- context chips ---------- */
+    function renderTray() {
+      el.tray.innerHTML = state.chips.map((c, i) => chipHtml(c) + `<button type="button" class="sk-ctx-x" data-rm="${i}" aria-label="Remove">${ICON("i-close")}</button></span>`).join("");
+    }
+    function chipHtml(c) {
+      if (c.type === "el") return `<span class="sk-ctx">${ICON("i-reticle")}<span class="sel">${esc(c.sel)}</span><span class="dim">${esc(c.dim)}</span>`;
+      if (c.type === "file") return `<span class="sk-ctx">${ICON("i-folder")}<span class="sel">${esc(c.name)}</span><span class="dim">${esc(c.dir)} · ${esc(c.size)}</span>`;
+      return `<span class="sk-ctx">${ICON("i-select-text")}<span class="q">${esc(c.text)}</span>`;
+    }
+    function addChip(c) { state.chips.push(c); renderTray(); }
+    el.tray.addEventListener("click", (e) => { const b = e.target.closest("[data-rm]"); if (!b) return; state.chips.splice(+b.dataset.rm, 1); renderTray(); });
+
+    /* ---------- element picker ---------- */
+    function placeAim(target) {
+      const sr = el.scroll.getBoundingClientRect(), r = target.getBoundingClientRect();
+      const top = r.top - sr.top + el.scroll.scrollTop, left = r.left - sr.left + el.scroll.scrollLeft;
+      Object.assign(el.aim.style, { top: top + "px", left: left + "px", width: r.width + "px", height: r.height + "px" });
+      el.aim.classList.toggle("is-top", top - el.scroll.scrollTop < 36);
+      el.aimSel.textContent = target.dataset.sk;
+      el.aimDim.textContent = `${Math.round(r.width)} × ${Math.round(r.height)}`;
+      el.aim.hidden = false;
+      return { sel: target.dataset.sk, dim: `${Math.round(r.width)} × ${Math.round(r.height)}` };
+    }
+    let hovered = null;
+    function onMove(e) {
+      const t = e.target.closest && e.target.closest("[data-sk]");
+      if (!t || !el.scroll.contains(t)) { hovered = null; el.aim.hidden = true; return; }
+      hovered = placeAim(t);
+    }
+    function onPickClick(e) {
+      if (!hovered) return;
+      e.preventDefault(); e.stopPropagation();
+      addChip({ type: "el", sel: hovered.sel, dim: hovered.dim });
+      toast(`Added <code>${esc(hovered.sel)}</code> to context`);
+      stopPick(); el.input.focus();
+    }
+    function startPick() {
+      if (state.picking) return;
+      hideSel(); setSelecting(false);
+      state.picking = true; root.classList.add("is-picking");
+      el.pickBtn.setAttribute("aria-pressed", "true"); el.aimHint.hidden = false;
+      el.scroll.addEventListener("mousemove", onMove); el.scroll.addEventListener("click", onPickClick, true);
+    }
+    function stopPick() {
+      if (!state.picking) return;
+      state.picking = false; hovered = null; root.classList.remove("is-picking");
+      el.pickBtn.setAttribute("aria-pressed", "false"); el.aimHint.hidden = true; el.aim.hidden = true;
+      el.scroll.removeEventListener("mousemove", onMove); el.scroll.removeEventListener("click", onPickClick, true);
+    }
+    el.pickBtn.addEventListener("click", () => (state.picking ? stopPick() : startPick()));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { stopPick(); hideSel(); openSwitcher(false); openFilePick(false); if (!el.dialogScrim.hidden) el.dialogScrim.hidden = true; }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k" && root.contains(document.activeElement)) { e.preventDefault(); startPick(); }
+    });
+
+    /* ---------- text selection ---------- */
+    function setSelecting(on) {
+      state.selecting = on; el.selectBtn.setAttribute("aria-pressed", String(on));
+      if (on) { stopPick(); toast("Drag across text on the page, then choose <b>Add to chat</b>"); }
+    }
+    el.selectBtn.addEventListener("click", () => setSelecting(!state.selecting));
+    function showSelAt(rect) {
+      const sr = el.scroll.getBoundingClientRect();
+      el.selAnchor.style.left = rect.left + rect.width / 2 - sr.left + el.scroll.scrollLeft + "px";
+      el.selAnchor.style.top = rect.top - sr.top + el.scroll.scrollTop - 46 + "px";
+      el.selAnchor.style.transform = "translateX(-50%)";
+      el.selAnchor.hidden = false;
+    }
+    function hideSel() {
+      el.selAnchor.hidden = true;
+      el.scroll.querySelectorAll(".sk-hl").forEach((m) => m.replaceWith(...m.childNodes));
+    }
+    el.scroll.addEventListener("mousedown", (e) => { if (!e.target.closest(".sk-seltool")) hideSel(); });
+    el.scroll.addEventListener("mouseup", () => {
+      if (state.picking) return;
+      setTimeout(() => {
+        const s = window.getSelection();
+        if (!s || s.isCollapsed || !el.scroll.contains(s.anchorNode)) return;
+        const text = s.toString().trim(); if (!text) return;
+        state.selText = text; showSelAt(s.getRangeAt(0).getBoundingClientRect());
+      }, 0);
+    });
+    el.selAnchor.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-act]"); if (!b) return;
+      const text = state.selText;
+      if (b.dataset.act === "note") { addNote(text, ""); setTab("notes"); toast("Saved to Notes"); }
+      else { addChip({ type: "text", text }); toast("Added selection to context"); if (b.dataset.act === "ask") el.input.focus(); }
+      window.getSelection()?.removeAllRanges(); hideSel(); setSelecting(false);
+    });
+
+    /* ---------- divider ---------- */
+    el.divider.addEventListener("mousedown", (e) => {
+      e.preventDefault(); el.divider.classList.add("is-dragging");
+      const move = (ev) => { const w = Math.max(320, Math.min(640, root.getBoundingClientRect().right - ev.clientX)); root.style.setProperty("--pane-w", w + "px"); };
+      const up = () => { el.divider.classList.remove("is-dragging"); document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    });
+
+    /* ---------- composer / canned replies ---------- */
+    const now = () => new Date().toTimeString().slice(0, 5);
+    function userMsg(text, chips) {
+      const ctx = chips.length ? `<div class="sk-msg-ctx">${chips.map((c) => chipHtml(c) + "</span>").join("")}</div>` : "";
+      const d = document.createElement("div"); d.className = "sk-msg user";
+      d.innerHTML = `${ctx}<div class="sk-bubble"><p>${esc(text)}</p></div><span class="sk-time">${now()}</span>`;
+      el.thread.appendChild(d); scrollBottom();
+    }
+    function reply(chips) {
+      const elChip = chips.find((c) => c.type === "el"), txt = chips.find((c) => c.type === "text"), file = chips.find((c) => c.type === "file");
+      const d = document.createElement("div"); d.className = "sk-msg ai";
+      d.innerHTML = `<div class="sk-ai-head">${ICON("i-reticle")}AI Skope · ${esc(state.model.name)}</div>
+        <div class="sk-tool" data-tool><span class="sk-spin"></span>${file ? "Reading" : "Looking at"} <code>${esc(elChip ? elChip.sel : file ? file.dir + "/" + file.name : txt ? "selection" : "document")}</code>…</div>
+        <div class="sk-ai-body"><p><span class="sk-cursor"></span></p></div><span class="sk-time">${now()}</span>`;
+      el.thread.appendChild(d); scrollBottom();
+      const words = (file
+        ? `I read ${file.name} from ${file.dir} through the server. It describes the CSV and JSON export written per statement month and says the JSON is the source of truth for re-imports — the same policy the page above calls "never billed automatically" is worth mirroring in your overage terms.`
+        : elChip
+        ? `Here's what that element says: it's the ${elChip.sel.includes("featured") ? "Growth" : "selected"} plan block — price, the event cap and the five included features. Ask me to compare it against another tier, or pick a second element and I'll diff them.`
+        : txt ? `About that passage: it reads as a conditional offer, not a guarantee — both conditions have to hold at sign-up. Want me to draft the question to sales?`
+        : `This page lists three plans — Starter (free, 1M events), Growth ($149/mo, 25M events) and Enterprise (custom). Retention, SQL access and SSO are the real differences; seats are unlimited on all of them.`).split(" ");
+      setTimeout(() => {
+        const tool = d.querySelector("[data-tool]"); tool.innerHTML = `${ICON("i-check", "sk-ico sm")}Read <code>${esc(elChip ? elChip.sel : file ? file.name : txt ? "selection" : "document")}</code>`;
+        const p = d.querySelector(".sk-ai-body p"); let i = 0;
+        const tick = () => { if (i < words.length) { p.innerHTML = esc(words.slice(0, ++i).join(" ")) + '<span class="sk-cursor"></span>'; scrollBottom(); setTimeout(tick, 28); } else p.innerHTML = esc(words.join(" ")); };
+        tick();
+      }, 900);
+    }
+    el.composer.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = el.input.value.trim(); if (!text || state.offline) return;
+      ensureCurrent(text); showEmpty(false); const chips = state.chips.slice();
+      userMsg(text, chips); state.chips = []; renderTray();
+      el.input.value = ""; autosize(el.input); reply(chips);
+    });
+    el.input.addEventListener("input", () => autosize(el.input));
+    el.input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); el.composer.requestSubmit(); } });
+
+    /* ---------- empty / first run ---------- */
+    function showEmpty(on) { el.empty.hidden = !on; el.thread.hidden = on; el.newBtn.disabled = on; el.newBtn.style.opacity = on ? ".45" : ""; el.clearLink.disabled = on; }
+
+    /* ---------- chats: new chat archives, history restores, delete undoes ---------- */
+    const PAGE = { url: "northwind.example/pricing", host: "northwind.example", fav: "N", favBg: "" };
+    const seedThread = (u, a, model) => `<div class="sk-day">Earlier</div><div class="sk-msg user"><div class="sk-bubble"><p>${esc(u)}</p></div></div><div class="sk-msg ai"><div class="sk-ai-head">${ICON("i-reticle")}AI Skope · ${esc(model)}</div><div class="sk-ai-body"><p>${esc(a)}</p></div></div>`;
+    const chats = [
+      { id: 1, title: "Is the Growth plan enough for about 40M events a month?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Opus 5", glyph: "r-claude-code", count: 4, when: "14:05", html: el.thread.innerHTML },
+      { id: 2, title: "What counts as an event?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Haiku 4.5", glyph: "r-claude-code", count: 2, when: "13:40", html: seedThread("What counts as an event?", "Any call to track(), plus page views and identify calls. Internal system events and failed requests are not billed — that's from the FAQ on this page.", "Haiku 4.5") },
+      { id: 3, title: "How do identify calls dedupe across devices?", url: "northwind.example/docs/identify", host: PAGE.host, fav: "N", favBg: "", model: "Sonnet 5", glyph: "r-claude-code", count: 6, when: "Yesterday", html: seedThread("How do identify calls dedupe across devices?", "The docs say identities merge on the first shared trait — usually email — and earlier anonymous events are re-attributed within 24 hours.", "Sonnet 5") },
+      { id: 4, title: "Metered billing vs. tiered — which fits us?", url: "docs.stripe.com/billing/subscriptions/usage-based", host: "docs.stripe.com", fav: "S", favBg: "#635BFF", model: "Opus 5", glyph: "r-claude-code", count: 8, when: "Yesterday", html: seedThread("Metered billing vs. tiered — which fits us?", "Tiered if you want predictable invoices and a published price list; metered if usage swings month to month. Stripe supports both on one subscription.", "Opus 5") },
+      { id: 5, title: "Explain this diff to me", url: "github.com/northwind/ingest/pull/412", host: "github.com", fav: "G", favBg: "#57606A", model: "GPT-5", glyph: "r-codex", count: 3, when: "Mon", html: seedThread("Explain this diff to me", "It moves event batching from the client to the edge worker and adds a 250 ms flush window. The risk is ordering across retries.", "GPT-5") },
+      { id: 6, title: "Summarize the thread", url: "news.ycombinator.com/item?id=41012", host: "news.ycombinator.com", fav: "Y", favBg: "#F26522", model: "qwen3 8B", glyph: "r-pi", count: 2, when: "Mon", html: seedThread("Summarize the thread", "Mostly people comparing self-hosted analytics to hosted ones; the recurring point is retention cost, not features.", "qwen3 8B") },
+      { id: 7, title: "What does the export section of this README say?", url: "~/dev/finme/README.md", host: "local file", fav: "MD", favBg: "#3B6EA5", model: "Opus 5", glyph: "r-claude-code", count: 2, when: "Tue", html: seedThread("What does the export section of this README say?", "It documents a CSV and a JSON export per statement month, written to ~/.finme/export, and notes that the JSON is the source of truth for re-imports.", "Opus 5") },
+    ];
+    let currentId = 1, nextId = 8, deleted = null, lastArchived = null;
+    const clearThread = () => { el.thread.innerHTML = '<div class="sk-day">Today</div>'; state.chips = []; renderTray(); };
+    function saveCurrent() {
+      const c = chats.find((x) => x.id === currentId); if (!c || el.thread.hidden) return;
+      c.html = el.thread.innerHTML; c.count = el.thread.querySelectorAll(".sk-msg").length; c.model = state.model.name; c.glyph = state.model.glyph;
+    }
+    function ensureCurrent(firstText) {
+      if (currentId) return;
+      chats.unshift({ id: nextId, title: firstText.length > 60 ? firstText.slice(0, 57) + "…" : firstText, url: PAGE.url, host: PAGE.host, fav: PAGE.fav, favBg: PAGE.favBg, model: state.model.name, glyph: state.model.glyph, count: 0, when: now(), html: "" });
+      currentId = nextId++;
+    }
+    function newChat(verb = "New chat") {
+      if (el.thread.hidden) return;
+      saveCurrent(); lastArchived = currentId; currentId = null; clearThread(); showEmpty(true); openHistory(false);
+      toast(`${verb} — the last one is in ${ICON("i-history", "sk-ico sm")} History${lastArchived ? ` <button type="button" class="undo" data-undo-new>${ICON("i-undo", "sk-ico sm")}Undo</button>` : ""}`);
+    }
+    el.clearLink.addEventListener("click", () => newChat("Chat cleared"));
+    function openChat(id) {
+      saveCurrent(); const c = chats.find((x) => x.id === id); if (!c) return;
+      currentId = id; el.thread.innerHTML = c.html; showEmpty(false); openHistory(false); scrollBottom();
+    }
+    function deleteChat(id) {
+      const i = chats.findIndex((x) => x.id === id); if (i < 0) return;
+      deleted = { c: chats[i], i, wasCurrent: id === currentId }; chats.splice(i, 1);
+      if (deleted.wasCurrent) { currentId = null; clearThread(); showEmpty(true); }
+      renderHistory(el.histSearch.value);
+      toast(`Chat deleted <button type="button" class="undo" data-undo>${ICON("i-undo", "sk-ico sm")}Undo</button>`);
+    }
+    el.toast.addEventListener("click", (e) => {
+      if (e.target.closest("[data-undo-new]") && lastArchived) { openChat(lastArchived); lastArchived = null; el.toast.hidden = true; return; }
+      if (!e.target.closest("[data-undo]") || !deleted) return;
+      chats.splice(deleted.i, 0, deleted.c);
+      if (deleted.wasCurrent) { currentId = deleted.c.id; el.thread.innerHTML = deleted.c.html; showEmpty(false); }
+      deleted = null; el.toast.hidden = true; renderHistory(el.histSearch.value);
+    });
+    function renderHistory(q = "") {
+      q = q.trim().toLowerCase();
+      const rows = (list, host) => list.map((c) => `<button type="button" class="sk-chat${c.id === currentId ? " is-current" : ""}" data-open="${c.id}">
+        <span class="fav"${c.favBg ? ` style="background:${c.favBg}"` : ""}>${esc(c.fav)}</span>
+        <span class="body"><span class="ttl">${esc(c.title)}</span><span class="meta">${ICON(c.glyph)}${esc(c.model)} · ${c.count} message${c.count === 1 ? "" : "s"} · ${esc(c.when)}${host ? " · " + esc(c.host) : ""}</span></span>
+        ${c.id === currentId ? '<span class="sk-tag">open</span>' : `<span class="del sk-iconbtn sm" role="button" tabindex="0" data-del="${c.id}" aria-label="Delete chat">${ICON("i-trash")}</span>`}
+      </button>`).join("");
+      const hit = chats.filter((c) => !q || c.title.toLowerCase().includes(q) || c.url.includes(q) || c.model.toLowerCase().includes(q));
+      const groups = [
+        ["This page", PAGE.url, hit.filter((c) => c.url === PAGE.url)],
+        ["This site", PAGE.host, hit.filter((c) => c.url !== PAGE.url && c.host === PAGE.host)],
+        ["Everywhere", "", hit.filter((c) => c.host !== PAGE.host), true],
+      ].filter((g) => g[2].length);
+      el.histList.innerHTML = groups.length ? groups.map(([n, u, l, h]) => `<section class="sk-set-section sk-hist-group"><h3>${n}${u ? ` <span class="url">${esc(u)}</span>` : ""}</h3>${rows(l, h)}</section>`).join("")
+        : `<div class="sk-hist-empty">No chats match "${esc(q)}".</div>`;
+    }
+    el.histList.addEventListener("click", (e) => {
+      const d = e.target.closest("[data-del]"); if (d) { e.stopPropagation(); deleteChat(+d.dataset.del); return; }
+      const o = e.target.closest("[data-open]"); if (o) openChat(+o.dataset.open);
+    });
+    el.histSearch.addEventListener("input", (e) => renderHistory(e.target.value));
+    el.newBtn.addEventListener("click", () => newChat());
+    el.histNew.addEventListener("click", () => newChat());
+    el.empty.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-suggest]"); if (!b) return;
+      if (b.dataset.suggest === "pick") startPick();
+      else if (b.dataset.suggest === "select") setSelecting(true);
+      else if (b.dataset.suggest === "local") openFilePick(true);
+      else { el.input.value = "Summarize this page"; autosize(el.input); el.input.focus(); }
+    });
+
+    /* ---------- notes ---------- */
+    function addNote(quote, text) {
+      const a = document.createElement("article"); a.className = "sk-note";
+      a.innerHTML = `<div class="src"><span class="fav">N</span><span class="ttl">Northwind Analytics — Pricing</span><span class="url">northwind.example/pricing</span><span class="when">${now()}</span></div>
+        ${quote ? `<blockquote class="sk-quote">${esc(quote)}</blockquote>` : ""}${text ? `<div class="txt"><p>${esc(text)}</p></div>` : ""}
+        <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note">${ICON("i-copy")}</button><button class="sk-iconbtn sm" aria-label="Open source page">${ICON("i-external")}</button><button class="sk-iconbtn sm" aria-label="Delete note">${ICON("i-trash")}</button></div>`;
+      el.notesList.prepend(a); el.notesCount.textContent = el.notesList.children.length;
+    }
+    el.noteNew.addEventListener("submit", (e) => { e.preventDefault(); const t = el.noteInput.value.trim(); if (!t) return; addNote("", t); el.noteInput.value = ""; toast("Saved to Notes"); });
+    el.notesList.addEventListener("click", (e) => {
+      const b = e.target.closest("[aria-label='Delete note']"); if (!b) return;
+      b.closest(".sk-note").remove(); el.notesCount.textContent = el.notesList.children.length;
+    });
+
+    /* ---------- demo states ---------- */
+    function highlightDemo() {
+      const p = el.scroll.querySelector("p.pg-lede"); if (!p) return;
+      const m = document.createElement("mark"); m.className = "sk-hl"; m.style.background = "var(--accent-soft)";
+      while (p.firstChild) m.appendChild(p.firstChild); p.appendChild(m);
+      state.selText = m.textContent.trim();
+      showSelAt(m.getBoundingClientRect());
+    }
+    function setState(name) {
+      stopPick(); hideSel(); setSelecting(false); openSwitcher(false); openFilePick(false); openPanel(null, false); openOptions(false);
+      if (state.offline) setOffline(false); showEmpty(false); setTab("chat"); el.scroll.scrollTop = 0;
+      root.dataset.state = name;
+      switch (name) {
+        case "picking": startPick(); { const t = el.scroll.querySelector('[data-sk="article.pg-tier.featured"]'); if (t) hovered = placeAim(t); } break;
+        case "selection": highlightDemo(); break;
+        case "notes": setTab("notes"); break;
+        case "switcher": openSwitcher(true); break;
+        case "settings": openSettings(true); break;
+        case "history": openHistory(true); break;
+        case "add-source": openAddSource("provider"); break;
+        case "add-file": openFilePick(true); break;
+        case "options": openOptions(true, "general"); break;
+        case "options-server": openOptions(true, "server"); break;
+        case "offline": setOffline(true); break;
+        case "first-run": showEmpty(true); break;
+      }
+    }
+    root.__skope = { setState, setTheme, setPalette, startPick, setOffline, newChat, openChat };
+    applySelection(); renderSwitcher(); syncThemeSeg(); syncPalette(); renderTray(); autosize(el.input);
+    setState(initialState || "chat");
+    return root.__skope;
+  }
+  window.initSkope = initSkope;
+  document.querySelectorAll("[data-skope]").forEach((c) => initSkope(c, (c.closest("[data-init]") || c).dataset.init || c.dataset.state));
+})();
+</script>

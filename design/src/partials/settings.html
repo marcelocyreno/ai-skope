@@ -1,0 +1,59 @@
+<div class="sk-settings" data-role="settings" role="dialog" aria-label="Settings" aria-hidden="true">
+  <div class="hd">
+    <button type="button" class="sk-iconbtn" data-role="settings-back" aria-label="Back to chat"><svg class="sk-ico" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+    <h2>Settings</h2>
+    <span class="sk-topbar-spacer"></span>
+    <button type="button" class="sk-btn ghost sm" data-role="open-options" data-section="general">All settings <svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button>
+  </div>
+  <div class="bd">
+    <section class="sk-set-section">
+      <h3>Appearance</h3>
+      <div class="sk-row"><div class="lbl"><b>Theme</b><small>Follows Chrome unless you choose one.</small></div>
+        <div class="sk-seg" data-role="theme-seg" role="group" aria-label="Theme">
+          <button type="button" aria-pressed="false" data-theme-pick="light"><svg class="sk-ico" aria-hidden="true"><use href="#i-sun"/></svg>Light</button>
+          <button type="button" aria-pressed="false" data-theme-pick="dark"><svg class="sk-ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button>
+          <button type="button" aria-pressed="true" data-theme-pick="system"><svg class="sk-ico" aria-hidden="true"><use href="#i-monitor"/></svg>System</button>
+        </div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Color</b><small data-role="palette-name">Graphite</small></div>
+        <div class="sk-swatches" data-role="palette-seg" role="group" aria-label="Color palette"><button type="button" class="sk-swatch" data-palette-pick="graphite" data-palette="graphite" data-theme="dark" aria-pressed="true" aria-label="Graphite" title="Graphite"></button><button type="button" class="sk-swatch" data-palette-pick="nocturne" data-palette="nocturne" data-theme="dark" aria-pressed="false" aria-label="Nocturne" title="Nocturne"></button><button type="button" class="sk-swatch" data-palette-pick="sage" data-palette="sage" data-theme="dark" aria-pressed="false" aria-label="Sage" title="Sage"></button><button type="button" class="sk-swatch" data-palette-pick="ember" data-palette="ember" data-theme="dark" aria-pressed="false" aria-label="Ember" title="Ember"></button><button type="button" class="sk-swatch" data-palette-pick="arctic" data-palette="arctic" data-theme="dark" aria-pressed="false" aria-label="Arctic" title="Arctic"></button><button type="button" class="sk-swatch" data-palette-pick="mono" data-palette="mono" data-theme="dark" aria-pressed="false" aria-label="Mono" title="Mono"></button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Text size</b></div>
+        <div class="sk-seg" role="group" aria-label="Text size"><button type="button" aria-pressed="false">Small</button><button type="button" aria-pressed="true">Default</button><button type="button" aria-pressed="false">Large</button></div>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Pane</h3>
+      <div class="sk-row"><div class="lbl"><b>Side</b></div>
+        <div class="sk-seg" role="group" aria-label="Pane side"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-left"/></svg>Left</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-right"/></svg>Right</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Open automatically</b><small>Show the pane when Chrome starts.</small></div>
+        <button type="button" class="sk-switch" role="switch" aria-checked="false" aria-label="Open automatically"></button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Models</h3>
+      <div class="sk-row"><div class="lbl"><b>Source</b><small>Server drives local agents and reads files; keys call providers directly.</small></div>
+        <div class="sk-seg" role="group" aria-label="Model source"><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Server</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API keys</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>AI Skope Server</b><small><span class="sk-dot" style="display:inline-block;vertical-align:middle;margin-right:5px"></span>connected · v0.3 · 5 runtimes · 3 folders</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="server">Manage</button>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Providers &amp; keys</b><small>z.ai, fireworks.ai, ollama via server · 3 direct keys</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="providers">Manage</button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <h3>Page access</h3>
+      <div class="sk-row"><div class="lbl"><b>Send page content to the model</b><small>Only what you pick or select unless you allow the whole page.</small></div>
+        <div class="sk-seg" role="group" aria-label="Page content"><button type="button" aria-pressed="true">Ask</button><button type="button" aria-pressed="false">Always</button><button type="button" aria-pressed="false">Never</button></div>
+      </div>
+      <div class="sk-row"><div class="lbl"><b>Blocked on 2 sites</b><small>Never read or sent.</small></div>
+        <button type="button" class="sk-btn secondary sm" data-role="open-options" data-section="privacy">Manage</button>
+      </div>
+    </section>
+    <section class="sk-set-section">
+      <div class="sk-row" style="border:0"><div class="lbl"><b>AI Skope 0.1.0</b><small>Design preview · Shortcuts, data and more in All settings</small></div></div>
+    </section>
+  </div>
+</div>

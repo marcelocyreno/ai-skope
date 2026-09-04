@@ -1,0 +1,98 @@
+<div class="sk-options" data-role="options" hidden>
+  <div class="sk-tabstrip" aria-hidden="true"><span class="tab"><span class="fav" style="background:#2A4B8D"></span>Northwind Analytics — Pricing</span><span class="tab on"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>AI Skope · Settings<button type="button" class="x" data-role="options-close" aria-label="Close settings tab"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span></div>
+  <div class="sk-opt-shell">
+    <nav class="sk-opt-nav" data-role="options-nav" aria-label="Settings sections">
+      <div class="brand"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><span>AI Skope</span><small>Settings · 0.1.0</small></div>
+      <a href="#" data-section="general" class="on">General</a>
+      <a href="#" data-section="server">Server &amp; runtimes</a>
+      <a href="#" data-section="folders">Folders</a>
+      <a href="#" data-section="providers">Providers &amp; keys</a>
+      <a href="#" data-section="privacy">Privacy</a>
+      <a href="#" data-section="shortcuts">Shortcuts</a>
+      <a href="#" data-section="about">About</a>
+      <div class="srv"><span class="sk-dot"></span>Server connected<small class="mono">localhost:7331 · v0.3</small></div>
+    </nav>
+    <main class="sk-opt-main" data-role="options-main">
+      <section class="sk-opt-section" data-section="general">
+        <div class="sk-setup">
+          <div class="hd"><svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg><b>Set up AI Skope</b><span class="mono">2 of 3</span></div>
+          <div class="step done"><svg class="sk-ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Install the AI Skope Server</b><small>Running · v0.3 at localhost:7331</small></span></div>
+          <div class="step done"><svg class="sk-ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Allow a folder</b><small>~/dev, ~/Documents/notes, ~/Downloads</small></span></div>
+          <div class="step"><i></i><span><b>Choose a default runtime</b><small>Which agent answers when you open a new chat.</small></span><button type="button" class="sk-btn primary sm">Choose</button></div>
+        </div>
+        <h2>General</h2>
+        <div class="sk-row"><div class="lbl"><b>Theme</b><small>Follows Chrome unless you choose one.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-sun"/></svg>Light</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-moon"/></svg>Dark</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-monitor"/></svg>System</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Color</b></div><div class="sk-swatches" role="group" aria-label="Color palette"><button type="button" class="sk-swatch" data-palette-pick="graphite" data-palette="graphite" data-theme="dark" aria-pressed="true" aria-label="Graphite" title="Graphite"></button><button type="button" class="sk-swatch" data-palette-pick="nocturne" data-palette="nocturne" data-theme="dark" aria-pressed="false" aria-label="Nocturne" title="Nocturne"></button><button type="button" class="sk-swatch" data-palette-pick="sage" data-palette="sage" data-theme="dark" aria-pressed="false" aria-label="Sage" title="Sage"></button><button type="button" class="sk-swatch" data-palette-pick="ember" data-palette="ember" data-theme="dark" aria-pressed="false" aria-label="Ember" title="Ember"></button><button type="button" class="sk-swatch" data-palette-pick="arctic" data-palette="arctic" data-theme="dark" aria-pressed="false" aria-label="Arctic" title="Arctic"></button><button type="button" class="sk-swatch" data-palette-pick="mono" data-palette="mono" data-theme="dark" aria-pressed="false" aria-label="Mono" title="Mono"></button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Text size</b></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false">Small</button><button type="button" aria-pressed="true">Default</button><button type="button" aria-pressed="false">Large</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Pane side</b></div><div class="sk-seg" role="group"><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-left"/></svg>Left</button><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-panel-right"/></svg>Right</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Default pane width</b><small>Drag the divider to resize any time.</small></div><input class="sk-input mono" type="text" value="400 px" style="width:96px;text-align:right" aria-label="Default width"></div>
+        <div class="sk-row"><div class="lbl"><b>Open automatically</b><small>Show the pane when Chrome starts.</small></div><button type="button" class="sk-switch" role="switch" aria-checked="false" aria-label="Open automatically"></button></div>
+        <div class="sk-row"><div class="lbl"><b>Model source</b><small>The server drives local coding agents and can read files on this computer. API keys call providers directly.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Server</button><button type="button" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API keys</button></div></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="server">
+        <h2>Server &amp; runtimes</h2>
+        <div class="sk-row"><div class="lbl"><b>Server address</b><small><span class="sk-dot" style="display:inline-block;vertical-align:middle;margin-right:5px"></span>connected · v0.3 · uptime 3 h 12 m</small></div><input class="sk-input mono" type="text" value="http://localhost:7331" style="width:260px" aria-label="Server URL"><button type="button" class="sk-btn secondary sm">Restart</button><button type="button" class="sk-btn ghost sm">Logs <svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button></div>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th></th><th>Runtime</th><th>Path</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg></span></td><td><b>Claude Code</b><small class="mono">2.1</small></td><td class="mono">/opt/homebrew/bin/claude</td><td>Opus 5, Sonnet 5, Haiku 4.5</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Claude Code"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-codex"/></svg></span></td><td><b>Codex</b><small class="mono">0.9</small></td><td class="mono">~/.npm/bin/codex</td><td>GPT-5 Codex, GPT-5</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Codex"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg></span></td><td><b>pi</b><small class="mono">0.14</small></td><td class="mono">~/.local/bin/pi</td><td>5 models via z.ai, fireworks.ai, ollama</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="pi"></button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg></span></td><td><b>omp</b><small class="mono">—</small></td><td class="mono">not found on PATH</td><td>—</td><td><button type="button" class="sk-btn secondary sm">Install guide</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg></span></td><td><b>opencode</b><small class="mono">1.2</small></td><td class="mono">/opt/homebrew/bin/opencode</td><td>5 models via z.ai, fireworks.ai, ollama</td><td><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="opencode"></button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><input class="sk-input mono" type="text" placeholder="Custom command, e.g. my-agent --stdio" style="flex:1" aria-label="Custom command"><button type="button" class="sk-btn secondary sm"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add runtime</button></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="folders">
+        <h2>Folders</h2>
+        <p class="lead">Folders the server may read so you can ask about local HTML and Markdown files, repos and notes. Nothing outside these folders is ever opened.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th>Folder</th><th>Indexed</th><th>Access</th><th>Last indexed</th><th></th></tr></thead>
+          <tbody><tr><td class="mono"><b>~/dev</b></td><td>1,284 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option selected>Read + watch</option><option>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">2 min ago</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr><tr><td class="mono"><b>~/Documents/notes</b></td><td>96 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option>Read + watch</option><option selected>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">1 h ago</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr><tr><td class="mono"><b>~/Downloads</b></td><td>412 files</td><td><span class="sk-selectwrap"><select class="sk-select" aria-label="Access"><option>Read + watch</option><option selected>Read</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></td><td class="mono">Yesterday</td><td><button type="button" class="sk-iconbtn sm" aria-label="Remove folder"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm"><svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg>Add folder</button><span class="grow"></span><small class="mono" style="color:var(--ink-3)">Ignoring node_modules, .git, build outputs</small></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="providers">
+        <h2>Providers &amp; keys</h2>
+        <h3>Via AI Skope Server <span class="sk-tag">recommended</span></h3>
+        <p class="lead">Keys stored by the server on this computer; the extension never sees them. Each provider is offered to the runtimes you choose.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th>Provider</th><th>Key</th><th>Available to</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-8f3a…c21e</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…7Kd0</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
+        </table></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm" data-role="options-add-source"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add a source</button></div>
+        <h3 style="margin-top:20px">Direct API keys</h3>
+        <p class="lead">Stored in Chrome's extension storage on this device. Calls go straight to the provider — no server, no local files.</p>
+        <div class="sk-tablewrap"><table class="sk-table">
+          <thead><tr><th></th><th>Provider</th><th>Key</th><th>Models</th><th></th></tr></thead>
+          <tbody><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-anthropic"/></svg></span></td><td><b>Anthropic</b></td><td class="mono">sk-ant-…4Qf8</td><td>3 models</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-openai"/></svg></span></td><td><b>OpenAI</b></td><td class="mono">sk-…9Lm2</td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr><tr><td><span class="glyph"><svg class="sk-ico" aria-hidden="true"><use href="#p-google"/></svg></span></td><td><b>Google</b></td><td class="mono">AIza…Xr1c</td><td>1 model</td><td><button type="button" class="sk-btn secondary sm">Edit key</button></td></tr></tbody>
+        </table></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="privacy">
+        <h2>Privacy</h2>
+        <div class="sk-row"><div class="lbl"><b>Send page content to the model</b><small>Only what you pick or select is sent unless you allow the whole page.</small></div><div class="sk-seg" role="group"><button type="button" aria-pressed="true">Ask</button><button type="button" aria-pressed="false">Always</button><button type="button" aria-pressed="false">Never</button></div></div>
+        <div class="sk-row"><div class="lbl"><b>Blocked sites</b><small>AI Skope never reads or sends anything here.</small></div></div>
+        <div class="sk-chks"><span class="sk-chk" aria-pressed="true">*.bank.example <button type="button" class="sk-ctx-x" aria-label="Remove"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span><span class="sk-chk" aria-pressed="true">mail.google.com <button type="button" class="sk-ctx-x" aria-label="Remove"><svg class="sk-ico" aria-hidden="true"><use href="#i-close"/></svg></button></span><button type="button" class="sk-chk"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add site</button></div>
+        <div class="sk-row"><div class="lbl"><b>Keep chat history</b><small>Stored locally, per site.</small></div><button type="button" class="sk-switch" role="switch" aria-checked="true" aria-label="Keep chat history"></button></div>
+        <div class="sk-row"><div class="lbl"><b>Delete chats older than</b></div><span class="sk-selectwrap"><select class="sk-select" aria-label="Retention"><option>Never</option><option selected>90 days</option><option>30 days</option><option>7 days</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></div>
+        <div class="sk-row" style="border:0"><button type="button" class="sk-btn secondary sm">Export chats &amp; notes</button><button type="button" class="sk-btn danger sm">Clear all data</button></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="shortcuts">
+        <h2>Shortcuts</h2>
+        <div class="sk-tablewrap"><table class="sk-table"><thead><tr><th>Action</th><th>Keys</th><th></th></tr></thead><tbody><tr><td>Toggle AI Skope</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>A</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Pick element</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Add selection to chat</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>S</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Add file</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>F</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Switch model</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>New chat</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>N</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr><tr><td>Focus the composer</td><td><span class="kbds"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>L</kbd></span></td><td><button type="button" class="sk-btn ghost sm">Change</button></td></tr></tbody></table></div>
+      </section>
+
+      <section class="sk-opt-section" data-section="about">
+        <h2>About</h2>
+        <div class="sk-row"><div class="lbl"><b>AI Skope 0.1.0</b><small>Extension · design preview</small></div><button type="button" class="sk-btn secondary sm">Check for updates</button></div>
+        <div class="sk-row"><div class="lbl"><b>AI Skope Server 0.3</b><small class="mono">/opt/homebrew/bin/aiss · started 3 h ago</small></div><button type="button" class="sk-btn secondary sm">Update server</button></div>
+        <div class="sk-row" style="border:0"><div class="lbl"><small>Open source · Report a problem · Privacy policy</small></div></div>
+      </section>
+    </main>
+  </div>
+  <div class="sk-dialog-scrim" data-role="dialog-scrim" hidden>
+    <div class="sk-dialog" role="dialog" aria-label="Add a source" data-role="dialog">
+      {{addsrc-static}}
+    </div>
+  </div>
+</div>

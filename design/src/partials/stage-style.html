@@ -1,0 +1,19 @@
+<style>
+/* Component stage: same markup rendered on the light and the dark palette. */
+html, body { background: #202429; }
+.stage { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.stage > .side { padding: 28px; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; gap: 22px; }
+.stage-lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.stage-var { display: flex; flex-direction: column; gap: 8px; }
+.stage-pane { container-type: inline-size; width: 400px; max-width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.stage-pane.tall { height: 560px; }
+.stage-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.stage-sw { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+.stage-sw .sw { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.stage-sw .sw i { display: block; height: 52px; }
+.stage-sw .sw b { display: block; font-family: var(--font-ui); font-weight: 600; font-size: 12px; padding: 7px 9px 0; }
+.stage-sw .sw small { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); padding: 1px 9px 8px; }
+.stage-type { display: flex; flex-direction: column; gap: 14px; }
+.stage-type .spec { display: grid; grid-template-columns: 150px 1fr; gap: 14px; align-items: baseline; border-bottom: 1px solid var(--line-2); padding-bottom: 12px; }
+.stage-type .spec small { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+</style>

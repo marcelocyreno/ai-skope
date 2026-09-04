@@ -1,0 +1,42 @@
+<div class="sk-canvas" data-skope data-state="chat">
+  <div class="sk-content">
+    <div class="sk-scroll" data-role="scroll">
+      {{example-page}}
+      <div class="sk-aim" data-role="aim" hidden aria-hidden="true">
+        <i></i><i></i><i></i><i></i>
+        <span class="sk-aim-tag"><b data-role="aim-sel">article.pg-tier.featured</b><span class="dim" data-role="aim-dim">320 × 412</span></span>
+      </div>
+      <div class="sk-anchor" data-role="selanchor" hidden>{{seltool}}</div>
+    </div>
+    <div class="sk-aim-hint" data-role="aimhint" hidden>
+      <svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>
+      Click an element to add it to the chat <kbd>esc</kbd> cancel
+    </div>
+    <div class="sk-toast" data-role="toast" hidden></div>
+  </div>
+  <div class="sk-divider" data-role="divider" role="separator" aria-orientation="vertical" aria-label="Resize AI pane"></div>
+  <aside class="sk-pane" data-role="pane" aria-label="AI Skope">
+    {{topbar}}
+    {{tabs}}
+    <div class="sk-body">
+      <section class="sk-view" data-role="view-chat" role="tabpanel">
+        {{thread-chat}}
+        {{empty}}
+      </section>
+      <section class="sk-view sk-notes" data-role="view-notes" role="tabpanel" hidden>
+        {{notes}}
+      </section>
+    </div>
+    {{strip-offline}}
+    {{composer}}
+    <div class="sk-scrim" data-role="scrim" hidden></div>
+    <div class="sk-anchor sk-pop sk-switcher" data-role="switcher" hidden>
+      {{switcher}}
+    </div>
+    {{filepick}}
+    {{settings}}
+    {{history}}
+    {{addsrc}}
+  </aside>
+  {{options}}
+</div>

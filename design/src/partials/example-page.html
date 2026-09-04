@@ -1,0 +1,62 @@
+<!-- Example third-party page rendered in the Content Pane. Clearly fictional
+     ("Northwind Analytics"). Uses its own pg-* palette so it reads as a real
+     website, not as part of the extension's UI. -->
+<div class="pg">
+  <nav class="pg-nav">
+    <div class="pg-logo"><span class="pg-logo-mark"></span>Northwind Analytics</div>
+    <div class="pg-links"><a href="#">Product</a><a href="#">Docs</a><a href="#" class="on">Pricing</a><a href="#">Customers</a></div>
+    <div class="pg-nav-cta"><a href="#" class="pg-link">Sign in</a><a href="#" class="pg-btn">Start free</a></div>
+  </nav>
+  <div class="pg-example">Example page</div>
+  <header class="pg-hero">
+    <p class="pg-eyebrow">Pricing</p>
+    <h1 data-sk="h1.pg-h1">Plans that scale with your event volume</h1>
+    <p class="pg-lede" data-sk="p.pg-lede">Every plan includes unlimited seats, SQL access and 13 months of history. Switch or cancel any time — billing is prorated to the day.</p>
+    <div class="pg-toggle" data-sk="div.pg-toggle"><button class="on">Monthly</button><button>Annual <span>−20%</span></button></div>
+  </header>
+  <section class="pg-tiers" data-sk="section.pg-tiers">
+    <article class="pg-tier" data-sk="article.pg-tier:nth-child(1)">
+      <h2>Starter</h2><p class="pg-price"><b>$0</b><span>/ month</span></p>
+      <p class="pg-tier-desc">For side projects and early prototypes.</p>
+      <ul><li>Up to 1M events / mo</li><li>3 dashboards</li><li>7-day retention</li><li>Community support</li></ul>
+      <a href="#" class="pg-btn ghost">Get started</a>
+    </article>
+    <article class="pg-tier featured" data-sk="article.pg-tier.featured">
+      <span class="pg-pop">Most popular</span>
+      <h2>Growth</h2><p class="pg-price"><b>$149</b><span>/ month</span></p>
+      <p class="pg-tier-desc">For product teams shipping weekly.</p>
+      <ul><li>Up to 25M events / mo</li><li>Unlimited dashboards</li><li>13-month retention</li><li>Funnels, retention &amp; paths</li><li>Slack alerts</li></ul>
+      <a href="#" class="pg-btn">Start 14-day trial</a>
+    </article>
+    <article class="pg-tier" data-sk="article.pg-tier:nth-child(3)">
+      <h2>Enterprise</h2><p class="pg-price"><b>Custom</b></p>
+      <p class="pg-tier-desc">For regulated or high-volume workloads.</p>
+      <ul><li>Unlimited events</li><li>SSO &amp; SCIM</li><li>Custom retention</li><li>Dedicated VPC</li><li>99.95% SLA</li></ul>
+      <a href="#" class="pg-btn ghost">Talk to sales</a>
+    </article>
+  </section>
+  <section class="pg-compare" data-sk="section.pg-compare">
+    <h2 data-sk="h2.pg-compare-title">Compare plans</h2>
+    <div class="pg-tablewrap">
+    <table class="pg-table" data-sk="table.pg-table">
+      <thead><tr><th>Feature</th><th>Starter</th><th>Growth</th><th>Enterprise</th></tr></thead>
+      <tbody>
+        <tr data-sk="tr:nth-child(1)"><td>Events per month</td><td>1M</td><td>25M</td><td>Unlimited</td></tr>
+        <tr data-sk="tr:nth-child(2)"><td>Data retention</td><td>7 days</td><td>13 months</td><td>Custom</td></tr>
+        <tr data-sk="tr:nth-child(3)"><td>Seats</td><td>Unlimited</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr data-sk="tr:nth-child(4)"><td>SQL access</td><td>—</td><td>✓</td><td>✓</td></tr>
+        <tr data-sk="tr:nth-child(5)"><td>Data warehouse export</td><td>—</td><td>Daily</td><td>Hourly</td></tr>
+        <tr data-sk="tr:nth-child(6)"><td>Single sign-on</td><td>—</td><td>—</td><td>✓</td></tr>
+        <tr data-sk="tr:nth-child(7)"><td>Support</td><td>Community</td><td>Email, 1 business day</td><td>Dedicated, 1 hour</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+  <section class="pg-faq" data-sk="section.pg-faq">
+    <h2>Questions</h2>
+    <details open data-sk="details:nth-child(2)"><summary>What counts as an event?</summary><p>Any call to <code>track()</code>, plus page views and identify calls. Internal system events and failed requests are not billed.</p></details>
+    <details data-sk="details:nth-child(3)"><summary>What happens if I go over my event limit?</summary><p>We keep ingesting for the rest of the month and email you. You can upgrade at any point; overage is never billed automatically.</p></details>
+    <details data-sk="details:nth-child(4)"><summary>Do you offer discounts for startups or non-profits?</summary><p>Yes — Growth is free for 12 months for companies under 2 years old with less than $2M raised, and 50% off for registered non-profits.</p></details>
+  </section>
+  <footer class="pg-foot">© 2026 Northwind Analytics, Inc. · Fictional example content used for design review.</footer>
+</div>

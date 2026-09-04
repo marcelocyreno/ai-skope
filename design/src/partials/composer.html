@@ -1,0 +1,30 @@
+<form class="sk-composer" data-role="composer" autocomplete="off">
+  <div class="sk-tray" data-role="tray" aria-label="Context attached to your next message"></div>
+  <div class="sk-field">
+    <textarea data-role="input" rows="3" placeholder="Ask about this page… pick an element or select text to add context" aria-label="Message"></textarea>
+    <div class="sk-toolrow">
+      <button type="button" class="sk-iconbtn" data-role="pick-btn" aria-pressed="false" aria-label="Pick an element from the page" title="Pick element  ⌘⇧K">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-reticle"/></svg>
+      </button>
+      <button type="button" class="sk-iconbtn" data-role="select-btn" aria-pressed="false" aria-label="Select text on the page" title="Select text  ⌘⇧S">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-select-text"/></svg>
+      </button>
+      <button type="button" class="sk-iconbtn" data-role="file-btn" aria-label="Add a file from this computer" title="Add file — via AI Skope Server">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-folder"/></svg>
+      </button>
+      <button type="button" class="sk-chip-model" data-role="model-chip" aria-haspopup="listbox" aria-expanded="false" title="Change model">
+        <svg class="sk-ico" data-role="model-glyph" aria-hidden="true"><use href="#r-claude-code"/></svg>
+        <span class="name" data-role="model-name">Opus 5</span>
+        <span class="eff sk-tag" data-role="model-eff">High</span>
+        <span class="sk-dot" data-role="model-dot" aria-label="online"></span>
+        <span class="lat" data-role="model-lat">124 ms</span>
+        <svg class="sk-ico chev" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+      </button>
+      <span class="grow"></span>
+      <button type="submit" class="sk-send" data-role="send" aria-label="Send">
+        <svg class="sk-ico" aria-hidden="true"><use href="#i-send"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="sk-hint"><span><kbd>⏎</kbd> send</span><span><kbd>⇧⏎</kbd> new line</span><span><kbd>⌘⇧K</kbd> pick element</span><span class="grow"></span><button type="button" class="clear" data-role="clear-link"><svg class="sk-ico" aria-hidden="true"><use href="#i-chat-clear"/></svg>Clear chat</button></div>
+</form>

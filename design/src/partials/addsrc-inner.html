@@ -1,0 +1,15 @@
+<div class="hd">
+    <button type="button" class="sk-iconbtn" data-role="addsrc-back" aria-label="Back to settings"><svg class="sk-ico" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+    <h2>Add a source</h2>
+  </div>
+  <div class="sk-sheet-seg"><div class="sk-seg" role="group" aria-label="Kind of source" data-role="addsrc-seg">
+    <button type="button" data-view="runtime" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-claude-code"/></svg>Runtime</button>
+    <button type="button" data-view="provider" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg>Provider</button>
+    <button type="button" data-view="direct" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#i-key"/></svg>API key</button>
+  </div></div>
+  <div class="bd" style="padding-top:0">
+    {{addsrc-runtime}}
+    {{addsrc-provider}}
+    {{addsrc-direct}}
+  </div>
+  <div class="sk-sheet-foot"><button type="button" class="sk-btn ghost" data-role="addsrc-cancel">Cancel</button><button type="button" class="sk-btn primary" data-role="addsrc-add">Add to server</button></div>
