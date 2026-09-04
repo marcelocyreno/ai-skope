@@ -266,3 +266,18 @@ func (db *DB) newestFiles(limit int) ([]File, error) {
 	}
 	return out, rows.Err()
 }
+
+// UpsertFileMeta refreshes metadata for a file whose content is unchanged,
+// leaving the indexed body in place.
+func (db *DB) UpsertFileMeta(f File) error {
+	isDir := 0
+	if f.IsDir {
+		isDir = 1
+	}
+	_, err := db.sql.Exec(`INSERT INTO files (path, folder_id, name, ext, size, mtime, is_dir, indexed_at)
+		VALUES (?,?,?,?,?,?,?,?)
+		ON CONFLICT(path) DO UPDATE SET folder_id=excluded.folder_id, name=excluded.name, ext=excluded.ext,
+			size=excluded.size, mtime=excluded.mtime, is_dir=excluded.is_dir, indexed_at=excluded.indexed_at`,
+		f.Path, f.FolderID, f.Name, f.Ext, f.Size, f.MTime, isDir, Now())
+	return err
+}
