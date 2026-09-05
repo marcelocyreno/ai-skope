@@ -66,7 +66,7 @@ tasks:
       - "{{.AISS}} start"
 
   serve:
-    desc: Run the server in the foreground with debug logging
+    desc: Run the server in the foreground with debug logging (holds this terminal — pair from another)
     dir: "{{.SERVER}}"
     cmds:
       - make run

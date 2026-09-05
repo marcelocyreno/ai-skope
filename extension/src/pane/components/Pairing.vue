@@ -55,8 +55,9 @@ async function saveUrl() {
     <template v-else>
       <h2>Pair this browser</h2>
       <p>
-        Run <code>aiss pair</code> in a terminal and type the code it shows. It is
-        valid once, for ten minutes.
+        Run <code>aiss pair</code> in a terminal — a second one, if the server is
+        running in the first — and type the code it shows. It is valid once, for
+        ten minutes.
       </p>
       <input
         v-model="code"

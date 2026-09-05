@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -39,7 +40,7 @@ func cmdStart(args []string) error {
 	if !foreground {
 		return startDetached()
 	}
-	return serve()
+	return serve(true)
 }
 
 // startDetached re-runs this binary in the background and waits for it to
@@ -102,8 +103,10 @@ func alive(cfg config.Config) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
-// serve runs the server in the foreground until interrupted.
-func serve() error {
+// serve runs the server until interrupted. When it was started in the
+// foreground the log goes to the terminal as well as the file: a foreground
+// process that prints nothing is indistinguishable from one that has hung.
+func serve(foreground bool) error {
 	cfg, err := config.Load()
 	if err != nil {
 		return err
@@ -114,7 +117,7 @@ func serve() error {
 	if err := config.EnsureDirs(); err != nil {
 		return err
 	}
-	setupLogging(cfg)
+	setupLogging(cfg, foreground)
 
 	db, err := store.Open(config.DBFile())
 	if err != nil {
@@ -189,7 +192,7 @@ func serve() error {
 	}
 }
 
-func setupLogging(cfg config.Config) {
+func setupLogging(cfg config.Config, alsoToTerminal bool) {
 	level := slog.LevelInfo
 	switch cfg.LogLevel {
 	case "debug":
@@ -200,8 +203,13 @@ func setupLogging(cfg config.Config) {
 		level = slog.LevelError
 	}
 	f, err := os.OpenFile(config.LogFile(), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
-	var w *os.File = os.Stderr
-	if err == nil {
+	var w io.Writer = os.Stderr
+	switch {
+	case err != nil:
+		// No log file: the terminal is all there is.
+	case alsoToTerminal:
+		w = io.MultiWriter(f, os.Stderr)
+	default:
 		w = f
 	}
 	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})))
