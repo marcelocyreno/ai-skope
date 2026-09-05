@@ -285,10 +285,30 @@ tasks:
     cmds:
       - npx playwright test --config=playwright.store.config.ts
 
+  release:
+    desc: 'Cut a release from a tag that is already pushed (needs goreleaser)'
+    silent: true
+    cmds:
+      - |
+        if [ -z "$(git tag --points-at HEAD)" ]; then
+          echo "HEAD is not tagged. Tag first:"
+          echo "  git tag -a v0.1.1 -m '...' && git push origin v0.1.1"
+          exit 1
+        fi
+      - |
+        GITHUB_TOKEN="$(gh auth token)"         HOMEBREW_TAP_GITHUB_TOKEN="$(gh auth token)"         goreleaser release --clean
+
+  release:check:
+    desc: 'Build every release target without publishing anything'
+    cmds:
+      - goreleaser release --snapshot --clean --skip=publish
+      - ls -lh dist/*.tar.gz dist/checksums.txt
+
   clean:
     desc: Remove build output
     cmds:
       - rm -rf "{{.EXT}}/dist" "{{.EXT}}/test-results" "{{.EXT}}/playwright-report"
+      - rm -rf "{{.TASKFILE_DIR}}/dist"
       - rm -f "{{.AISS}}"
 
   reset:

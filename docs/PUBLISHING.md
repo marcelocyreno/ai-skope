@@ -29,27 +29,40 @@ rough edges are found by people who were told what this is.
 | Who publishes? | A **personal developer account** is fine to start ($5 one-off). A group publisher matters only if others need dashboard access later. |
 | Open source? | **Yes, and say so in the listing.** For an extension that reads pages and runs local agents, a public repository is the strongest trust signal there is — and reviewers can be pointed at it. |
 
-## Phase 1 — Make the server installable (the real gate)
+## Phase 1 — Make the server installable (the real gate) — **done**
 
-Nothing else matters until a stranger can do this:
+Nothing else mattered until a stranger could do this, and now they can:
 
 ```
-brew install ai-skope/tap/aiss     # or: curl … | sh
+brew install marcelocyreno/tap/aiss
 aiss start && aiss pair
 ```
 
-- **goreleaser** in `server/`: static builds for darwin/arm64, darwin/amd64,
-  linux/amd64, linux/arm64; version stamped through the existing
-  `-X …/internal/version.Version` ldflag the Makefile already uses.
-- **macOS signing and notarisation.** Without it Gatekeeper refuses to run the
-  binary and the user sees a scary dialog. Needs an Apple Developer ID
-  ($99/year). This is the most likely thing to stall the release.
-- **A Homebrew tap** (`ai-skope/homebrew-tap`), published by goreleaser.
-- **GitHub Releases** with checksums, plus a one-line install script for people
-  without Homebrew.
+- **goreleaser** (`.goreleaser.yaml`, at the repository root so it can reach the
+  LICENSE and the install guide): static builds for darwin and linux on both
+  architectures, version stamped through the `-X …/internal/version.Version`
+  ldflag. Cross-compiling is free — the SQLite driver is pure Go, so everything
+  builds with `CGO_ENABLED=0`.
+- **A Homebrew tap** — `marcelocyreno/homebrew-tap`, cask written by goreleaser
+  on each release.
+- **GitHub Releases** with `checksums.txt`, for people without Homebrew.
+- **`.github/workflows/release.yml`** cuts a release on any `v*` tag.
+
+**Signing and notarisation were not needed.** The earlier draft of this plan
+called them the most likely thing to stall the release. That was wrong: macOS
+applies the quarantine attribute from whichever application downloads a file,
+and neither `curl` nor Homebrew does, so Gatekeeper never intervenes. The cask
+strips the attribute after staging as a belt-and-braces measure. An Apple
+Developer ID becomes necessary only for a `.dmg`, a `.pkg`, or a binary people
+download in a browser — none of which is planned.
+
+Still open from this phase, and not blocking:
+
 - A **service file** so the server survives a reboot: launchd plist on macOS,
   systemd user unit on Linux. `aiss start` already detaches, but a user who
   restarts their Mac should not have to think about it.
+- A **one-line `curl … | sh` installer** for people without Homebrew. The
+  release archives cover them today; this is only convenience.
 
 ## Phase 2 — Make the first run explain itself
 
@@ -159,19 +172,37 @@ Phase 3 is prepared. Everything the dashboard asks for lives in `store/`:
 Done since: the repository is public and MIT licensed, GitHub Pages serves the
 install guide and the privacy policy, and every URL in the listing resolves.
 
+Phase 1 is done too: `aiss` installs with one Homebrew command, so a reviewer
+can actually exercise the extension.
+
 Still missing:
 
-- **Phase 1 in full** — `server/.goreleaser.yaml`, a GitHub release and a
-  Homebrew tap. Today a reviewer cannot run `aiss` without cloning the
-  repository and having Go, which is the single biggest risk to review.
+- **A `HOMEBREW_TAP_GITHUB_TOKEN` secret** on this repository, so the release
+  workflow can update the tap on its own. v0.1.0 was released from a
+  workstation, which needed no secret; the next tag will not be. See below.
+- **Phase 2** — the pane's first run still assumes the reader knows what `aiss`
+  is. Now that there is a one-line install command, it should show it.
 - **Windows support in the server**, if it is to be claimed.
 
-On notarisation: the plan above called it the most likely thing to stall the
-release. That was too pessimistic. macOS sets the quarantine flag from the
-application that downloads a file, and neither `curl` nor Homebrew sets it, so
-a binary installed either way runs without Gatekeeper intervening. Notarisation
-— and the Apple Developer account behind it — matters when shipping a `.dmg` or
-`.pkg`, or when people download the binary in a browser. Neither is planned.
+### The tap token
+
+`GITHUB_TOKEN` in Actions cannot write to another repository, so pushing the
+cask to `marcelocyreno/homebrew-tap` needs a token of its own:
+
+1. github.com/settings/personal-access-tokens → **Generate new token**
+   (fine-grained)
+2. Repository access: **only** `marcelocyreno/homebrew-tap`
+3. Permissions: **Contents → Read and write**. Nothing else.
+4. On `marcelocyreno/ai-skope`: Settings → Secrets and variables → Actions →
+   **New repository secret**, named `HOMEBREW_TAP_GITHUB_TOKEN`
+
+Until that exists, release from a workstation instead:
+
+```
+git tag -a v0.2.0 -m "…" && git push origin v0.2.0
+GITHUB_TOKEN=$(gh auth token) HOMEBREW_TAP_GITHUB_TOKEN=$(gh auth token) \
+  goreleaser release --clean
+```
 
 ## A note on visibility
 

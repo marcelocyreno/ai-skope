@@ -221,6 +221,7 @@ Every URL in this document resolves, the repository is public and MIT
 licensed, and the package is built. What remains is the account and the
 upload — see "Account, once" above.
 
-The one thing worth knowing before you submit: a reviewer cannot currently run
-`aiss` without cloning the repository and having Go installed, because there is
-no packaged release yet. See "Phase 1" in `../docs/PUBLISHING.md`.
+A reviewer can install the companion server with one command —
+`brew install marcelocyreno/tap/aiss` — so the extension can actually be
+exercised during review. If they ask how to test it, point them at
+<https://marcelocyreno.github.io/ai-skope/install>.
