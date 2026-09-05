@@ -136,6 +136,9 @@ that is the product in one image, and it is what the design was built around.
   above. The honest answers are that no data is collected by us, none is sold,
   and none is used for anything unrelated to the single purpose.
 
+> **Resuming?** `store/SUBMIT.md` is the live checklist — what is done, what is
+> left, and the decision still open. This document is the reasoning behind it.
+
 ## Phase 4 — Submit and survive review
 
 - Submit as **unlisted**. Expect days rather than hours; broad host permissions

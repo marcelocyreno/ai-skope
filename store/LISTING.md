@@ -1,7 +1,10 @@
 # Chrome Web Store listing
 
 Everything the dashboard asks for, in the order it asks. Copy each block into
-the matching field. Anything in **[brackets]** is a decision still to make.
+the matching field.
+
+**Start at [`SUBMIT.md`](SUBMIT.md)** — it is the checklist of what is done and
+what is left. This file is only the text.
 
 The privacy policy is published at
 <https://marcelocyreno.github.io/ai-skope/privacy> (source: `docs/privacy.md`).

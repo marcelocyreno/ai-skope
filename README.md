@@ -22,6 +22,7 @@ provider API keys are supported as a secondary source.
 | `docs/SERVER-PLAN.md` | The plan the server was built from: architecture, security model, v1 API, milestones. |
 | `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |
 | `docs/PUBLISHING.md` | What it takes to put the extension on the Chrome Web Store, and what has to exist first. |
+| `store/` | The Chrome Web Store submission: `SUBMIT.md` is the checklist, `LISTING.md` the text to paste, `screenshots/` the assets. |
 
 **Documentation:** [install guide](https://marcelocyreno.github.io/ai-skope/install)
 · [privacy policy](https://marcelocyreno.github.io/ai-skope/privacy)
