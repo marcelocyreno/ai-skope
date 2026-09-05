@@ -23,6 +23,9 @@ provider API keys are supported as a secondary source.
 | `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |
 | `docs/PUBLISHING.md` | What it takes to put the extension on the Chrome Web Store, and what has to exist first. |
 
+**Documentation:** [install guide](https://marcelocyreno.github.io/ai-skope/install)
+· [privacy policy](https://marcelocyreno.github.io/ai-skope/privacy)
+
 ## Try it
 
 ```
@@ -43,11 +46,14 @@ ask about the page you are on.
 - **Wave 2 — the server:** complete (`server/`).
 - **Wave 3 — the extension:** complete (`extension/`).
 
-All four coding agents installed here have been driven end to end for real —
-Claude Code with Sonnet, pi and omp with z.ai GLM 5.3 Flash, opencode with
-GLM 5.3 — attaching a picked element and a local file and streaming the answer
-back. `docs/runtimes/COMPAT.md` records the exact invocation and output shape
-of each. Codex is still unverified: it is not installed on this machine.
+All five supported agents have been driven end to end for real — Claude Code,
+Codex, pi, omp and opencode — attaching a picked element and a local file and
+streaming the answer back. `docs/runtimes/COMPAT.md` records the exact
+invocation and output shape each one was verified against, and the version it
+was verified on.
+
+Not done yet: there is no packaged release of the server, so installing it
+means building from source with Go. That is the next thing.
 
 Everything is driven from the `Taskfile.yml` at the root:
 
@@ -59,3 +65,7 @@ task real         # drive every installed agent through a real turn (costs token
 task doctor       # check the installation and explain what to fix
 task folder -- ~/dev
 ```
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).

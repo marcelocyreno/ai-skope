@@ -3,8 +3,10 @@
 Everything the dashboard asks for, in the order it asks. Copy each block into
 the matching field. Anything in **[brackets]** is a decision still to make.
 
-Sibling files: `PRIVACY.md` (host it and link it), `screenshots/` (five frames
-at 1280×800, regenerate with `task store:shots`).
+The privacy policy is published at
+<https://marcelocyreno.github.io/ai-skope/privacy> (source: `docs/privacy.md`).
+Screenshots are in `screenshots/` — five frames at 1280×800, regenerate with
+`task store:shots`.
 
 ---
 
@@ -77,13 +79,13 @@ Page content is sent only when you pick something, select something, or answer y
 
 BEFORE YOU INSTALL
 
-This extension does nothing on its own. You need AI Skope Server running on the same computer, and at least one supported coding agent installed. Setup instructions: [INSTALL URL]
+This extension does nothing on its own. You need AI Skope Server running on the same computer, and at least one supported coding agent installed. Setup instructions: https://marcelocyreno.github.io/ai-skope/install
 
 Requires macOS or Linux for the server. Windows is not supported yet.
 
 OPEN SOURCE
 
-[REPO URL]
+https://github.com/marcelocyreno/ai-skope
 ```
 
 > The last two sections are load-bearing. A user who installs this without the
@@ -154,10 +156,10 @@ Then certify all three:
 **Privacy policy URL**
 
 ```
-[PRIVACY POLICY URL]
+https://marcelocyreno.github.io/ai-skope/privacy
 ```
 
-Host `store/PRIVACY.md` — GitHub Pages is enough — and paste the URL.
+Served from `docs/privacy.md` by GitHub Pages.
 
 ---
 
@@ -213,11 +215,12 @@ unfinished, but it is not required to submit.
 
 ---
 
-## Still to decide
+## Nothing left to decide
 
-- **`[REPO URL]`** — the repository is not on GitHub yet. `homepage_url` in the
-  manifest currently points at `https://github.com/marcelocyreno/ai-skope`.
-- **`[INSTALL URL]`** and **`[PRIVACY POLICY URL]`** — both need somewhere to
-  live. GitHub Pages on the same repository covers both.
-- Nothing else. The repository is MIT licensed, which backs the "open source"
-  line in the description.
+Every URL in this document resolves, the repository is public and MIT
+licensed, and the package is built. What remains is the account and the
+upload — see "Account, once" above.
+
+The one thing worth knowing before you submit: a reviewer cannot currently run
+`aiss` without cloning the repository and having Go installed, because there is
+no packaged release yet. See "Phase 1" in `../docs/PUBLISHING.md`.

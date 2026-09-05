@@ -151,22 +151,27 @@ Phase 3 is prepared. Everything the dashboard asks for lives in `store/`:
 | | |
 |---|---|
 | `store/LISTING.md` | every field, in the order the dashboard asks — name, descriptions, single purpose, one justification per permission, data-usage answers, distribution |
-| `store/PRIVACY.md` | the privacy policy, ready to host |
+| `docs/privacy.md` | the privacy policy, published at marcelocyreno.github.io/ai-skope/privacy |
 | `store/screenshots/` | five frames at 1280×800, shot from the running extension — `task store:shots` |
 | `store/ai-skope-<version>.zip` | the upload — `task store:package` |
 | `homepage_url` | in the manifest |
 
+Done since: the repository is public and MIT licensed, GitHub Pages serves the
+install guide and the privacy policy, and every URL in the listing resolves.
+
 Still missing:
 
-- **A `LICENSE`.** Not required to submit, but the listing calls the project
-  open source, and that claim needs one.
-- **A repository and somewhere to host pages.** `homepage_url`, the install
-  guide and the privacy policy all point at
-  `github.com/marcelocyreno/ai-skope`, which does not exist yet. GitHub Pages
-  on that repository covers the two URLs.
-- **Phase 1 in full** — `server/.goreleaser.yaml`, the Homebrew tap and
-  notarisation. This gates a *public* listing, not an unlisted one.
+- **Phase 1 in full** — `server/.goreleaser.yaml`, a GitHub release and a
+  Homebrew tap. Today a reviewer cannot run `aiss` without cloning the
+  repository and having Go, which is the single biggest risk to review.
 - **Windows support in the server**, if it is to be claimed.
+
+On notarisation: the plan above called it the most likely thing to stall the
+release. That was too pessimistic. macOS sets the quarantine flag from the
+application that downloads a file, and neither `curl` nor Homebrew sets it, so
+a binary installed either way runs without Gatekeeper intervening. Notarisation
+— and the Apple Developer account behind it — matters when shipping a `.dmg` or
+`.pkg`, or when people download the binary in a browser. Neither is planned.
 
 ## A note on visibility
 

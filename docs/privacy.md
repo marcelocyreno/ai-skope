@@ -1,3 +1,7 @@
+---
+title: Privacy Policy
+---
+
 # AI Skope — Privacy Policy
 
 **Last updated: 5 September 2026**
@@ -86,4 +90,4 @@ the extension's release notes.
 
 ## Contact
 
-Issues and questions: [REPO URL]/issues
+Issues and questions: https://github.com/marcelocyreno/ai-skope/issues

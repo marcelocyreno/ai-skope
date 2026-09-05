@@ -1,0 +1,11 @@
+title: AI Skope
+description: Aim at anything on a page and ask a local coding agent about it.
+theme: jekyll-theme-cayman
+
+# The planning documents stay in the repository; the site is the three pages
+# a user or a store reviewer actually needs.
+exclude:
+  - PUBLISHING.md
+  - SERVER-PLAN.md
+  - SPEC.md
+  - runtimes
