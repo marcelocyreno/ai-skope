@@ -7,7 +7,7 @@
 import { reactive, computed } from "vue";
 import { api, connection } from "./connection";
 import { models } from "./models";
-import { page, pageRef, readPageText } from "./page";
+import { page, pageRef, readPage, refreshActiveTab, type PageSnapshot } from "./page";
 import { loadSettings } from "./storage";
 import type { Chat, ContextItem, Message, TurnEvent } from "@/api/types";
 
@@ -82,19 +82,31 @@ export interface SendOptions {
 export async function send(opts: SendOptions = {}): Promise<void> {
   const text = chat.draft.trim();
   if (!text || chat.sending) return;
+
+  // Held before anything can reset the tray below.
+  const context = chat.tray.slice();
+
+  // Re-read which page is on screen rather than trusting the last tab event to
+  // have arrived. A missed event is invisible, and its symptom is an answer
+  // confidently about the previous page.
+  await refreshActiveTab().catch(() => {});
+  if (chat.chat && chat.chat.url && page.url && chat.chat.url !== page.url) {
+    // The page moved on. A fresh chat is not only the design's rule — the
+    // agent session behind the old chat still holds the old page's text, and
+    // the agent would answer from that rather than say it cannot tell.
+    await openForCurrentPage();
+  }
   if (!chat.chat) await newChat();
   const chatId = chat.chat!.id;
 
   // The page's text is only read when the user has allowed it — always, or
   // for this message. "Never" means never, whatever was asked for.
   const settings = await loadSettings();
-  let pageText: string | undefined;
+  let read: PageSnapshot | null = null;
   const wantsPage = settings.pageAccess === "always" || (opts.includePage && settings.pageAccess !== "never");
   if (wantsPage) {
-    pageText = await readPageText().catch(() => "");
+    read = await readPage().catch(() => null);
   }
-
-  const context = chat.tray.slice();
   chat.messages.push({
     id: `local-${Date.now()}`,
     chatId,
@@ -123,7 +135,7 @@ export async function send(opts: SendOptions = {}): Promise<void> {
   try {
     for await (const ev of api().send(
       chatId,
-      { text, page: pageRef(pageText), context, model: models.selection ?? undefined },
+      { text, page: pageRef(read), context, model: models.selection ?? undefined },
       abort.signal,
     )) {
       applyTurnEvent(assistant, ev);

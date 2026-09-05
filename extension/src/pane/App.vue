@@ -11,6 +11,7 @@ import { chat, openForCurrentPage, newChat, addContext, send, rememberPageConsen
 import { loadNotes, addNote } from "@/stores/notes";
 import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, syncContentScripts } from "@/stores/page";
 import { showToast } from "@/stores/toast";
+import { escapeHtml } from "@/pane/markdown";
 import type { ContextItem, FileEntry } from "@/api/types";
 
 import TopBar from "./components/TopBar.vue";
@@ -43,12 +44,26 @@ const showChat = computed(() => tab.value === "chat");
 
 let unwatchTab: (() => void) | null = null;
 
+/** The page the transcript on screen belongs to. */
+let describing = "";
+
 onMounted(async () => {
   await refreshActiveTab();
+  describing = page.url;
   void syncContentScripts();
   unwatchTab = watchActiveTab(() => {
     // A new page means a new conversation context; the old one is in History.
-    if (ready.value) void openForCurrentPage();
+    if (!ready.value) return;
+    const from = describing;
+    const hadTranscript = chat.messages.length > 0;
+    describing = page.url;
+    void openForCurrentPage().then(() => {
+      // Swapping the transcript silently is how the pane ends up answering
+      // about a page the user has already left, so say when it happens.
+      if (from && page.url && from !== page.url && hadTranscript) {
+        showToast(`Now asking about ${escapeHtml(page.title || hostOf(page.url))}`, { icon: "i-reticle" });
+      }
+    });
   });
 
   await initConnection();
@@ -145,6 +160,7 @@ async function summarize() {
     showToast("Page access is set to Never, so the page can't be summarized", { icon: "i-shield" });
     return;
   }
+  await refreshActiveTab().catch(() => {});
   chat.draft = "Summarize this page";
   rememberPageConsent(page.url);
   await submitMessage({ includePage: true });
@@ -155,7 +171,18 @@ async function summarize() {
  * question carrying no context would reach the model with nothing to go on, so
  * the pane asks first rather than sending a request that cannot be answered.
  */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 async function submitMessage(opts: { includePage?: boolean } = {}) {
+  // Settle which page this is before asking about it, so the question — and
+  // the consent it records — belong to the page now on screen.
+  await refreshActiveTab().catch(() => {});
   const access = connection.settings?.pageAccess ?? "ask";
   const hasContext = chat.tray.length > 0;
   const decided = opts.includePage !== undefined;

@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Northwind Analytics — Docs</title>
+    <style>body { font-family: system-ui; margin: 40px; }</style>
+  </head>
+  <body>
+    <h1 id="head">Getting started</h1>
+    <p id="body">Install the collector and point it at your ingest key.</p>
+    <button id="go">Open the billing chapter</button>
+    <script>
+      // A single-page app: the URL and the content change with no page load.
+      document.getElementById("go").addEventListener("click", () => {
+        history.pushState({}, "", "/spa.html#billing");
+        document.title = "Northwind Analytics — Billing";
+        document.getElementById("head").textContent = "Billing";
+        document.getElementById("body").textContent =
+          "Invoices are issued on the first working day of each month.";
+      });
+    </script>
+  </body>
+</html>

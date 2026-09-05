@@ -29,8 +29,22 @@ export const page = reactive<PageState>({
   error: "",
 });
 
-export function pageRef(text?: string): PageRef {
-  return { url: page.url, title: page.title, favicon: page.favicon, text };
+/** A page as it was at the moment it was read. */
+export interface PageSnapshot {
+  url: string;
+  title: string;
+  text: string;
+}
+
+export function pageRef(read?: PageSnapshot | null): PageRef {
+  // Prefer what the content script saw over what the tab list said: they only
+  // differ when the page moved underneath us, and then the text is the truth.
+  return {
+    url: read?.url || page.url,
+    title: read?.title || page.title,
+    favicon: page.favicon,
+    text: read?.text,
+  };
 }
 
 /** A page we must never read, per the user's blocked-site list. */
@@ -51,34 +65,110 @@ export function isRestricted(url: string): boolean {
     url.startsWith("https://chromewebstore.google.com");
 }
 
+/**
+ * The window this pane belongs to.
+ *
+ * A side panel is per-window, so the tab it describes has to come from its own
+ * window. `lastFocusedWindow` is not that: with a second window open — or a
+ * detached devtools window — it resolves somewhere else entirely, and the pane
+ * then answers about a page the user cannot even see.
+ */
+let ownWindowId: number | null = null;
+
+/** The last tab with real content the pane saw, for when the pane is itself
+ *  the active tab (the options page and the tests run it that way). */
+let lastContentTabId: number | null = null;
+
+async function paneWindowId(): Promise<number | null> {
+  if (ownWindowId != null) return ownWindowId;
+  try {
+    const win = await chrome.windows.getCurrent();
+    if (win?.id != null) ownWindowId = win.id;
+  } catch {
+    /* fall back to the last focused window below */
+  }
+  return ownWindowId;
+}
+
+/** A tab, reduced to what choosing between them needs. */
+export interface TabLike {
+  id?: number;
+  url?: string;
+  active?: boolean;
+}
+
+/**
+ * Picks the tab the pane should describe.
+ *
+ * The active one, unless that is the pane itself — the options page and the
+ * tests run the pane as a tab. Then the right answer is the content tab the
+ * user last looked at, not whichever happens to sit last in the strip.
+ */
+export function chooseTab<T extends TabLike>(tabs: T[], lastSeenId: number | null): T | null {
+  const usable = tabs.filter((t) => t.id != null && t.url && !t.url.startsWith("chrome-extension://"));
+  return (
+    usable.find((t) => t.active) ??
+    usable.find((t) => t.id === lastSeenId) ??
+    usable[usable.length - 1] ??
+    null
+  );
+}
+
+async function resolveTab(): Promise<chrome.tabs.Tab | null> {
+  const id = await paneWindowId();
+  const inWindow = await chrome.tabs.query(id != null ? { windowId: id } : { lastFocusedWindow: true });
+  return chooseTab(inWindow, lastContentTabId);
+}
+
+/**
+ * Re-reads which page is on screen.
+ *
+ * Cheap enough (one tabs.query) to call before every question rather than
+ * trusting the last event to have arrived: a missed event is invisible, and
+ * the symptom is an answer that is confidently about the previous page.
+ */
 export async function refreshActiveTab(): Promise<void> {
-  // The pane must describe the page the user is looking at — never itself.
-  // In the side panel that is simply the active tab; but the options page and
-  // the test harness run as tabs, so extension pages are skipped.
-  const inWindow = await chrome.tabs.query({ lastFocusedWindow: true });
-  const usable = inWindow.filter((t) => t.url && !t.url.startsWith("chrome-extension://"));
-  const tab = usable.find((t) => t.active) ?? usable[usable.length - 1];
+  const tab = await resolveTab();
   if (!tab?.id) {
     page.tabId = null;
     return;
   }
   page.tabId = tab.id;
+  lastContentTabId = tab.id;
   page.url = tab.url ?? "";
   page.title = tab.title ?? "";
   page.favicon = tab.favIconUrl ?? "";
 }
 
-/** Watches for tab changes so the pane always describes what is on screen. */
+/**
+ * Watches for page changes so the pane always describes what is on screen.
+ *
+ * Four things can change it: another tab is selected, the tab navigates (this
+ * covers single-page apps too — tabs.onUpdated reports a pushState as a URL
+ * change), the described tab closes, or the window regains focus after the
+ * user was elsewhere.
+ */
 export function watchActiveTab(onChange: () => void): () => void {
-  const activated = () => void refreshActiveTab().then(onChange);
+  const recheck = () => void refreshActiveTab().then(onChange);
+  const activated = () => recheck();
   const updated = (id: number, info: chrome.tabs.TabChangeInfo) => {
-    if (id === page.tabId && (info.url || info.title)) void refreshActiveTab().then(onChange);
+    if (id === page.tabId && (info.url || info.title)) recheck();
+  };
+  const removed = (id: number) => {
+    if (id === page.tabId) recheck();
+  };
+  const focused = (id: number) => {
+    if (id !== chrome.windows.WINDOW_ID_NONE) recheck();
   };
   chrome.tabs.onActivated.addListener(activated);
   chrome.tabs.onUpdated.addListener(updated);
+  chrome.tabs.onRemoved.addListener(removed);
+  chrome.windows.onFocusChanged.addListener(focused);
   return () => {
     chrome.tabs.onActivated.removeListener(activated);
     chrome.tabs.onUpdated.removeListener(updated);
+    chrome.tabs.onRemoved.removeListener(removed);
+    chrome.windows.onFocusChanged.removeListener(focused);
   };
 }
 
@@ -208,8 +298,8 @@ export async function readSelection(): Promise<ContextItem | null> {
 }
 
 /** Extracts the page's readable text, for "send page content". */
-export async function readPageText(): Promise<string> {
-  if (!(await ensureAccess())) return "";
-  const out = await callContent<{ text: string } | null>({ kind: "skope:pagetext" });
-  return out?.text ?? "";
+export async function readPage(): Promise<PageSnapshot | null> {
+  if (!(await ensureAccess())) return null;
+  const out = await callContent<PageSnapshot | null>({ kind: "skope:pagetext" });
+  return out?.text ? out : null;
 }

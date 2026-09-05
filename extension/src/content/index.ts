@@ -304,7 +304,10 @@ if (!window.__aiSkopeContentReady) {
         sendResponse(readSelection());
         return false;
       case "skope:pagetext":
-        sendResponse({ text: pageText() });
+        // The URL and title come from the document that was actually read, so
+        // a tab that navigated between the pane resolving it and this reply
+        // cannot leave the answer labelled with the wrong page.
+        sendResponse({ url: location.href, title: document.title, text: pageText() });
         return false;
       default:
         return false;
