@@ -21,6 +21,7 @@ provider API keys are supported as a secondary source.
 | `server/` | The **AI Skope Server** (`aiss`), written in Go: HTTP + SSE API, runtime adapters, provider keychain, folder allow-list and file index, chats and notes. |
 | `docs/SERVER-PLAN.md` | The plan the server was built from: architecture, security model, v1 API, milestones. |
 | `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |
+| `docs/PUBLISHING.md` | What it takes to put the extension on the Chrome Web Store, and what has to exist first. |
 
 ## Try it
 
