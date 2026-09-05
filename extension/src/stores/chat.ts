@@ -37,6 +37,10 @@ let abort: AbortController | null = null;
 /** Opens the chat for the current page, or starts one if there is none. */
 export async function openForCurrentPage(): Promise<void> {
   if (connection.state !== "online") return;
+  // Already the chat for this page. Re-opening it would throw away context the
+  // user has attached, and any tab event — including clicking into the pane —
+  // would land here.
+  if (chat.chat && chat.chat.url === page.url) return;
   const existing = await api().chats({ url: page.url, limit: 1 });
   if (existing.length > 0) {
     await openChat(existing[0].id);

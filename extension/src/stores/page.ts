@@ -58,9 +58,9 @@ export function isBlocked(blocked: string[]): boolean {
   }
 }
 
-/** Pages Chrome will not let any extension touch. */
+/** Pages no extension can read, and pages there is nothing to read on. */
 export function isRestricted(url: string): boolean {
-  return /^(chrome|edge|about|devtools|chrome-extension|view-source):/i.test(url) ||
+  return /^(chrome|edge|brave|opera|vivaldi|about|devtools|chrome-extension|view-source):/i.test(url) ||
     url.startsWith("https://chrome.google.com/webstore") ||
     url.startsWith("https://chromewebstore.google.com");
 }
@@ -105,7 +105,9 @@ export interface TabLike {
  * user last looked at, not whichever happens to sit last in the strip.
  */
 export function chooseTab<T extends TabLike>(tabs: T[], lastSeenId: number | null): T | null {
-  const usable = tabs.filter((t) => t.id != null && t.url && !t.url.startsWith("chrome-extension://"));
+  // A new blank tab is not a page the user wants asked about, and neither is
+  // the pane itself: switching to either would abandon the page they left.
+  const usable = tabs.filter((t) => t.id != null && t.url && !isRestricted(t.url));
   return (
     usable.find((t) => t.active) ??
     usable.find((t) => t.id === lastSeenId) ??
@@ -150,9 +152,26 @@ export async function refreshActiveTab(): Promise<void> {
  */
 export function watchActiveTab(onChange: () => void): () => void {
   const recheck = () => void refreshActiveTab().then(onChange);
-  const activated = () => recheck();
-  const updated = (id: number, info: chrome.tabs.TabChangeInfo) => {
-    if (id === page.tabId && (info.url || info.title)) recheck();
+  const activated = (info: chrome.tabs.TabActiveInfo) => {
+    // Remember the tab the event named, not whatever is active by the time a
+    // query comes back: activating two tabs in quick succession would
+    // otherwise resolve both queries against the last one.
+    void chrome.tabs
+      .get(info.tabId)
+      .then((t) => {
+        if (t?.url && !isRestricted(t.url)) lastContentTabId = info.tabId;
+      })
+      .catch(() => {})
+      .finally(recheck);
+  };
+  const updated = (id: number, info: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+    if (!info.url && !info.title) return;
+    // A link opened in a new tab activates while it is still blank and only
+    // then navigates, so the URL arrives on a tab that is not yet the one
+    // being described. Watching only the described tab misses it entirely —
+    // which leaves the pane answering about the page the user just left.
+    if (tab.active && tab.url && !isRestricted(tab.url)) lastContentTabId = id;
+    if (id === page.tabId || tab.active) recheck();
   };
   const removed = (id: number) => {
     if (id === page.tabId) recheck();

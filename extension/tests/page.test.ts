@@ -31,6 +31,16 @@ describe("chooseTab", () => {
     expect(chooseTab([pane(2)], null)).toBeNull();
   });
 
+  it("stays on the page when the user opens a blank tab", () => {
+    const tabs = [content(1, "https://a.example"), { id: 4, url: "about:blank", active: true }];
+    expect(chooseTab(tabs, 1)?.id).toBe(1);
+  });
+
+  it("ignores the browser's own pages", () => {
+    const tabs = [content(1, "https://a.example"), { id: 5, url: "brave://settings", active: true }];
+    expect(chooseTab(tabs, 1)?.id).toBe(1);
+  });
+
   it("ignores tabs whose URL Chrome withheld", () => {
     expect(chooseTab([{ id: 1 }, content(2, "https://b.example")], null)?.id).toBe(2);
   });

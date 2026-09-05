@@ -197,7 +197,11 @@
 .sk-switcher .foot a:hover { text-decoration: underline; }
 
 /* file picker (server-side) */
-.sk-file { grid-template-columns: 30px 1fr auto; }
+/* The name column keeps a floor and the path yields: a long directory in
+   .meta is an auto column that would otherwise squeeze the filename — the one
+   thing the row exists to show — down to nothing. */
+.sk-file { grid-template-columns: 30px minmax(140px, 1fr) minmax(0, auto); }
+.sk-file .meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sk-file .ft { display: inline-grid; place-items: center; width: 30px; height: 18px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: .02em; }
 .sk-file .ft.dir { background: transparent; color: var(--ink-2); } .sk-file .ft.dir .sk-ico { width: 15px; height: 15px; }
 

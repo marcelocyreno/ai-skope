@@ -376,6 +376,12 @@ func parseVersion(out string) string {
 			return strings.Trim(f, "(),")
 		}
 	}
+	// Nothing version-shaped. A long line, or one with no digit anywhere, is
+	// help text, a log line, or — for a tool with no --version at all — the
+	// first line of its actual output. None of that belongs in a version.
+	if len(line) > 40 || !strings.ContainsAny(line, "0123456789") {
+		return ""
+	}
 	return line
 }
 

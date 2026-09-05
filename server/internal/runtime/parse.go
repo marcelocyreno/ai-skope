@@ -21,13 +21,23 @@ func parseLine(line []byte) []Event {
 		return nil
 	}
 	if !strings.HasPrefix(trimmed, "{") {
-		// Plain-text output (agents that do not implement a JSON mode, or
-		// stray log lines) is still useful as answer text.
-		return []Event{{Kind: EventText, Text: trimmed + "\n"}}
+		// Plain-text output (agents with no JSON mode, or a stray log line) is
+		// still useful as answer text — but as a chunk, never a delta. A delta
+		// tells the caller this runtime streams token by token, and it then
+		// discards the structured text that follows as duplicated. One stray
+		// warning on stdout would otherwise swallow the whole answer.
+		return []Event{{Kind: EventTextChunk, Text: trimmed + "\n"}}
 	}
 	var raw map[string]any
 	if err := json.Unmarshal([]byte(trimmed), &raw); err != nil {
-		return []Event{{Kind: EventText, Text: trimmed + "\n"}}
+		// A line opening with a quoted key is a JSON frame that arrived split
+		// or truncated, never prose. Showing it would put the agent's wire
+		// format in the middle of the answer. A line that merely starts with a
+		// brace — a stray `{` from a code block — is still text.
+		if strings.HasPrefix(trimmed, `{"`) {
+			return nil
+		}
+		return []Event{{Kind: EventTextChunk, Text: trimmed + "\n"}}
 	}
 	return parseObject(raw)
 }
