@@ -1,0 +1,225 @@
+# AI Skope — everything you need to build, test and run the two halves.
+#
+#   task            list the targets
+#   task up         build both halves, start the server, print a pairing code
+#   task test       everything that does not cost tokens
+version: "3"
+
+vars:
+  SERVER: "{{.TASKFILE_DIR}}/server"
+  EXT: "{{.TASKFILE_DIR}}/extension"
+  DESIGN: "{{.TASKFILE_DIR}}/design"
+  AISS: "{{.TASKFILE_DIR}}/server/aiss"
+
+tasks:
+  default:
+    desc: List the available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  # ---------------------------------------------------------------- build ---
+
+  build:
+    desc: Build the server and the extension
+    deps: [build:server, build:extension]
+
+  build:server:
+    desc: Build the aiss binary
+    dir: "{{.SERVER}}"
+    sources: ["**/*.go", "go.mod", "go.sum"]
+    generates: ["aiss"]
+    cmds:
+      - make build
+
+  build:extension:
+    desc: Build the unpacked extension into extension/dist
+    dir: "{{.EXT}}"
+    cmds:
+      - "[ -d node_modules ] || npm install"
+      - npm run build
+
+  build:design:
+    desc: Rebuild the design kit and the interactive prototype
+    dir: "{{.DESIGN}}"
+    cmds:
+      - node build.mjs
+
+  install:
+    desc: Install aiss onto your PATH (go install)
+    dir: "{{.SERVER}}"
+    cmds:
+      - make install
+
+  # ------------------------------------------------------------- run/stop ---
+
+  up:
+    desc: Build everything, start the server, and print a pairing code
+    deps: [build]
+    cmds:
+      - task: start
+      - task: pair
+
+  start:
+    desc: Start the server in the background
+    cmds:
+      - "{{.AISS}} start"
+
+  serve:
+    desc: Run the server in the foreground with debug logging
+    dir: "{{.SERVER}}"
+    cmds:
+      - make run
+
+  stop:
+    desc: Stop the server
+    cmds:
+      - "{{.AISS}} stop"
+
+  restart:
+    desc: Rebuild the server and restart it
+    cmds:
+      - "{{.AISS}} stop || true"
+      - task: build:server
+      - "{{.AISS}} start"
+
+  status:
+    desc: Is the server running, and what does it see
+    cmds:
+      - "{{.AISS}} status"
+
+  doctor:
+    desc: Check the installation and explain what to fix
+    cmds:
+      - "{{.AISS}} doctor"
+
+  pair:
+    desc: Print a one-time pairing code for the browser
+    cmds:
+      - "{{.AISS}} pair"
+
+  logs:
+    desc: Follow the server log
+    cmds:
+      - "{{.AISS}} logs -f"
+
+  folder:
+    desc: 'Allow a folder: task folder -- ~/dev'
+    cmds:
+      - "{{.AISS}} folders add {{.CLI_ARGS}} --watch"
+
+  models:
+    desc: List the models the switcher offers
+    cmds:
+      - "{{.AISS}} models"
+
+  runtimes:
+    desc: Detect the coding agents installed on this machine
+    cmds:
+      - "{{.AISS}} runtimes detect"
+
+  # ----------------------------------------------------------------- test ---
+
+  test:
+    desc: Every test that costs nothing (server, extension, both end to end)
+    cmds:
+      - task: test:server
+      - task: test:extension
+      - task: e2e:server
+      - task: e2e:extension
+
+  test:server:
+    desc: Server unit and integration tests
+    dir: "{{.SERVER}}"
+    cmds:
+      - go test ./...
+
+  test:extension:
+    desc: Extension unit tests and typecheck
+    dir: "{{.EXT}}"
+    cmds:
+      - "[ -d node_modules ] || npm install"
+      - npx vue-tsc --noEmit
+      - npx vitest run
+
+  race:
+    desc: Server tests under the race detector
+    dir: "{{.SERVER}}"
+    cmds:
+      - go test -race ./...
+
+  e2e:server:
+    desc: End to end against a real server with a fake agent (no network)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/e2e.sh
+
+  e2e:extension:
+    desc: End to end in a real browser against a real server
+    deps: [build:extension]
+    dir: "{{.EXT}}"
+    cmds:
+      - npx playwright test
+
+  # These call real models: they need the agent installed and authenticated,
+  # and they cost tokens.
+  real:
+    desc: Drive every installed agent through a real turn (costs tokens)
+    cmds:
+      - task: real:claude
+      - task: real:pi
+      - task: real:omp
+      - task: real:opencode
+
+  real:claude:
+    desc: A real turn through Claude Code with Sonnet (costs tokens)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/real-agent.sh claude-code sonnet "" low
+
+  real:pi:
+    desc: A real turn through pi with z.ai GLM 5.3 Flash (costs tokens)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/real-agent.sh pi glm-5.3-flash zai low
+
+  real:omp:
+    desc: A real turn through omp with z.ai GLM 5.3 Flash (costs tokens)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/real-agent.sh omp glm-5.3-flash zai low
+
+  real:opencode:
+    desc: A real turn through opencode with GLM 5.3 (costs tokens)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/real-agent.sh opencode glm-5.3 zai-coding-plan
+
+  # ------------------------------------------------------------- housekeep ---
+
+  fmt:
+    desc: Format the Go source
+    dir: "{{.SERVER}}"
+    cmds:
+      - gofmt -w .
+
+  vet:
+    desc: go vet
+    dir: "{{.SERVER}}"
+    cmds:
+      - go vet ./...
+
+  clean:
+    desc: Remove build output
+    cmds:
+      - rm -rf "{{.EXT}}/dist" "{{.EXT}}/test-results" "{{.EXT}}/playwright-report"
+      - rm -f "{{.AISS}}"
+
+  reset:
+    desc: Delete the server's database, config and logs — everything it stores
+    prompt: This deletes your chats, notes, folders and pairings. Continue?
+    cmds:
+      - "{{.AISS}} stop || true"
+      - rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/ai-skope"
+      - rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/ai-skope"
+      - rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/ai-skope"

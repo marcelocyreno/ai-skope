@@ -135,8 +135,18 @@ export const test = base.extend<{ harness: Harness }>({
     // sha256 of the absolute path, first 32 hex digits mapped 0->a … f->p.
     const extensionId = unpackedExtensionId(loadDir);
 
+    // From here on any failure must still stop the server, or a broken setup
+    // leaves an aiss process running for the rest of the session.
     const panel = await context.newPage();
-    await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    try {
+      await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
+    } catch (err) {
+      await context.close().catch(() => {});
+      fixtures.close();
+      server.kill("SIGKILL");
+      rmSync(work, { recursive: true, force: true });
+      throw err;
+    }
 
     // Point the panel at this run's server before anything else happens.
     await panel.evaluate(

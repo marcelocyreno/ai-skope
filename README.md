@@ -17,23 +17,44 @@ provider API keys are supported as a secondary source.
 |---|---|
 | `design/` | The visual design system: tokens, six palettes, 20 component previews, 12 screens, and an interactive prototype (`design/preview/ai-skope.html`). Start there. |
 | `docs/SPEC.md` | The product as specified so far: anatomy, context types, chats & history rules, model-source hierarchy, settings tiers, visual system, implementation assumptions, open questions. |
-| `server/` | The **AI Skope Server** (`aiss`), written in Go: HTTP + SSE API, runtime adapters, provider keychain, folder allow-list and file index, chats and notes. Built and tested, including an end-to-end script. |
+| `extension/` | The **Chrome extension**: Vue 3 + TypeScript, MV3, Chrome Side Panel. The AI Pane, the element picker and selection toolbar, the local-file picker, notes, history and the options page. |
+| `server/` | The **AI Skope Server** (`aiss`), written in Go: HTTP + SSE API, runtime adapters, provider keychain, folder allow-list and file index, chats and notes. |
 | `docs/SERVER-PLAN.md` | The plan the server was built from: architecture, security model, v1 API, milestones. |
 | `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |
+
+## Try it
+
+```
+cd server && make build && ./aiss start   # start the server
+./aiss folders add ~/dev --watch          # let it read a folder
+./aiss pair                               # note the 8-character code
+
+cd ../extension && npm install && npm run build
+```
+
+Then in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** →
+choose `extension/dist`. Click the AI Skope icon (or ⌘⇧A), enter the code, and
+ask about the page you are on.
 
 ## Status
 
 - **Wave 1 — visual design:** complete (`design/`).
-- **Wave 2 — the server:** complete (`server/`). API, runtimes, providers,
-  files, chats and notes, with unit, integration and end-to-end tests. The
-  exact command line of each real coding agent still needs verifying against
-  installed versions — see `docs/runtimes/COMPAT.md`.
-- **Next — the extension:** not started. `docs/SPEC.md` carries the decisions.
+- **Wave 2 — the server:** complete (`server/`).
+- **Wave 3 — the extension:** complete (`extension/`).
+
+All four coding agents installed here have been driven end to end for real —
+Claude Code with Sonnet, pi and omp with z.ai GLM 5.3 Flash, opencode with
+GLM 5.3 — attaching a picked element and a local file and streaming the answer
+back. `docs/runtimes/COMPAT.md` records the exact invocation and output shape
+of each. Codex is still unverified: it is not installed on this machine.
+
+Everything is driven from the `Taskfile.yml` at the root:
 
 ```
-cd design && node build.mjs        # rebuild the design kit and prototype
-open design/preview/ai-skope.html
-
-cd server && make test && make e2e # server tests, then a live end-to-end run
-make build && ./aiss start && ./aiss pair
+task              # list every target
+task up           # build both halves, start the server, print a pairing code
+task test         # server + extension, unit through end-to-end (no tokens)
+task real         # drive every installed agent through a real turn (costs tokens)
+task doctor       # check the installation and explain what to fix
+task folder -- ~/dev
 ```

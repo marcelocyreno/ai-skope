@@ -22,10 +22,13 @@ export XDG_STATE_HOME="$WORK/state"
 export AISS_PORT="$PORT"
 export AISS_KEYSTORE=file          # never touch the developer's real keychain
 
+PROVIDER_STUB_PID=""
 cleanup() {
   "$WORK/aiss" stop >/dev/null 2>&1 || true
   sleep 0.3
   pkill -f "$WORK/aiss" >/dev/null 2>&1 || true
+  # The stub provider would otherwise outlive the run and keep the pipe open.
+  [ -n "$PROVIDER_STUB_PID" ] && kill "$PROVIDER_STUB_PID" >/dev/null 2>&1
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -199,7 +202,7 @@ expect_eq "note deleted" "$(api GET /v1/notes | jq_ 'len(d["notes"])')" "0"
 
 say "Providers (server-held keys)"
 FAKE_API="$WORK/provider.log"
-python3 - "$WORK/port.txt" <<'PY' &
+python3 - "$WORK/port.txt" >/dev/null 2>&1 <<'PY' &
 import http.server, json, socketserver, sys, threading
 class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -211,6 +214,7 @@ with socketserver.TCPServer(("127.0.0.1", 0), H) as srv:
     open(sys.argv[1], "w").write(str(srv.server_address[1]))
     srv.serve_forever()
 PY
+PROVIDER_STUB_PID=$!
 for i in $(seq 1 40); do [ -s "$WORK/port.txt" ] && break; sleep 0.1; done
 PPORT="$(cat "$WORK/port.txt")"
 PROV="$(api POST /v1/providers "{\"kind\":\"openai-compatible\",\"name\":\"z.ai\",\"baseUrl\":\"http://127.0.0.1:$PPORT\",\"key\":\"zai-secret-value\",\"availableTo\":[\"pi\",\"opencode\"]}")"
