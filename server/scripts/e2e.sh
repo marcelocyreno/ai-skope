@@ -244,5 +244,14 @@ say "Shutdown"
 sleep 0.5
 expect_eq "the server is gone" "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/v1/health" 2>/dev/null)" "000"
 
+# The privacy policy promises this command deletes everything the server holds,
+# so the promise is checked rather than assumed.
+say "Reset"
+check "the database exists before the reset" "$([ -f "$XDG_DATA_HOME/ai-skope/aiss.db" ] && echo yes)"
+"$WORK/aiss" reset --yes >/dev/null 2>&1
+check "the data directory is gone"   "$([ ! -d "$XDG_DATA_HOME/ai-skope" ] && echo yes)"
+check "the config directory is gone" "$([ ! -d "$XDG_CONFIG_HOME/ai-skope" ] && echo yes)"
+check "the log directory is gone"    "$([ ! -d "$XDG_STATE_HOME/ai-skope" ] && echo yes)"
+
 printf '\n\033[1m%d passed, %d failed\033[0m\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

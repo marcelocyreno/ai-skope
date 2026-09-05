@@ -35,6 +35,7 @@ Usage:
   aiss models [--set RUNTIME MODEL]
   aiss logs [--tail N]
   aiss config <show|set KEY VALUE>
+  aiss reset [--yes]             Delete everything it stores, keys included
   aiss version
 
 Everything lives under:
@@ -74,6 +75,8 @@ func Main(args []string) int {
 		err = cmdLogs(rest)
 	case "config":
 		err = cmdConfig(rest)
+	case "reset":
+		err = cmdReset(rest)
 	case "version", "--version", "-v":
 		fmt.Println("aiss", version.String())
 	case "help", "--help", "-h":

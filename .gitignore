@@ -17,3 +17,6 @@ node_modules/
 
 # Store upload packages (regenerate with: task store:package)
 /store/*.zip
+
+# go-task build cache
+/.task/

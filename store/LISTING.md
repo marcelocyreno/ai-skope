@@ -12,7 +12,7 @@ at 1280×800, regenerate with `task store:shots`).
 
 Upload `store/ai-skope-<version>.zip`, built by `task store:package` — a zip of
 the *contents* of `extension/dist`, manifest at the root, no source maps,
-around 260 KB.
+around 80 KB.
 
 Before the first upload, confirm in `extension/manifest.json`:
 

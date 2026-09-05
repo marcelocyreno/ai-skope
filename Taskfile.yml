@@ -295,7 +295,4 @@ tasks:
     desc: Delete the server's database, config and logs — everything it stores
     prompt: This deletes your chats, notes, folders and pairings. Continue?
     cmds:
-      - "{{.AISS}} stop || true"
-      - rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/ai-skope"
-      - rm -rf "${XDG_CONFIG_HOME:-$HOME/.config}/ai-skope"
-      - rm -rf "${XDG_STATE_HOME:-$HOME/.local/state}/ai-skope"
+      - "{{.AISS}} reset --yes"

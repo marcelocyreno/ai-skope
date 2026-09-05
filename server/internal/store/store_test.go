@@ -165,7 +165,7 @@ func TestFileSearch(t *testing.T) {
 
 func TestProvidersAndFolders(t *testing.T) {
 	db := newTestDB(t)
-	p := Provider{ID: NewID(), Kind: "zai", Name: "z.ai", KeyMasked: "zai-…c21e", AvailableTo: []string{"pi", "opencode"}}
+	p := Provider{ID: NewID(), Kind: "zai", Name: "z.ai", KeyMasked: "zai-…0000", AvailableTo: []string{"pi", "opencode"}}
 	if err := db.SaveProvider(p); err != nil {
 		t.Fatal(err)
 	}

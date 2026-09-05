@@ -554,3 +554,71 @@ func cmdConfig(args []string) error {
 		return fmt.Errorf("unknown config subcommand %q", sub)
 	}
 }
+
+// cmdReset deletes everything the server has stored on this computer.
+//
+// The privacy policy promises this, and a promise to delete has to include the
+// provider keys: those live in the OS keychain rather than under the data
+// directory, so removing the database alone would orphan them there for good.
+func cmdReset(args []string) error {
+	yes := false
+	for _, a := range args {
+		if a == "--yes" || a == "-y" {
+			yes = true
+		}
+	}
+
+	dirs := []string{config.DataDir(), config.ConfigDir(), config.StateDir()}
+	if !yes {
+		fmt.Println("This deletes everything AI Skope Server holds on this computer:")
+		fmt.Println("  chats, notes and the file index")
+		fmt.Println("  allowed folders, runtimes and settings")
+		fmt.Println("  provider keys, including those in the OS keychain")
+		fmt.Println()
+		for _, d := range dirs {
+			fmt.Println("  " + d)
+		}
+		fmt.Print("\nType 'delete' to confirm: ")
+		in, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		if strings.TrimSpace(in) != "delete" {
+			fmt.Println("nothing was deleted")
+			return nil
+		}
+	}
+
+	// A running server holds the database open and would write it back out
+	// after the file was removed.
+	if _, err := os.Stat(config.PIDFile()); err == nil {
+		if err := cmdStop(); err != nil {
+			fmt.Fprintln(os.Stderr, "aiss: could not stop the server:", err)
+		}
+	}
+
+	// Best effort: a keychain that will not open must not stop the rest of the
+	// deletion, but the user has to be told what was left behind. Nothing to
+	// clear if there is no database — and opening one would create it.
+	if _, err := os.Stat(config.DBFile()); err == nil {
+		if db, err := openDB(); err == nil {
+			keys := provider.NewKeystore(config.StateDir())
+			if list, err := db.Providers(); err == nil {
+				for _, p := range list {
+					if p.KeyRef == "" {
+						continue
+					}
+					if err := keys.Delete(p.KeyRef); err != nil {
+						fmt.Fprintf(os.Stderr, "aiss: could not remove the key for %s: %v\n", p.ID, err)
+					}
+				}
+			}
+			_ = db.Close()
+		}
+	}
+
+	for _, d := range dirs {
+		if err := os.RemoveAll(d); err != nil {
+			return fmt.Errorf("removing %s: %w", d, err)
+		}
+	}
+	fmt.Println("aiss reset — everything it stored is gone")
+	return nil
+}

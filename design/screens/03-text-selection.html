@@ -219,10 +219,19 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-ai-head { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-family: var(--font-ui); font-size: var(--t-11); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .sk-ai-head .sk-ico { width: 13px; height: 13px; color: var(--ink-2); }
 .sk-ai-body { font-size: var(--t-14); line-height: var(--lh-body); color: var(--ink); max-width: 62ch; overflow-wrap: anywhere; }
-.sk-ai-body p { margin: 0; } .sk-ai-body p + p, .sk-ai-body ul + p, .sk-ai-body p + ul { margin-top: 8px; }
-.sk-ai-body ul { margin: 0; padding-left: 18px; } .sk-ai-body li + li { margin-top: 3px; }
+.sk-ai-body > * { margin: 0; } .sk-ai-body > * + * { margin-top: 8px; }
+.sk-ai-body ul, .sk-ai-body ol { padding-left: 18px; } .sk-ai-body li + li { margin-top: 3px; }
+.sk-ai-body li > ul, .sk-ai-body li > ol { margin-top: 3px; }
+.sk-ai-body h3, .sk-ai-body h4, .sk-ai-body h5, .sk-ai-body h6 { font-size: var(--t-13); font-weight: 600; }
+.sk-ai-body h3 { font-size: var(--t-14); }
+.sk-ai-body > * + h3, .sk-ai-body > * + h4 { margin-top: 12px; }
 .sk-ai-body code { font-size: var(--t-12); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line-2); }
+.sk-ai-body pre { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line-2); overflow-x: auto; }
+.sk-ai-body pre code { padding: 0; border: 0; background: none; white-space: pre; }
+.sk-ai-body blockquote { padding-left: 10px; border-left: 2px solid var(--line); color: var(--ink-2); }
+.sk-ai-body hr { height: 1px; border: 0; background: var(--line-2); }
 .sk-ai-body strong { font-weight: 600; }
+.sk-ai-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .sk-time { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); opacity: 0; transition: opacity var(--dur) var(--ease); }
 .sk-msg:hover .sk-time, .sk-msg:focus-within .sk-time { opacity: 1; }
 .sk-msg-ctx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
@@ -334,7 +343,11 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-switcher .foot a:hover { text-decoration: underline; }
 
 /* file picker (server-side) */
-.sk-file { grid-template-columns: 30px 1fr auto; }
+/* The name column keeps a floor and the path yields: a long directory in
+   .meta is an auto column that would otherwise squeeze the filename — the one
+   thing the row exists to show — down to nothing. */
+.sk-file { grid-template-columns: 30px minmax(140px, 1fr) minmax(0, auto); }
+.sk-file .meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sk-file .ft { display: inline-grid; place-items: center; width: 30px; height: 18px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: .02em; }
 .sk-file .ft.dir { background: transparent; color: var(--ink-2); } .sk-file .ft.dir .sk-ico { width: 15px; height: 15px; }
 
@@ -1146,8 +1159,8 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
   </article>
   <article class="sk-note">
-    <div class="src"><span class="fav" style="background:#635BFF">S</span><span class="ttl">Usage-based billing — Stripe Docs</span><span class="url">docs.stripe.com/billing/subscriptions/usage-based</span><span class="when">Yesterday</span></div>
-    <blockquote class="sk-quote">Report usage to Stripe throughout the billing period; the invoice is generated at the end of the period from the total.</blockquote>
+    <div class="src"><span class="fav" style="background:#3A6EA5">N</span><span class="ttl">Usage-based billing — Northwind Docs</span><span class="url">docs.northwind.example/billing/usage-based</span><span class="when">Yesterday</span></div>
+    <blockquote class="sk-quote">Report usage throughout the billing period; the invoice is generated at the end of the period from the total.</blockquote>
     <div class="txt"><p>Compare with Northwind's "never billed automatically" policy when we write our own overage terms.</p></div>
     <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
   </article>
@@ -1358,7 +1371,7 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="sk-form" data-view="provider">
   <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
   <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
-  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-0000•••••••••••••••••••••••••••0000" aria-label="API key"></label>
   <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
   <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
 </div>
@@ -1432,7 +1445,7 @@ html, body { background: #202429; color: #C9D0D8; }
         <p class="lead">Keys stored by the server on this computer; the extension never sees them. Each provider is offered to the runtimes you choose.</p>
         <div class="sk-tablewrap"><table class="sk-table">
           <thead><tr><th>Provider</th><th>Key</th><th>Available to</th><th>Models</th><th></th></tr></thead>
-          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-8f3a…c21e</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…7Kd0</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
+          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-0000…0000</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…0000</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
         </table></div>
         <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm" data-role="options-add-source"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add a source</button></div>
         <h3 style="margin-top:20px">Direct API keys</h3>
@@ -1493,7 +1506,7 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="sk-form" data-view="provider">
   <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
   <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
-  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-0000•••••••••••••••••••••••••••0000" aria-label="API key"></label>
   <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
   <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
 </div>
@@ -1701,8 +1714,8 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
   </article>
   <article class="sk-note">
-    <div class="src"><span class="fav" style="background:#635BFF">S</span><span class="ttl">Usage-based billing — Stripe Docs</span><span class="url">docs.stripe.com/billing/subscriptions/usage-based</span><span class="when">Yesterday</span></div>
-    <blockquote class="sk-quote">Report usage to Stripe throughout the billing period; the invoice is generated at the end of the period from the total.</blockquote>
+    <div class="src"><span class="fav" style="background:#3A6EA5">N</span><span class="ttl">Usage-based billing — Northwind Docs</span><span class="url">docs.northwind.example/billing/usage-based</span><span class="when">Yesterday</span></div>
+    <blockquote class="sk-quote">Report usage throughout the billing period; the invoice is generated at the end of the period from the total.</blockquote>
     <div class="txt"><p>Compare with Northwind's "never billed automatically" policy when we write our own overage terms.</p></div>
     <div class="acts"><button class="sk-iconbtn sm" aria-label="Copy note"><svg class="sk-ico" aria-hidden="true"><use href="#i-copy"/></svg></button><button class="sk-iconbtn sm" aria-label="Open source page"><svg class="sk-ico" aria-hidden="true"><use href="#i-external"/></svg></button><button class="sk-iconbtn sm" aria-label="Delete note"><svg class="sk-ico" aria-hidden="true"><use href="#i-trash"/></svg></button></div>
   </article>
@@ -1913,7 +1926,7 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="sk-form" data-view="provider">
   <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
   <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
-  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-0000•••••••••••••••••••••••••••0000" aria-label="API key"></label>
   <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
   <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
 </div>
@@ -1987,7 +2000,7 @@ html, body { background: #202429; color: #C9D0D8; }
         <p class="lead">Keys stored by the server on this computer; the extension never sees them. Each provider is offered to the runtimes you choose.</p>
         <div class="sk-tablewrap"><table class="sk-table">
           <thead><tr><th>Provider</th><th>Key</th><th>Available to</th><th>Models</th><th></th></tr></thead>
-          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-8f3a…c21e</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…7Kd0</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
+          <tbody><tr><td><b>z.ai</b></td><td class="mono">zai-0000…0000</td><td><span class="mono">pi · opencode</span></td><td>4 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>fireworks.ai</b></td><td class="mono">fw-…0000</td><td><span class="mono">pi · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr><tr><td><b>ollama</b></td><td class="mono">http://localhost:11434</td><td><span class="mono">pi · omp · opencode</span></td><td>2 models</td><td><button type="button" class="sk-btn secondary sm">Edit</button></td></tr></tbody>
         </table></div>
         <div class="sk-row" style="border:0"><button type="button" class="sk-btn primary sm" data-role="options-add-source"><svg class="sk-ico" aria-hidden="true"><use href="#i-plus"/></svg>Add a source</button></div>
         <h3 style="margin-top:20px">Direct API keys</h3>
@@ -2048,7 +2061,7 @@ html, body { background: #202429; color: #C9D0D8; }
     <div class="sk-form" data-view="provider">
   <div class="sk-callout"><svg class="sk-ico" aria-hidden="true"><use href="#i-server"/></svg><span>The key is stored by the <b>AI Skope Server</b> on this computer. The extension never sees it — runtimes use it when they answer.</span></div>
   <label class="lbl">Provider<span class="sk-selectwrap"><select class="sk-select" aria-label="Provider"><option>z.ai</option><option>fireworks.ai</option><option>OpenRouter</option><option>Groq</option><option>Together</option><option>Custom (OpenAI-compatible)</option></select><svg class="sk-ico" aria-hidden="true"><use href="#i-chevron-down"/></svg></span></label>
-  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-8f3a•••••••••••••••••••••••••••c21e" aria-label="API key"></label>
+  <label class="lbl">API key<input class="sk-input mono" type="text" value="zai-0000•••••••••••••••••••••••••••0000" aria-label="API key"></label>
   <div class="lbl" style="font-family:var(--font-ui);font-weight:600;font-size:12px;color:var(--ink-2)">Available to<div class="sk-chks" style="margin-top:5px"><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-pi"/></svg>pi</button><button type="button" class="sk-chk" aria-pressed="false"><svg class="sk-ico" aria-hidden="true"><use href="#r-omp"/></svg>omp</button><button type="button" class="sk-chk" aria-pressed="true"><svg class="sk-ico" aria-hidden="true"><use href="#r-opencode"/></svg>opencode</button></div></div>
   <div class="sk-found"><div class="hd"><span class="sk-dot"></span>Key works · 4 models found</div><div class="list"><span>GLM 5.3</span><span>GLM 5.3 Flash</span><span>GLM 4.6</span><span>GLM 4.6 Air</span></div></div>
 </div>
@@ -2459,7 +2472,7 @@ html, body { background: #202429; color: #C9D0D8; }
       { id: 1, title: "Is the Growth plan enough for about 40M events a month?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Opus 5", glyph: "r-claude-code", count: 4, when: "14:05", html: el.thread.innerHTML },
       { id: 2, title: "What counts as an event?", url: PAGE.url, host: PAGE.host, fav: "N", favBg: "", model: "Haiku 4.5", glyph: "r-claude-code", count: 2, when: "13:40", html: seedThread("What counts as an event?", "Any call to track(), plus page views and identify calls. Internal system events and failed requests are not billed — that's from the FAQ on this page.", "Haiku 4.5") },
       { id: 3, title: "How do identify calls dedupe across devices?", url: "northwind.example/docs/identify", host: PAGE.host, fav: "N", favBg: "", model: "Sonnet 5", glyph: "r-claude-code", count: 6, when: "Yesterday", html: seedThread("How do identify calls dedupe across devices?", "The docs say identities merge on the first shared trait — usually email — and earlier anonymous events are re-attributed within 24 hours.", "Sonnet 5") },
-      { id: 4, title: "Metered billing vs. tiered — which fits us?", url: "docs.stripe.com/billing/subscriptions/usage-based", host: "docs.stripe.com", fav: "S", favBg: "#635BFF", model: "Opus 5", glyph: "r-claude-code", count: 8, when: "Yesterday", html: seedThread("Metered billing vs. tiered — which fits us?", "Tiered if you want predictable invoices and a published price list; metered if usage swings month to month. Stripe supports both on one subscription.", "Opus 5") },
+      { id: 4, title: "Metered billing vs. tiered — which fits us?", url: "docs.northwind.example/billing/usage-based", host: "docs.northwind.example", fav: "N", favBg: "#3A6EA5", model: "Opus 5", glyph: "r-claude-code", count: 8, when: "Yesterday", html: seedThread("Metered billing vs. tiered — which fits us?", "Tiered if you want predictable invoices and a published price list; metered if usage swings month to month. Most billing platforms support both on one subscription.", "Opus 5") },
       { id: 5, title: "Explain this diff to me", url: "github.com/northwind/ingest/pull/412", host: "github.com", fav: "G", favBg: "#57606A", model: "GPT-5", glyph: "r-codex", count: 3, when: "Mon", html: seedThread("Explain this diff to me", "It moves event batching from the client to the edge worker and adds a 250 ms flush window. The risk is ordering across retries.", "GPT-5") },
       { id: 6, title: "Summarize the thread", url: "news.ycombinator.com/item?id=41012", host: "news.ycombinator.com", fav: "Y", favBg: "#F26522", model: "qwen3 8B", glyph: "r-pi", count: 2, when: "Mon", html: seedThread("Summarize the thread", "Mostly people comparing self-hosted analytics to hosted ones; the recurring point is retention cost, not features.", "qwen3 8B") },
       { id: 7, title: "What does the export section of this README say?", url: "~/dev/finme/README.md", host: "local file", fav: "MD", favBg: "#3B6EA5", model: "Opus 5", glyph: "r-claude-code", count: 2, when: "Tue", html: seedThread("What does the export section of this README say?", "It documents a CSV and a JSON export per statement month, written to ~/.finme/export, and notes that the JSON is the source of truth for re-imports.", "Opus 5") },
