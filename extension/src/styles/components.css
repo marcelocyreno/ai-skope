@@ -73,10 +73,19 @@
 .sk-ai-head { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-family: var(--font-ui); font-size: var(--t-11); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .sk-ai-head .sk-ico { width: 13px; height: 13px; color: var(--ink-2); }
 .sk-ai-body { font-size: var(--t-14); line-height: var(--lh-body); color: var(--ink); max-width: 62ch; overflow-wrap: anywhere; }
-.sk-ai-body p { margin: 0; } .sk-ai-body p + p, .sk-ai-body ul + p, .sk-ai-body p + ul { margin-top: 8px; }
-.sk-ai-body ul { margin: 0; padding-left: 18px; } .sk-ai-body li + li { margin-top: 3px; }
+.sk-ai-body > * { margin: 0; } .sk-ai-body > * + * { margin-top: 8px; }
+.sk-ai-body ul, .sk-ai-body ol { padding-left: 18px; } .sk-ai-body li + li { margin-top: 3px; }
+.sk-ai-body li > ul, .sk-ai-body li > ol { margin-top: 3px; }
+.sk-ai-body h3, .sk-ai-body h4, .sk-ai-body h5, .sk-ai-body h6 { font-size: var(--t-13); font-weight: 600; }
+.sk-ai-body h3 { font-size: var(--t-14); }
+.sk-ai-body > * + h3, .sk-ai-body > * + h4 { margin-top: 12px; }
 .sk-ai-body code { font-size: var(--t-12); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line-2); }
+.sk-ai-body pre { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line-2); overflow-x: auto; }
+.sk-ai-body pre code { padding: 0; border: 0; background: none; white-space: pre; }
+.sk-ai-body blockquote { padding-left: 10px; border-left: 2px solid var(--line); color: var(--ink-2); }
+.sk-ai-body hr { height: 1px; border: 0; background: var(--line-2); }
 .sk-ai-body strong { font-weight: 600; }
+.sk-ai-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .sk-time { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); opacity: 0; transition: opacity var(--dur) var(--ease); }
 .sk-msg:hover .sk-time, .sk-msg:focus-within .sk-time { opacity: 1; }
 .sk-msg-ctx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }

@@ -5,6 +5,7 @@
  */
 import { computed } from "vue";
 import type { Message } from "@/api/types";
+import { renderMarkdown, renderPlain, withCursor } from "@/pane/markdown";
 import ContextChip from "./ContextChip.vue";
 import Icon from "./Icon.vue";
 
@@ -15,8 +16,16 @@ const time = computed(() =>
   new Date(props.message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
 );
 
-/** Paragraphs, so a long answer is readable without a Markdown renderer. */
-const paragraphs = computed(() => props.message.text.split(/\n{2,}/).filter(Boolean));
+/** What the user typed, kept literal — only its line breaks are honoured. */
+const asked = computed(() => renderPlain(props.message.text));
+
+const CURSOR = '<span class="sk-cursor"></span>';
+
+/** Answers arrive as Markdown; see markdown.ts for why nothing is parsed as HTML. */
+const answer = computed(() => {
+  const html = renderMarkdown(props.message.text);
+  return props.streaming ? withCursor(html, CURSOR) : html;
+});
 </script>
 
 <template>
@@ -24,9 +33,7 @@ const paragraphs = computed(() => props.message.text.split(/\n{2,}/).filter(Bool
     <div v-if="message.context?.length" class="sk-msg-ctx">
       <ContextChip v-for="(item, i) in message.context" :key="i" :item="item" />
     </div>
-    <div class="sk-bubble">
-      <p v-for="(p, i) in paragraphs" :key="i">{{ p }}</p>
-    </div>
+    <div class="sk-bubble"><p v-html="asked"></p></div>
     <span class="sk-time">{{ time }}</span>
   </div>
 
@@ -42,12 +49,7 @@ const paragraphs = computed(() => props.message.text.split(/\n{2,}/).filter(Bool
       <template v-if="tool.detail"> · {{ tool.detail }}</template>
     </div>
 
-    <div v-if="message.text" class="sk-ai-body">
-      <p v-for="(p, i) in paragraphs" :key="i">
-        {{ p }}<span v-if="streaming && i === paragraphs.length - 1" class="sk-cursor" />
-      </p>
-    </div>
-    <div v-else-if="streaming" class="sk-ai-body"><p><span class="sk-cursor" /></p></div>
+    <div v-if="message.text || streaming" class="sk-ai-body" v-html="answer"></div>
 
     <div v-if="message.error" class="sk-err">
       <Icon id="i-alert" />

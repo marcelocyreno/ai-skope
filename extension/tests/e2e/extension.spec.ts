@@ -45,6 +45,14 @@ test("pairs with the server, then answers a question about the page", async ({ h
   await expect(panel.getByText(/Growth caps at 25M events/)).toBeVisible({ timeout: 30000 });
   // And the tool line the agent reported is shown.
   await expect(panel.getByText(/README\.md|Read/).first()).toBeVisible();
+
+  // The answer is Markdown, and reaches the transcript as real structure —
+  // not as literal asterisks and backticks.
+  const body = panel.locator(".sk-msg.ai .sk-ai-body").last();
+  await expect(body.locator("strong")).toHaveText("Limits");
+  await expect(body.locator("li")).toHaveCount(2);
+  await expect(body.locator("li code").first()).toHaveText("25M");
+  await expect(body).not.toContainText("**");
 });
 
 test("keeps the transcript, and undoes a delete", async ({ harness }) => {
