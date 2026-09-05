@@ -118,6 +118,42 @@ tasks:
     cmds:
       - "{{.AISS}} runtimes detect"
 
+  # -------------------------------------------------------------- browsers ---
+
+  brave:
+    desc: 'Open brave://extensions with the dist path copied, ready for Load unpacked'
+    deps: [build:extension]
+    silent: true
+    cmds:
+      - printf '%s' "{{.EXT}}/dist" | pbcopy
+      - |
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" "brave://extensions/" >/dev/null 2>&1 &
+      - |
+        echo
+        echo "The path is on your clipboard:"
+        echo "  {{.EXT}}/dist"
+        echo
+        echo "In the tab that just opened:"
+        echo "  1. turn on Developer mode (top right)"
+        echo "  2. Load unpacked"
+        echo "  3. paste the path (⌘⇧G in the file dialog, then ⌘V)"
+        echo
+        echo "That install persists. After a rebuild, press Reload on the card."
+
+  brave:flag:
+    desc: 'Restart Brave with the extension loaded (no clicks, but only for this launch)'
+    deps: [build:extension]
+    prompt: This quits Brave and reopens it. Unsaved tabs restore only if Brave is set to continue where you left off. Continue?
+    cmds:
+      - osascript -e 'tell application "Brave Browser" to quit' || true
+      - sleep 2
+      # Only --load-extension: --disable-extensions-except would switch off
+      # every other extension in the profile.
+      - |
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" --load-extension="{{.EXT}}/dist" >/dev/null 2>&1 &
+      - sleep 2
+      - echo "Brave restarted with AI Skope loaded (for this launch)."
+
   # ----------------------------------------------------------------- test ---
 
   test:
@@ -167,6 +203,7 @@ tasks:
     desc: Drive every installed agent through a real turn (costs tokens)
     cmds:
       - task: real:claude
+      - task: real:codex
       - task: real:pi
       - task: real:omp
       - task: real:opencode
@@ -176,6 +213,12 @@ tasks:
     dir: "{{.SERVER}}"
     cmds:
       - ./scripts/real-agent.sh claude-code sonnet "" low
+
+  real:codex:
+    desc: A real turn through Codex (costs tokens)
+    dir: "{{.SERVER}}"
+    cmds:
+      - ./scripts/real-agent.sh codex {{.CODEX_MODEL | default "gpt-5.5"}} "" low
 
   real:pi:
     desc: A real turn through pi with z.ai GLM 5.3 Flash (costs tokens)

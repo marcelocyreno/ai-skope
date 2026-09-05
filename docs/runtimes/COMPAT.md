@@ -4,7 +4,7 @@ The server drives coding agents through their non-interactive JSON modes. Those
 flags change between releases, so this file records what has been verified and
 against which version.
 
-Everything below was **verified end to end** on 2026-09-04 with
+Every runtime below was **verified end to end** on 2026-09-04 with
 `server/scripts/real-agent.sh`, which pairs a real server, attaches a picked
 element and a local file, streams a real answer, and asks a follow-up in the
 same agent session.
@@ -15,7 +15,7 @@ same agent session.
 | `pi` | 0.84.3 | `pi -p --mode json --tools read,grep,find,ls [--model P/M] [--session-id ID] [--thinking E]` | `--session-id <id>` | `--thinking off\|minimal\|low\|medium\|high\|xhigh\|max` | **verified** |
 | `omp` | 18.1.6 | `omp -p --mode json --no-tools [--model P/M] [--resume ID] [--thinking E]` | `--resume <id>` | `--thinking …\|auto` | **verified** |
 | `opencode` | 1.18.20 | `opencode run --format json [--model P/M] [--session ID] [--variant E]` | `--session <id>` | `--variant minimal\|low\|medium\|high\|max` | **verified** |
-| `codex` | — | `codex exec --json --sandbox read-only --skip-git-repo-check [--model M] [-c model_reasoning_effort=E] -` | `codex exec resume <id>` | `-c model_reasoning_effort=` | **assumed** — not installed here |
+| `codex` | 0.152.1 | `codex exec --json --sandbox read-only --skip-git-repo-check [--model M] [-c model_reasoning_effort=E] -` | `codex exec resume <id>` | `-c model_reasoning_effort=low\|medium\|high` | **verified** |
 | `custom:<name>` | — | whatever the user configures; must read the prompt on stdin | — | — | supported |
 
 ## What each agent's output looks like
@@ -35,6 +35,13 @@ turn. Each shape has a fake in `server/testdata/fakes/` and a case in
   `{"type":"message_update","assistantMessageEvent":{"type":"text_delta",…}}`,
   and usage on `turn_end.message.usage` as `{input, output}`.
   `thinking_*` events are the model reasoning to itself and are dropped.
+- **Codex** — `{"type":"thread.started","thread_id":…}`, then items:
+  `{"type":"item.completed","item":{"type":"agent_message","text":…}}`, with
+  errors as `{"type":"item.completed","item":{"type":"error","message":…}}` or
+  a bare `{"type":"error","message":"<json>"}`. Like opencode it returns the
+  answer **in one piece**. Its model list is fixed by the account: on a ChatGPT
+  plan only `gpt-5.5` was accepted, and `model_reasoning_effort=minimal` is
+  rejected, so `low` is the cheapest setting.
 - **opencode** — `{"type":"text","sessionID":…,"part":{"text":…}}` (note the
   `sessionID` casing), reasoning in its own parts, usage on
   `step_finish.part.tokens`. It returns the answer **in one piece**, not token
@@ -66,7 +73,10 @@ aiss doctor                                       # PATH, keychain, folders, ind
 ./scripts/real-agent.sh pi glm-5.3-flash zai low
 ./scripts/real-agent.sh omp glm-5.3-flash zai low
 ./scripts/real-agent.sh opencode glm-5.3 zai-coding-plan
+./scripts/real-agent.sh codex gpt-5.5 "" low
 ```
+
+Or through the Taskfile at the repository root: `task real` runs all five.
 
 `real-agent.sh` calls a real model, so it needs the agent installed and
 authenticated, and it costs tokens. `scripts/e2e.sh` covers the same ground

@@ -78,12 +78,18 @@ var Specs = []Spec{
 	},
 	{
 		ID: "codex", Name: "Codex", Bin: "codex",
-		VersionArgs:    []string{"--version"},
+		VersionArgs: []string{"--version"},
+		// Verified against codex-cli 0.152.1. On a ChatGPT account the model
+		// list is fixed by the plan — gpt-5.5 was the only one accepted here,
+		// and the cheap lever is model_reasoning_effort rather than a smaller
+		// model. An API-key account offers more, so this is a starting list,
+		// not a limit: any name the CLI accepts can be selected.
 		EffortLevels:   []string{"low", "medium", "high"},
 		PromptViaStdin: true,
 		Models: []store.Model{
-			{Name: "gpt-5-codex", Ctx: 400000},
-			{Name: "gpt-5", Ctx: 400000},
+			{Name: "gpt-5.5", Ctx: 400000},
+			{Name: "gpt-5.5-codex", Ctx: 400000},
+			{Name: "gpt-5.2-codex", Ctx: 400000},
 		},
 		Args: func(req TurnRequest) []string {
 			a := []string{"exec", "--json", "--sandbox", "read-only", "--skip-git-repo-check"}
