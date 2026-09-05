@@ -43,6 +43,10 @@ separate conversation per page.
 To `http://127.0.0.1` — AI Skope Server, on your own machine. That is the only
 network destination the extension contacts.
 
+(The settings page and the first-run screen contain ordinary links — to the
+install guide, and to documentation for the coding agents. Those open in a new
+tab when you click them. The extension itself makes no request to them.)
+
 The server then passes your question to whichever coding agent you configured:
 Claude Code, Codex, pi, omp or opencode. **That agent may send your question,
 and the page content attached to it, to whichever AI provider it is set up

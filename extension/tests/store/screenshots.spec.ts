@@ -190,10 +190,23 @@ test("captures the store screenshots", async ({ harness }) => {
   writeFileSync(join(outDir, "5-settings.png"), await options.screenshot({ type: "png" }));
   await options.close();
 
+  // ---- 6. the first run, before anything is installed ---------------------
+  // Last, because it needs the server stopped.
+  await harness.stopServer();
+  // Paired, this pane would say the server is merely stopped. The frame worth
+  // showing is what someone who has just installed the extension sees.
+  await panel.evaluate(async () => {
+    const cur = ((await chrome.storage.local.get("settings")).settings ?? {}) as Record<string, unknown>;
+    await chrome.storage.local.set({ settings: { ...cur, token: "" } });
+  });
+  await panel.reload();
+  await expect(panel.getByText("One thing left to install")).toBeVisible({ timeout: 30000 });
+  await shoot(context, pageTab, panel, "6-first-run", "northwind.example/pricing");
+
   // Every frame the listing needs, at the size the store wants.
   const sizes = execFileSync("sips", [
     "-g", "pixelWidth", "-g", "pixelHeight",
-    ...["1-answer", "2-picker", "3-selection", "4-files", "5-settings"].map((n) =>
+    ...["1-answer", "2-picker", "3-selection", "4-files", "5-settings", "6-first-run"].map((n) =>
       join(outDir, `${n}.png`),
     ),
   ]).toString();

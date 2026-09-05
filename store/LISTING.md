@@ -79,18 +79,27 @@ Page content is sent only when you pick something, select something, or answer y
 
 BEFORE YOU INSTALL
 
-This extension does nothing on its own. You need AI Skope Server running on the same computer, and at least one supported coding agent installed. Setup instructions: https://marcelocyreno.github.io/ai-skope/install
+This extension does nothing on its own. It needs AI Skope Server running on the same computer, and at least one supported coding agent already installed.
 
-Requires macOS or Linux for the server. Windows is not supported yet.
+On macOS and Linux, the server is one command:
+
+    brew install marcelocyreno/tap/aiss
+    aiss start
+
+Then pair the browser with the code from "aiss pair". Full instructions, including Linux and building from source: https://marcelocyreno.github.io/ai-skope/install
+
+Windows is not supported yet.
 
 OPEN SOURCE
 
 https://github.com/marcelocyreno/ai-skope
 ```
 
-> The last two sections are load-bearing. A user who installs this without the
-> server will find a pairing screen and nothing else, so the listing has to say
-> so before they click Add.
+> The last two sections are load-bearing. Someone who installs this without the
+> server finds a screen telling them to install it, and the listing has to say
+> so before they click Add rather than after. The install command is in the
+> description on purpose: a reader can judge in one glance whether this is a
+> thing they want to set up.
 
 ---
 
@@ -179,16 +188,26 @@ users.
 
 ## Screenshots
 
-Five frames in `screenshots/`, all 1280×800. Regenerate any time with
-`task store:shots`.
+Six frames in `screenshots/`, all 1280×800. Regenerate any time with
+`task store:shots`. **The store accepts five**, so one is spare.
 
-| File | Shows |
-|---|---|
-| `1-answer.png` | A grounded answer beside the page it is about |
-| `2-picker.png` | The reticle outlining an element, with its selector |
-| `3-selection.png` | The selection toolbar: add to chat, ask, save note |
-| `4-files.png` | The file picker searching folders the user allowed |
-| `5-settings.png` | Folders, providers and privacy settings |
+| File | Shows | |
+|---|---|---|
+| `1-answer.png` | A grounded answer beside the page it is about | use |
+| `2-picker.png` | The reticle outlining an element, with its selector | use |
+| `3-selection.png` | The selection toolbar: add to chat, ask, save note | use |
+| `4-files.png` | The file picker searching folders the user allowed | use |
+| `6-first-run.png` | What a new install shows: the one command that installs the server | use |
+| `5-settings.png` | Folders, providers and privacy settings | spare |
+
+Recommended five are marked. `6-first-run` earns its place ahead of the
+settings page because the single biggest risk with this extension is someone
+installing it without the server and concluding it is broken — showing them
+that screen *before* they install sets the expectation honestly, and the
+listing's "before you install" section says the same thing in words.
+
+Order them 1, 2, 3, 4, 6: answer first, because it is the product in one
+image.
 
 **The answers in these frames come from a scripted agent**, not a live model, so
 the frames are reproducible and shooting them costs nothing. That is normal for

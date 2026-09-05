@@ -49,6 +49,67 @@ body {
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
+/* The commands to run, on the screen that appears when no server answers.
+   Each is selectable and has a copy button: the reader is expected to get it
+   into a terminal, not to retype it. */
+.sk-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Full width: the longest command has to fit beside its copy button without
+     needing a scrollbar, and the pane is only 400px to begin with. */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sk-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sk-steps code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  text-align: left;
+  font-size: var(--t-12);
+  padding: 7px 9px;
+  border-radius: var(--r-ctl);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+}
+.sk-steps .cp {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-ctl);
+  background: transparent;
+  color: var(--ink-2);
+}
+.sk-steps .cp:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.sk-steps .cp .sk-ico {
+  width: 15px;
+  height: 15px;
+}
+
+.sk-connect a {
+  color: var(--focus);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
 .sk-connect p {
   margin: 0;
   color: var(--ink-2);

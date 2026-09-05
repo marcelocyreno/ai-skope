@@ -125,6 +125,30 @@ test("says what is wrong when the server goes away", async ({ harness }) => {
   ).toBeVisible({ timeout: 30000 });
   // And it offers the way back rather than leaving the user stuck.
   await expect(panel.getByRole("button", { name: "Try again" })).toBeVisible();
+  // This browser has paired, so the server exists and is merely stopped:
+  // telling this reader to install it would be wrong.
+  await expect(panel.getByText("aiss start")).toBeVisible();
+  await expect(panel.getByText(/brew install/)).toBeHidden();
+});
+
+test("tells a first-time reader how to install the server", async ({ harness }) => {
+  // Someone who installs from the store has never heard of aiss. Telling them
+  // to start something they do not have is useless, so an unpaired pane with
+  // no server shows how to get one.
+  const { panel, stopServer } = harness;
+  await stopServer();
+  await panel.reload();
+
+  await expect(panel.getByText("One thing left to install")).toBeVisible({ timeout: 30000 });
+  await expect(panel.getByText("brew install marcelocyreno/tap/aiss")).toBeVisible();
+  await expect(panel.getByText("aiss start")).toBeVisible();
+  await expect(panel.getByRole("link", { name: "Full install guide" })).toHaveAttribute(
+    "href",
+    "https://marcelocyreno.github.io/ai-skope/install",
+  );
+
+  // The command is meant to reach a terminal, so it can be copied.
+  await expect(panel.getByLabel("Copy the install command")).toBeVisible();
 });
 
 test("summarizing a page actually sends the page", async ({ harness }) => {

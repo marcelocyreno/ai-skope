@@ -62,7 +62,11 @@ const glyph = (id: string) =>
     <h2>Server &amp; runtimes</h2>
     <p class="lead">
       The server drives the coding agents installed on this computer and reads the
-      folders you allow. Start it with <code>aiss start</code>.
+      folders you allow. Install it with
+      <code>brew install marcelocyreno/tap/aiss</code>, then start it with
+      <code>aiss start</code>. The
+      <a href="https://marcelocyreno.github.io/ai-skope/install" target="_blank" rel="noopener noreferrer">install guide</a>
+      covers Linux and building from source.
     </p>
 
     <div class="sk-row">
