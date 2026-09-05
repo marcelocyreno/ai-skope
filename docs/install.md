@@ -31,18 +31,47 @@ AI Skope does not ask you for a provider key, and it does not have one.
 
 macOS or Linux. Windows is not supported yet.
 
-## 1. Build and install the server
+## 1. Install the server
 
-> There is no packaged release yet, so this step needs [Go 1.25 or
-> newer](https://go.dev/dl/). A `brew install` and a one-line installer are
-> planned; until then, this is the honest instruction.
+```sh
+brew install marcelocyreno/tap/aiss
+```
+
+<details>
+<summary>Without Homebrew</summary>
+
+Download the archive for your platform from the
+[latest release](https://github.com/marcelocyreno/ai-skope/releases/latest),
+and put `aiss` somewhere on your `PATH`:
+
+```sh
+tar -xzf aiss_*_darwin_arm64.tar.gz
+sudo mv aiss /usr/local/bin/
+```
+
+Every release ships a `checksums.txt`:
+
+```sh
+shasum -a 256 -c checksums.txt --ignore-missing
+```
+
+macOS does not quarantine binaries fetched with `curl` or Homebrew, so neither
+route trips Gatekeeper.
+
+</details>
+
+<details>
+<summary>From source</summary>
+
+Needs [Go 1.25 or newer](https://go.dev/dl/).
 
 ```sh
 git clone https://github.com/marcelocyreno/ai-skope.git
 cd ai-skope/server
-go build -o aiss ./cmd/aiss
-sudo mv aiss /usr/local/bin/    # or anywhere on your PATH
+make install
 ```
+
+</details>
 
 Check it can see your agents:
 
@@ -60,10 +89,12 @@ It listens on `127.0.0.1:7331` and accepts connections from nowhere else.
 
 ## 2. Install the extension
 
-Until the Chrome Web Store listing is live, load it unpacked. This works in
-Chrome, Brave and any other Chromium browser.
+Until the Chrome Web Store listing is live, the extension is loaded unpacked,
+which means building it. This works in Chrome, Brave and any other Chromium
+browser, and needs [Node 22 or newer](https://nodejs.org).
 
 ```sh
+git clone https://github.com/marcelocyreno/ai-skope.git
 cd ai-skope/extension
 npm install
 npm run build

@@ -1,0 +1,41 @@
+# The suites that cost nothing to run: Go unit tests and the extension's.
+# The browser and real-agent suites need a display and a paid model, so they
+# stay local.
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - run: go vet ./...
+        working-directory: server
+      - run: go test -race ./...
+        working-directory: server
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: extension/package-lock.json
+      - run: npm ci
+        working-directory: extension
+      - run: npx vue-tsc --noEmit
+        working-directory: extension
+      - run: npx vitest run
+        working-directory: extension
+      - run: npm run build
+        working-directory: extension

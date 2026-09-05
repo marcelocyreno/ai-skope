@@ -1,0 +1,97 @@
+# Releases for AI Skope Server.
+#
+# The Go module lives in server/, but this config sits at the repository root
+# so it can reach the LICENSE and the install guide:
+#   goreleaser release --clean
+#
+# Cross-compiling is free because the SQLite driver is modernc.org/sqlite,
+# which is pure Go — CGO_ENABLED=0 builds every target from one machine.
+version: 2
+
+project_name: aiss
+
+before:
+  hooks:
+    - go mod download -C server
+
+builds:
+  - id: aiss
+    dir: server
+    main: ./cmd/aiss
+    binary: aiss
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/ai-skope/aiss/internal/version.Version={{ .Version }}
+      - -X github.com/ai-skope/aiss/internal/version.Commit={{ .ShortCommit }}
+
+archives:
+  - id: aiss
+    formats: [tar.gz]
+    name_template: "aiss_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: LICENSE
+        dst: LICENSE
+      - src: docs/install.md
+        dst: INSTALL.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^Merge "
+
+release:
+  github:
+    owner: marcelocyreno
+    name: ai-skope
+  name_template: "AI Skope Server {{ .Version }}"
+  header: |
+    The server half of [AI Skope](https://marcelocyreno.github.io/ai-skope/).
+    The extension is installed separately — see the
+    [install guide](https://marcelocyreno.github.io/ai-skope/install).
+
+    ```sh
+    brew install marcelocyreno/tap/aiss
+    ```
+
+    Or download the archive for your platform below, and put `aiss` on your
+    PATH. macOS does not quarantine binaries fetched with `curl` or Homebrew,
+    so neither route needs a Gatekeeper exception.
+  footer: |
+    ---
+    Verify a download against `checksums.txt`:
+
+    ```sh
+    shasum -a 256 -c checksums.txt --ignore-missing
+    ```
+
+homebrew_casks:
+  - name: aiss
+    repository:
+      owner: marcelocyreno
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/marcelocyreno/ai-skope
+    description: The server half of AI Skope — drives local coding agents for the browser extension
+    # Homebrew installs into a quarantined location; without this macOS refuses
+    # to run the binary because it is not notarised.
+    hooks:
+      post:
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"], print_stderr: false).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/aiss"]
+          end

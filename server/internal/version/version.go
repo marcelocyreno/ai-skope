@@ -4,8 +4,8 @@ package version
 import "runtime/debug"
 
 // Version is the semantic version, overridden at build time with
-// -ldflags "-X github.com/ai-skope/aiss/internal/version.Version=0.3.0".
-var Version = "0.3.0-dev"
+// -ldflags "-X github.com/ai-skope/aiss/internal/version.Version=0.1.0".
+var Version = "0.1.0-dev"
 
 // Commit is the git revision, filled from build info when not set by ldflags.
 var Commit = ""

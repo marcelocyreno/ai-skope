@@ -1,0 +1,40 @@
+# Cuts a release when a version tag is pushed:
+#
+#   git tag -a v0.1.0 -m "..." && git push origin v0.1.0
+#
+# Everything else — cross-compiling, checksums, release notes and the Homebrew
+# cask — is in .goreleaser.yaml.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # goreleaser builds the changelog from the previous tag, so it needs
+          # the whole history, not the default shallow clone.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A token that can push to marcelocyreno/homebrew-tap. The built-in
+          # GITHUB_TOKEN cannot reach another repository.
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

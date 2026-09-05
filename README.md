@@ -52,8 +52,10 @@ streaming the answer back. `docs/runtimes/COMPAT.md` records the exact
 invocation and output shape each one was verified against, and the version it
 was verified on.
 
-Not done yet: there is no packaged release of the server, so installing it
-means building from source with Go. That is the next thing.
+The server is released for macOS and Linux, on both architectures:
+`brew install marcelocyreno/tap/aiss`. The extension is not on the Chrome Web
+Store yet, so it is loaded unpacked — see the
+[install guide](https://marcelocyreno.github.io/ai-skope/install).
 
 Everything is driven from the `Taskfile.yml` at the root:
 
