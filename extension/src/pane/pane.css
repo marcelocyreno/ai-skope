@@ -1,0 +1,94 @@
+/* Panel-specific layout. Chrome owns the width and the edge, so the design's
+   .sk-canvas / .sk-content / .sk-divider have no job here: the browser tab is
+   the content pane, and this document is the AI Pane. */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-14);
+}
+#app {
+  height: 100%;
+}
+.sk-pane {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  border-left: 0;
+}
+
+/* Pairing and connection states get the same quiet treatment as first run. */
+.sk-connect {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px 24px;
+  text-align: center;
+}
+.sk-connect .ring .sk-ico {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1;
+  color: var(--ink-3);
+}
+.sk-connect h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--t-18);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.sk-connect p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: var(--t-13);
+  max-width: 34ch;
+  text-wrap: balance;
+}
+.sk-connect code {
+  font-family: var(--font-mono);
+  font-size: var(--t-12);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.sk-code-input {
+  width: 100%;
+  max-width: 260px;
+  height: 40px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--t-16);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--surface-2);
+  color: var(--ink);
+  outline: none;
+}
+.sk-code-input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--focus-soft);
+}
+.sk-connect .err {
+  color: var(--bad);
+  font-size: var(--t-12);
+}
+.sk-muted {
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+}

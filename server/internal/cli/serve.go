@@ -175,9 +175,17 @@ func serve() error {
 		return err
 	case <-ctx.Done():
 		slog.Info("shutting down")
-		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		// Graceful shutdown waits for in-flight requests — but the extension
+		// holds an event stream open for as long as its panel is open, and a
+		// turn can be mid-answer. Neither will end on its own, so after a
+		// short grace period the listeners are closed outright.
+		shutCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		return srv.Shutdown(shutCtx)
+		if err := srv.Shutdown(shutCtx); err != nil {
+			slog.Info("closing open streams", "reason", err)
+			return srv.Close()
+		}
+		return nil
 	}
 }
 
@@ -248,7 +256,7 @@ func cmdStop() error {
 		os.Remove(config.PIDFile())
 		return fmt.Errorf("process %d is not running", pid)
 	}
-	for i := 0; i < 25; i++ {
+	for i := 0; i < 60; i++ {
 		time.Sleep(200 * time.Millisecond)
 		if err := p.Signal(syscall.Signal(0)); err != nil {
 			fmt.Println("aiss stopped")

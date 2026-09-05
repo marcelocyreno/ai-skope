@@ -28,9 +28,16 @@ const maxLine = 4 << 20
 var baseEnvKeys = []string{
 	"PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "TERM",
 	"LANG", "LC_ALL", "LC_CTYPE", "TZ",
-	"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME",
 	"SystemRoot", "COMSPEC", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "PATHEXT",
 }
+
+// XDG_* is deliberately absent. Those variables point at *this server's*
+// config and data when aiss is run with them set, and agents keep their
+// credentials under the same paths — opencode reads
+// $XDG_DATA_HOME/opencode/auth.json, for instance. Passing the server's values
+// down makes an authenticated agent look unauthenticated. Agents fall back to
+// HOME, which is what the user's own shell would have given them; anyone who
+// genuinely needs one can name it in passthroughEnv.
 
 // BaseEnv returns the scrubbed environment for an agent, plus any variables
 // the user chose to pass through.

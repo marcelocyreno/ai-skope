@@ -43,19 +43,27 @@ func effortFlag(effort string) string { return strings.ToLower(strings.TrimSpace
 var Specs = []Spec{
 	{
 		ID: "claude-code", Name: "Claude Code", Bin: "claude",
-		VersionArgs:    []string{"--version"},
-		EffortLevels:   []string{"low", "medium", "high", "max"},
+		VersionArgs: []string{"--version"},
+		// Verified against Claude Code 2.1.261: --effort takes these five
+		// levels, and --model takes an alias for the latest model of a family
+		// (or a full model name). Aliases keep working as new models ship.
+		EffortLevels:   []string{"low", "medium", "high", "xhigh", "max"},
 		PromptViaStdin: true,
 		Models: []store.Model{
-			{Name: "opus-5", Ctx: 1000000},
-			{Name: "sonnet-5", Ctx: 1000000},
-			{Name: "haiku-4.5", Ctx: 200000},
+			{Name: "opus", Ctx: 1000000},
+			{Name: "sonnet", Ctx: 1000000},
+			{Name: "haiku", Ctx: 200000},
 		},
 		Args: func(req TurnRequest) []string {
 			// -p is print (non-interactive) mode; stream-json needs --verbose.
 			// plan mode keeps the agent read-only: it may inspect the allowed
 			// folder but never write to it.
-			a := []string{"-p", "--output-format", "stream-json", "--verbose", "--permission-mode", "plan"}
+			// --include-partial-messages turns the answer into token-level
+			// deltas rather than one block at the end.
+			a := []string{
+				"-p", "--output-format", "stream-json", "--verbose",
+				"--include-partial-messages", "--permission-mode", "plan",
+			}
 			if req.Model != "" {
 				a = append(a, "--model", req.Model)
 			}
@@ -94,48 +102,72 @@ var Specs = []Spec{
 	},
 	{
 		ID: "opencode", Name: "opencode", Group: "agents", Bin: "opencode",
-		VersionArgs:    []string{"--version"},
+		VersionArgs: []string{"--version"},
+		// Verified against opencode 1.18.20: `run --format json` emits raw
+		// events, and --variant carries the provider-specific reasoning
+		// effort.
+		EffortLevels:   []string{"minimal", "low", "medium", "high", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
-			a := []string{"run", "--print-logs"}
+			a := []string{"run", "--format", "json"}
 			if m := qualifiedModel(req); m != "" {
 				a = append(a, "--model", m)
 			}
 			if req.SessionID != "" {
 				a = append(a, "--session", req.SessionID)
+			}
+			if req.Effort != "" {
+				a = append(a, "--variant", effortFlag(req.Effort))
 			}
 			return a
 		},
 	},
 	{
 		ID: "pi", Name: "pi", Group: "agents", Bin: "pi",
-		VersionArgs:    []string{"--version"},
+		VersionArgs: []string{"--version"},
+		// Verified against pi 0.84.3: -p is non-interactive, --mode json emits
+		// the event stream, and --thinking is its effort control. The tool
+		// allowlist keeps it read-only, matching Claude Code's plan mode.
+		EffortLevels:   []string{"off", "minimal", "low", "medium", "high", "xhigh", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
-			a := []string{"--json"}
+			a := []string{"-p", "--mode", "json", "--tools", "read,grep,find,ls"}
 			if m := qualifiedModel(req); m != "" {
 				a = append(a, "--model", m)
 			}
 			if req.SessionID != "" {
-				a = append(a, "--session", req.SessionID)
+				a = append(a, "--session-id", req.SessionID)
+			}
+			if req.Effort != "" {
+				a = append(a, "--thinking", effortFlag(req.Effort))
 			}
 			return a
 		},
 	},
 	{
 		ID: "omp", Name: "omp", Group: "agents", Bin: "omp",
-		VersionArgs:    []string{"--version"},
+		VersionArgs: []string{"--version"},
+		// Verified against omp 18.1.6. It shares pi's flags, except that a
+		// session is continued with --resume rather than --session-id.
+		EffortLevels:   []string{"off", "minimal", "low", "medium", "high", "xhigh", "max", "auto"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
 		Args: func(req TurnRequest) []string {
-			a := []string{"--json"}
+			// --no-tools rather than an allowlist: omp's tool names depend on
+			// which extensions are installed, and naming one it does not have
+			// is a hard error. No tools is always valid and always read-only;
+			// the context the pane attaches is inlined in the prompt anyway.
+			a := []string{"-p", "--mode", "json", "--no-tools"}
 			if m := qualifiedModel(req); m != "" {
 				a = append(a, "--model", m)
 			}
 			if req.SessionID != "" {
-				a = append(a, "--session", req.SessionID)
+				a = append(a, "--resume", req.SessionID)
+			}
+			if req.Effort != "" {
+				a = append(a, "--thinking", effortFlag(req.Effort))
 			}
 			return a
 		},

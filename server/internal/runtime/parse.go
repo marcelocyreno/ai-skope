@@ -35,15 +35,21 @@ func parseLine(line []byte) []Event {
 func parseObject(raw map[string]any) []Event {
 	var out []Event
 
-	// Session identity, under any of the names the agents use.
-	for _, k := range []string{"session_id", "sessionId", "thread_id", "threadId", "conversation_id"} {
+	typ, _ := str(raw["type"])
+
+	// Session identity, under any of the names the agents use. A bare "id" is
+	// only a session when the frame says so, or every object with an id would
+	// look like one.
+	sessionKeys := []string{"session_id", "sessionId", "sessionID", "thread_id", "threadId", "conversation_id"}
+	if typ == "session" {
+		sessionKeys = append([]string{"id"}, sessionKeys...)
+	}
+	for _, k := range sessionKeys {
 		if s, ok := str(raw[k]); ok && s != "" {
 			out = append(out, Event{Kind: EventSession, SessionID: s})
 			break
 		}
 	}
-
-	typ, _ := str(raw["type"])
 
 	// Codex wraps its payload in "msg"; unwrap and recurse.
 	if msg, ok := raw["msg"].(map[string]any); ok {
@@ -52,6 +58,9 @@ func parseObject(raw map[string]any) []Event {
 
 	switch typ {
 	case "assistant", "message":
+		// A whole assistant message. When partial streaming is on this repeats
+		// what the deltas already carried, so it is emitted as a chunk and the
+		// caller decides whether it is needed.
 		if m, ok := raw["message"].(map[string]any); ok {
 			out = append(out, parseContent(m["content"])...)
 		} else {
@@ -65,6 +74,41 @@ func parseObject(raw map[string]any) []Event {
 		} else if ev, ok := raw["event"].(map[string]any); ok {
 			out = append(out, parseObject(ev)...)
 		}
+	case "text", "text-delta", "reasoning":
+		// opencode wraps each piece of the answer in a part.
+		if part, ok := raw["part"].(map[string]any); ok {
+			out = append(out, parsePart(typ, part)...)
+		} else if d, ok := str(raw["delta"]); ok && d != "" {
+			out = append(out, Event{Kind: EventText, Text: d})
+		} else if t, ok := str(raw["text"]); ok && t != "" {
+			out = append(out, Event{Kind: EventTextChunk, Text: t})
+		}
+
+	case "step_finish", "step-finish", "finish":
+		// opencode reports the turn's totals on its finishing part.
+		if part, ok := raw["part"].(map[string]any); ok {
+			if u := parseUsage(part["tokens"]); u != nil {
+				out = append(out, Event{Kind: EventUsage, Usage: u})
+			}
+		}
+
+	case "tool", "tool-call", "tool-result":
+		if part, ok := raw["part"].(map[string]any); ok {
+			state := "running"
+			if st, _ := str(part["state"]); st == "completed" || typ == "tool-result" {
+				state = "done"
+			}
+			out = append(out, toolEvent(part, state))
+		} else {
+			out = append(out, toolEvent(raw, "running"))
+		}
+
+	case "message_update":
+		// pi nests the interesting part one level down.
+		if ev, ok := raw["assistantMessageEvent"].(map[string]any); ok {
+			out = append(out, parseAssistantEvent(ev)...)
+		}
+
 	case "item.started", "item.completed", "item.updated":
 		if item, ok := raw["item"].(map[string]any); ok {
 			out = append(out, parseItem(item, typ == "item.completed")...)
@@ -81,9 +125,10 @@ func parseObject(raw map[string]any) []Event {
 		out = append(out, errorEvent(raw))
 	case "result", "turn.completed", "response.completed":
 		if t, ok := firstString(raw, "result", "text", "message"); ok && t != "" {
-			// Some agents only emit the full answer at the end; keep it, the
-			// caller de-duplicates against what it already streamed.
-			out = append(out, Event{Kind: EventText, Text: t})
+			// The end of a turn repeats the whole answer. Some agents only
+			// emit it here, so it is kept — but as a snapshot, not a delta,
+			// or the answer would appear twice.
+			out = append(out, Event{Kind: EventTextFull, Text: t})
 		}
 		if u := parseUsage(raw["usage"]); u != nil {
 			out = append(out, Event{Kind: EventUsage, Usage: u})
@@ -104,6 +149,12 @@ func parseObject(raw map[string]any) []Event {
 	if u := parseUsage(raw["usage"]); u != nil && typ != "result" && typ != "turn.completed" {
 		out = append(out, Event{Kind: EventUsage, Usage: u})
 	}
+	// Some agents only report the totals on the finished message.
+	if m, ok := raw["message"].(map[string]any); ok {
+		if u := parseUsage(m["usage"]); u != nil {
+			out = append(out, Event{Kind: EventUsage, Usage: u})
+		}
+	}
 	return out
 }
 
@@ -113,7 +164,7 @@ func parseContent(v any) []Event {
 	switch c := v.(type) {
 	case string:
 		if c != "" {
-			out = append(out, Event{Kind: EventText, Text: c})
+			out = append(out, Event{Kind: EventTextChunk, Text: c})
 		}
 	case []any:
 		for _, item := range c {
@@ -124,7 +175,7 @@ func parseContent(v any) []Event {
 			switch t, _ := str(m["type"]); t {
 			case "text":
 				if s, ok := str(m["text"]); ok && s != "" {
-					out = append(out, Event{Kind: EventText, Text: s})
+					out = append(out, Event{Kind: EventTextChunk, Text: s})
 				}
 			case "tool_use":
 				out = append(out, toolEvent(m, "running"))
@@ -134,6 +185,50 @@ func parseContent(v any) []Event {
 		}
 	}
 	return out
+}
+
+// parsePart handles opencode's part envelope. Reasoning is dropped: it is the
+// model thinking to itself, not its answer.
+func parsePart(frameType string, part map[string]any) []Event {
+	kind, _ := str(part["type"])
+	if kind == "reasoning" || frameType == "reasoning" {
+		return nil
+	}
+	text, _ := str(part["text"])
+	if text == "" {
+		return nil
+	}
+	if frameType == "text-delta" {
+		return []Event{{Kind: EventText, Text: text}}
+	}
+	return []Event{{Kind: EventTextChunk, Text: text}}
+}
+
+// parseAssistantEvent handles pi's incremental assistant events. Thinking is
+// deliberately dropped: it is the model reasoning to itself, not its answer.
+func parseAssistantEvent(ev map[string]any) []Event {
+	switch t, _ := str(ev["type"]); t {
+	case "text_delta":
+		if d, ok := str(ev["delta"]); ok && d != "" {
+			return []Event{{Kind: EventText, Text: d}}
+		}
+	case "text_end":
+		// The block's full text, already delivered as deltas.
+		if c, ok := str(ev["content"]); ok && c != "" {
+			return []Event{{Kind: EventTextChunk, Text: c}}
+		}
+	case "thinking_start", "thinking_delta", "thinking_end", "text_start":
+		return nil
+	default:
+		if strings.Contains(t, "tool") {
+			state := "running"
+			if strings.HasSuffix(t, "_end") {
+				state = "done"
+			}
+			return []Event{toolEvent(ev, state)}
+		}
+	}
+	return nil
 }
 
 // parseItem handles Codex's item envelope.
@@ -188,6 +283,12 @@ func errorEvent(m map[string]any) Event {
 		if s, ok := firstString(e, "message", "detail"); ok && s != "" {
 			msg = s
 		}
+		// opencode puts the readable message one level deeper still.
+		if data, ok := e["data"].(map[string]any); ok {
+			if s, ok := firstString(data, "message", "detail"); ok && s != "" {
+				msg = s
+			}
+		}
 	}
 	return Event{Kind: EventError, Err: msg, Retryable: true}
 }
@@ -198,8 +299,8 @@ func parseUsage(v any) *store.Usage {
 		return nil
 	}
 	u := &store.Usage{
-		InputTokens:  num(m, "input_tokens", "inputTokens", "prompt_tokens"),
-		OutputTokens: num(m, "output_tokens", "outputTokens", "completion_tokens"),
+		InputTokens:  num(m, "input_tokens", "inputTokens", "prompt_tokens", "input"),
+		OutputTokens: num(m, "output_tokens", "outputTokens", "completion_tokens", "output"),
 	}
 	if u.InputTokens == 0 && u.OutputTokens == 0 {
 		return nil

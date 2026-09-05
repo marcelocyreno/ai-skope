@@ -253,7 +253,10 @@ func (r *Registry) Models(ctx context.Context) []ModelOption {
 		if spec.UsesProvider {
 			for _, p := range r.providers.ModelsFor(info.ID) {
 				for _, m := range p.Models {
-					add(p.Name, m)
+					// The agent addresses a model as <provider>/<model> using
+					// its own provider id — which is the kind, not whatever
+					// display name the user typed when adding the key.
+					add(p.Kind, m)
 				}
 			}
 			continue

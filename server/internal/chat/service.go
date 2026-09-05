@@ -188,6 +188,12 @@ func (s *Service) pump(chat store.Chat, sel runtime.Selection, userMsg store.Mes
 	var text strings.Builder
 	started := time.Now()
 
+	// An agent can report its answer three ways in the same turn: token-level
+	// deltas, whole message blocks, and one final copy of everything. Taking
+	// all three would print the answer three times, so the most granular
+	// source wins and the rest are ignored.
+	sawDelta, sawChunk := false, false
+
 	send := func(ev Event) {
 		ev.MessageID = msg.ID
 		select {
@@ -207,6 +213,22 @@ func (s *Service) pump(chat store.Chat, sel runtime.Selection, userMsg store.Mes
 				_ = s.db.SetChatAgentSession(chat.ID, ev.SessionID)
 			}
 		case runtime.EventText:
+			sawDelta = true
+			text.WriteString(ev.Text)
+			send(Event{Event: EvTextDelta, Text: ev.Text})
+
+		case runtime.EventTextChunk:
+			if sawDelta {
+				continue // the deltas already carried this
+			}
+			sawChunk = true
+			text.WriteString(ev.Text)
+			send(Event{Event: EvTextDelta, Text: ev.Text})
+
+		case runtime.EventTextFull:
+			if sawDelta || sawChunk {
+				continue // this is the whole answer repeated at the end
+			}
 			text.WriteString(ev.Text)
 			send(Event{Event: EvTextDelta, Text: ev.Text})
 		case runtime.EventTool:

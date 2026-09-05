@@ -1,57 +1,80 @@
 # Runtime compatibility
 
 The server drives coding agents through their non-interactive JSON modes. Those
-flags change between releases, so this file records what has actually been
-verified and what is still assumed. Anything marked **assumed** is written from
-the documented shape and is covered by a fake agent in the tests, not by the
-real binary.
+flags change between releases, so this file records what has been verified and
+against which version.
 
-The parser (`internal/runtime/parse.go`) is deliberately tolerant: it accepts
-the union of the shapes below and falls back to treating a line as plain text,
-so a flag or field drifting does not break a turn outright.
+Everything below was **verified end to end** on 2026-09-04 with
+`server/scripts/real-agent.sh`, which pairs a real server, attaches a picked
+element and a local file, streams a real answer, and asks a follow-up in the
+same agent session.
 
-| runtime | invocation | resume | effort | status |
-|---|---|---|---|---|
-| `claude-code` | `claude -p --output-format stream-json --verbose --permission-mode plan [--model M] [--effort E]` | `--resume <session_id>` | `--effort low\|medium\|high\|max` | **assumed** |
-| `codex` | `codex exec --json --sandbox read-only --skip-git-repo-check [--model M] [-c model_reasoning_effort=E] -` | `codex exec resume <id> --json …` | `-c model_reasoning_effort=` | **assumed** |
-| `opencode` | `opencode run --print-logs [--model provider/model] [--session id]` | `--session <id>` | provider-dependent | **assumed** |
-| `pi` | `pi --json [--model provider/model] [--session id]` | `--session <id>` | provider-dependent | **assumed — binary and JSON mode unconfirmed** |
-| `omp` | `omp --json [--model provider/model] [--session id]` | `--session <id>` | provider-dependent | **unknown — confirm the binary name and whether it has a JSON mode** |
-| `custom:<name>` | whatever the user configures; must read the prompt on stdin | — | — | supported |
+| runtime | version | invocation | resume | effort | status |
+|---|---|---|---|---|---|
+| `claude-code` | 2.1.261 | `claude -p --output-format stream-json --verbose --include-partial-messages --permission-mode plan [--model M] [--effort E]` | `--resume <session_id>` | `--effort low\|medium\|high\|xhigh\|max` | **verified** |
+| `pi` | 0.84.3 | `pi -p --mode json --tools read,grep,find,ls [--model P/M] [--session-id ID] [--thinking E]` | `--session-id <id>` | `--thinking off\|minimal\|low\|medium\|high\|xhigh\|max` | **verified** |
+| `omp` | 18.1.6 | `omp -p --mode json --no-tools [--model P/M] [--resume ID] [--thinking E]` | `--resume <id>` | `--thinking …\|auto` | **verified** |
+| `opencode` | 1.18.20 | `opencode run --format json [--model P/M] [--session ID] [--variant E]` | `--session <id>` | `--variant minimal\|low\|medium\|high\|max` | **verified** |
+| `codex` | — | `codex exec --json --sandbox read-only --skip-git-repo-check [--model M] [-c model_reasoning_effort=E] -` | `codex exec resume <id>` | `-c model_reasoning_effort=` | **assumed** — not installed here |
+| `custom:<name>` | — | whatever the user configures; must read the prompt on stdin | — | — | supported |
 
-## Contract every adapter must satisfy
+## What each agent's output looks like
 
-- The **prompt is written to stdin**, never to argv: arguments are visible to
-  every process on the machine through `ps`. A test enforces this for all
-  built-in specs.
-- Output is read line by line. JSON objects are parsed; anything else is
-  treated as answer text.
-- The process runs with a **scrubbed environment** (see `BaseEnv`) plus the
-  credentials the provider registry injects for that runtime, and with its
-  working directory inside an allowed folder.
-- Cancellation kills the whole process group, sweeps again shortly after to
-  catch a child forked during the race, and gives up on stray descendants via
-  `WaitDelay`.
+The parser (`internal/runtime/parse.go`) accepts the union of these shapes and
+falls back to treating a line as plain text, so a field moving does not break a
+turn. Each shape has a fake in `server/testdata/fakes/` and a case in
+`TestAgentOutputShapes`.
 
-## Output shapes understood
+- **Claude Code** — `{"type":"system","subtype":"init","session_id":…}`, token
+  deltas as `{"type":"stream_event","event":{"type":"content_block_delta",…}}`,
+  the assembled `{"type":"assistant","message":{"content":[…]}}`, and finally
+  `{"type":"result","result":"…","usage":{"input_tokens":…}}`.
+  **The answer arrives three times** — as deltas, as the whole message, and
+  again in the result. The service keeps the most granular and drops the rest.
+- **pi and omp** — `{"type":"session","id":…}` (a plain `id`), text inside
+  `{"type":"message_update","assistantMessageEvent":{"type":"text_delta",…}}`,
+  and usage on `turn_end.message.usage` as `{input, output}`.
+  `thinking_*` events are the model reasoning to itself and are dropped.
+- **opencode** — `{"type":"text","sessionID":…,"part":{"text":…}}` (note the
+  `sessionID` casing), reasoning in its own parts, usage on
+  `step_finish.part.tokens`. It returns the answer **in one piece**, not token
+  by token; its streaming API is `opencode serve`, which the server does not
+  use yet.
 
-- Anthropic/Claude Code: `{"type":"system","session_id":…}`,
-  `{"type":"assistant","message":{"content":[{"type":"text"|"tool_use",…}]}}`,
-  `{"type":"content_block_delta","delta":{"text":…}}`, `{"type":"result",…}`.
-- Codex: `{"type":"thread.started","thread_id":…}`,
-  `{"type":"item.started"|"item.completed","item":{…}}`, and the older
-  `{"msg":{"type":"agent_message","message":…}}`.
-- Generic: any object carrying `text`, `delta`, `content`, `usage`, or an
-  `error`; plain text lines.
+## The contract every adapter satisfies
 
-## How to verify a runtime
+- The **prompt goes to stdin**, never argv, where `ps` would expose it. A test
+  enforces this for every built-in spec.
+- The process runs **read-only**: `--permission-mode plan` (Claude Code), a
+  read-only tool allowlist (pi), no tools at all (omp, whose tool names depend
+  on installed extensions), and no `--auto` (opencode).
+- It starts with a **scrubbed environment** plus only the credentials the
+  provider registry injects for that runtime. **`XDG_*` is deliberately not
+  inherited**: those point at the *server's* config and data, and agents keep
+  their own credentials under the same paths — passing ours down makes an
+  authenticated agent look unauthenticated (opencode fails outright). Anyone
+  who needs one can name it in `passthroughEnv`.
+- Its working directory is inside an allowed folder, and cancelling a turn
+  kills the whole process group.
+
+## Verifying a runtime yourself
 
 ```
-aiss runtimes detect          # version and path per runtime
-aiss doctor                   # PATH, keychain, folders, index health
+aiss runtimes detect                              # version and path per runtime
+aiss doctor                                       # PATH, keychain, folders, index
+./scripts/real-agent.sh claude-code sonnet        # a real turn, real tokens
+./scripts/real-agent.sh pi glm-5.3-flash zai low
+./scripts/real-agent.sh omp glm-5.3-flash zai low
+./scripts/real-agent.sh opencode glm-5.3 zai-coding-plan
 ```
 
-Then run one real turn and compare the transcript against the agent's own
-output. When a flag turns out to be wrong, change it in
-`internal/runtime/specs.go` — the process machinery does not need to change —
-and move the row above to **verified**, noting the version.
+`real-agent.sh` calls a real model, so it needs the agent installed and
+authenticated, and it costs tokens. `scripts/e2e.sh` covers the same ground
+with a fake agent and no network.
+
+## A note on provider names
+
+For `pi`, `omp` and `opencode` a model is addressed as `<provider>/<model>`
+using **the agent's own provider id** — `zai` for pi and omp,
+`zai-coding-plan` for opencode. The server therefore sends a provider's *kind*,
+not the display name a user typed when adding the key.

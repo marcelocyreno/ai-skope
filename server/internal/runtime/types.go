@@ -53,10 +53,18 @@ type TurnRequest struct {
 const (
 	EventSession = "session"
 	EventTool    = "tool"
-	EventText    = "text.delta"
-	EventUsage   = "usage"
-	EventError   = "error"
-	EventDone    = "done"
+	// EventText is an incremental delta: append it.
+	EventText = "text.delta"
+	// EventTextChunk is a whole message block. Agents emit these *as well as*
+	// deltas when partial streaming is on, so it is used only when no deltas
+	// have arrived.
+	EventTextChunk = "text.chunk"
+	// EventTextFull is the complete answer, repeated at the end of a turn. It
+	// is used only when nothing else produced any text.
+	EventTextFull = "text.full"
+	EventUsage    = "usage"
+	EventError    = "error"
+	EventDone     = "done"
 )
 
 // Event is one normalised step of a turn.

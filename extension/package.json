@@ -1,0 +1,32 @@
+{
+  "name": "ai-skope-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI Skope \u2014 a Chrome extension that aims at the page and asks a local agent about it",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:pages && npm run build:content && npm run build:worker",
+    "build:pages": "vite build",
+    "build:content": "vite build --config vite.content.config.ts",
+    "build:worker": "vite build --config vite.worker.config.ts",
+    "dev": "npm run build -- --watch",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/chrome": "^0.0.287",
+    "@types/node": "^26.4.1",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8",
+    "vue-tsc": "^2.2.0"
+  }
+}

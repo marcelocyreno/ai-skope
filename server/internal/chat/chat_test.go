@@ -317,3 +317,78 @@ func TestPackBudget(t *testing.T) {
 		t.Fatal("picked element should precede the page")
 	}
 }
+
+func TestAnswerIsNotRepeatedWhenTheAgentSendsItThreeWays(t *testing.T) {
+	// Claude Code streams token deltas, then the assembled message, then the
+	// whole answer again in its result frame. Naively taking all three prints
+	// the answer three times.
+	svc, db, _ := newService(t, "claude-partial.sh")
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "count"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	evs := drain(t, ch)
+	streamed := joinText(evs)
+	if streamed != "one two three" {
+		t.Fatalf("the answer should appear exactly once, got %q", streamed)
+	}
+
+	msgs, _ := db.Messages(chat.ID)
+	if got := msgs[1].Text; got != "one two three" {
+		t.Fatalf("stored transcript: %q", got)
+	}
+	if msgs[1].Usage == nil || msgs[1].Usage.InputTokens != 12 {
+		t.Fatalf("usage from the result frame: %+v", msgs[1].Usage)
+	}
+	got, _ := db.Chat(chat.ID)
+	if got.AgentSession != "sess-partial" {
+		t.Fatalf("session id: %q", got.AgentSession)
+	}
+}
+
+// Each agent reports a turn differently. These lock in the shapes that were
+// verified against the real binaries, including the parts that must NOT reach
+// the transcript: the user's own prompt echoed back, and the model's private
+// reasoning.
+func TestAgentOutputShapes(t *testing.T) {
+	cases := []struct {
+		name, fake, want, session string
+		inputTokens              int64
+	}{
+		{"pi and omp", "pi-like.sh", "one two", "01a06f28-pi-session", 2044},
+		{"opencode", "opencode-like.sh", "one two", "ses_opencode123", 11},
+		{"claude code", "claude-partial.sh", "one two three", "sess-partial", 12},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			svc, db, _ := newService(t, c.fake)
+			chat, _ := db.CreateChat(store.Chat{})
+			ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "count"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			streamed := joinText(drain(t, ch))
+			if streamed != c.want {
+				t.Fatalf("streamed %q, want %q", streamed, c.want)
+			}
+			if strings.Contains(streamed, "SECRET REASONING") {
+				t.Fatal("the model's private reasoning must not appear in the answer")
+			}
+			if strings.Contains(streamed, "THE USER PROMPT") {
+				t.Fatal("the user's own message must not be echoed into the answer")
+			}
+			msgs, _ := db.Messages(chat.ID)
+			if msgs[1].Text != c.want {
+				t.Fatalf("stored %q, want %q", msgs[1].Text, c.want)
+			}
+			if msgs[1].Usage == nil || msgs[1].Usage.InputTokens != c.inputTokens {
+				t.Fatalf("usage: %+v, want %d input tokens", msgs[1].Usage, c.inputTokens)
+			}
+			got, _ := db.Chat(chat.ID)
+			if got.AgentSession != c.session {
+				t.Fatalf("session %q, want %q", got.AgentSession, c.session)
+			}
+		})
+	}
+}

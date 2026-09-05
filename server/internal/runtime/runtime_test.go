@@ -37,7 +37,9 @@ func collect(t *testing.T, turn Turn) (string, []store.ToolRecord, *store.Usage,
 				return text.String(), tools, usage, errMsg, session
 			}
 			switch ev.Kind {
-			case EventText:
+			// These tests are about parsing, so every flavour of text counts;
+			// choosing between them is the chat service's job.
+			case EventText, EventTextChunk, EventTextFull:
 				text.WriteString(ev.Text)
 			case EventTool:
 				tools = append(tools, *ev.Tool)
@@ -145,7 +147,7 @@ func TestCancelStopsTheTurn(t *testing.T) {
 	// Wait for the first token, then cancel.
 	select {
 	case ev := <-turn.Events():
-		if ev.Kind != EventText {
+		if ev.Kind != EventText && ev.Kind != EventTextChunk {
 			t.Fatalf("expected text first, got %+v", ev)
 		}
 	case <-time.After(10 * time.Second):
@@ -311,5 +313,28 @@ func TestPromptNeverOnArgv(t *testing.T) {
 				t.Errorf("%s put the prompt in argv: %q", s.ID, a)
 			}
 		}
+	}
+}
+
+func TestServerXDGDirsAreNotInheritedByAgents(t *testing.T) {
+	// aiss stores its own config and data under XDG_*. Agents keep their
+	// credentials under the same paths, so handing ours down makes an
+	// authenticated agent look unauthenticated — opencode fails outright.
+	t.Setenv("XDG_DATA_HOME", "/tmp/aiss-scratch/data")
+	t.Setenv("XDG_CONFIG_HOME", "/tmp/aiss-scratch/config")
+	for _, e := range BaseEnv(nil) {
+		if strings.HasPrefix(e, "XDG_") {
+			t.Fatalf("the server's %s must not reach an agent", strings.SplitN(e, "=", 2)[0])
+		}
+	}
+	// Unless the user asks for it explicitly.
+	var found bool
+	for _, e := range BaseEnv([]string{"XDG_DATA_HOME"}) {
+		if e == "XDG_DATA_HOME=/tmp/aiss-scratch/data" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("passthroughEnv must still be able to pass XDG_DATA_HOME")
 	}
 }

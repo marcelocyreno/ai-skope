@@ -1,0 +1,25 @@
+/* The options page is a full browser tab, so it gets the two-column layout the
+   design shows; the .sk-opt-* classes come straight from the design kit. */
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-14);
+}
+.sk-options {
+  position: static;
+  min-height: 100vh;
+}
+.sk-opt-shell {
+  overflow: visible;
+}
+.sk-opt-nav {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
