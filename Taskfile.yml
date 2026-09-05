@@ -140,6 +140,14 @@ tasks:
         echo
         echo "That install persists. After a rebuild, press Reload on the card."
 
+  brave:test:
+    desc: 'Start Brave with the extension loaded and paired, on its own profile'
+    deps: [build:extension]
+    cmds:
+      - "{{.AISS}} status >/dev/null 2>&1 || {{.AISS}} start"
+      - "{{.AISS}} pair | head -1 | awk '{print $3}' > /tmp/skope-pair-code"
+      - cd "{{.EXT}}" && node tools/launch-brave.mjs
+
   brave:flag:
     desc: 'Restart Brave with the extension loaded (no clicks, but only for this launch)'
     deps: [build:extension]

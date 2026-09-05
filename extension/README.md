@@ -24,6 +24,23 @@ Then, in Chrome:
 
 The panel opens beside the page — drag Chrome's own edge to resize it.
 
+### Or let it start Brave for you
+
+```
+task brave:test
+```
+
+That builds the extension, starts the server if it is not running, launches
+Brave on a **separate profile** with the extension loaded, and pairs it — so it
+is ready to use without touching your everyday browser or its tabs. The profile
+lives in `~/.local/share/ai-skope/brave-test-profile` and persists, so the
+pairing and your chats survive between runs.
+
+It uses a separate profile for a reason: `--load-extension` only takes effect
+at startup, so loading into your everyday Brave would mean quitting it, and
+Brave's default is to open a fresh New Tab page rather than restore what you
+had open.
+
 ## How it is put together
 
 | Piece | Where | What it does |
