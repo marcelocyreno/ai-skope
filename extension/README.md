@@ -54,6 +54,18 @@ whether AI Skope may read that site. That prompt *is* the design's "Page
 access: Ask" setting. Only what you aim at is sent, unless you set page access
 to *Always*.
 
+## The icon
+
+The action icon is the reticle the product is built on — the same mark the pane
+shows and the element picker uses as its cursor. `tools/make-icons.py` draws it
+at every size Chrome asks for, with proportions tuned per size rather than one
+geometry scaled down: at 16px the centre dot is dropped and the stroke thickened,
+because a ring, four ticks and a dot cannot all survive sixteen pixels.
+
+```
+python3 tools/make-icons.py    # rewrites icons/icon{16,32,48,128}.png
+```
+
 ## Development
 
 ```
