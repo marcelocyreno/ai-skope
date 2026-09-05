@@ -260,6 +260,31 @@ tasks:
     cmds:
       - go vet ./...
 
+  store:package:
+    desc: 'Build the zip to upload to the Chrome Web Store'
+    deps: [build:extension]
+    silent: true
+    cmds:
+      - mkdir -p "{{.TASKFILE_DIR}}/store"
+      - |
+        v=$(python3 -c 'import json;print(json.load(open("{{.EXT}}/manifest.json"))["version"])')
+        out="{{.TASKFILE_DIR}}/store/ai-skope-$v.zip"
+        rm -f "$out"
+        # The store wants the *contents* of dist, manifest at the root.
+        cd "{{.EXT}}/dist" && zip -qr "$out" . -x '.*' -x '__MACOSX/*'
+        echo "$out"
+        unzip -l "$out" | tail -3
+      - |
+        echo
+        echo "Next: store/LISTING.md has every field the dashboard asks for."
+
+  store:shots:
+    desc: 'Capture the store screenshots (SKOPE_SHOT_RUNTIME=<id> to use a real agent)'
+    deps: [build:extension]
+    dir: "{{.EXT}}"
+    cmds:
+      - npx playwright test --config=playwright.store.config.ts
+
   clean:
     desc: Remove build output
     cmds:

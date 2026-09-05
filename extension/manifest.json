@@ -3,6 +3,7 @@
   "name": "AI Skope",
   "version": "0.1.0",
   "description": "Aim at anything on a page and ask a local coding agent about it.",
+  "homepage_url": "https://github.com/marcelocyreno/ai-skope",
   "minimum_chrome_version": "116",
   "permissions": [
     "sidePanel",

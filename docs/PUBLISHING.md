@@ -144,14 +144,38 @@ that is the product in one image, and it is what the design was built around.
 - **Updates**: the store reviews every update; a new permission triggers a
   fuller review, so add permissions rarely and deliberately.
 
-## What is missing in the repository today
+## What is ready, and what is missing
 
-- `LICENSE` — none. Pick one before publishing anything.
-- `homepage_url` in the manifest.
-- `server/.goreleaser.yaml`, the Homebrew tap, and notarisation.
-- A hosted privacy policy and install guide.
-- Store screenshots.
-- Windows support in the server, if it is to be claimed.
+Phase 3 is prepared. Everything the dashboard asks for lives in `store/`:
+
+| | |
+|---|---|
+| `store/LISTING.md` | every field, in the order the dashboard asks — name, descriptions, single purpose, one justification per permission, data-usage answers, distribution |
+| `store/PRIVACY.md` | the privacy policy, ready to host |
+| `store/screenshots/` | five frames at 1280×800, shot from the running extension — `task store:shots` |
+| `store/ai-skope-<version>.zip` | the upload — `task store:package` |
+| `homepage_url` | in the manifest |
+
+Still missing:
+
+- **A `LICENSE`.** Not required to submit, but the listing calls the project
+  open source, and that claim needs one.
+- **A repository and somewhere to host pages.** `homepage_url`, the install
+  guide and the privacy policy all point at
+  `github.com/marcelocyreno/ai-skope`, which does not exist yet. GitHub Pages
+  on that repository covers the two URLs.
+- **Phase 1 in full** — `server/.goreleaser.yaml`, the Homebrew tap and
+  notarisation. This gates a *public* listing, not an unlisted one.
+- **Windows support in the server**, if it is to be claimed.
+
+## A note on visibility
+
+Listed and unlisted go through the same review, with the same policies,
+justifications and privacy-policy requirement — visibility is a dropdown, not a
+review track, and switching later keeps the extension ID and its existing
+users. The argument for unlisted first is about product readiness, not process:
+until `aiss` installs in one command, a public listing collects one-star
+reviews from people who install, find a pairing screen, and leave.
 
 ## An honest alternative
 

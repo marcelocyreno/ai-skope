@@ -14,3 +14,6 @@ node_modules/
 /extension/dist/
 /extension/test-results/
 /extension/playwright-report/
+
+# Store upload packages (regenerate with: task store:package)
+/store/*.zip
