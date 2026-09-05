@@ -29,6 +29,9 @@ export interface Harness {
   fixture: (name: string) => string;
   /** Stops the server and waits for it to actually be gone. */
   stopServer: () => Promise<void>;
+  /** Registers a provider whose models the fake runtime can offer. */
+  addStubProvider: () => Promise<void>;
+  token: string;
 }
 
 /**
@@ -109,6 +112,15 @@ export const test = base.extend<{ harness: Harness }>({
     // Playwright's bundled Chromium, not the installed Chrome: Chrome 137+
     // ignores --load-extension entirely, so a released Chrome cannot load an
     // unpacked extension from the command line at all.
+    // A stub model API, so a provider can be registered and the switcher has
+    // something real to list.
+    const models: Server = createServer((_req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ data: [{ id: "glm-5.3-flash", context_length: 128000 }, { id: "glm-5.3" }] }));
+    });
+    await new Promise<void>((r) => models.listen(0, "127.0.0.1", r));
+    const modelsPort = (models.address() as { port: number }).port;
+
     // Fixture pages are served over http so the content script can be
     // injected the same way it would be on a real site.
     const fixtures: Server = createServer((req, res) => {
@@ -138,6 +150,12 @@ export const test = base.extend<{ harness: Harness }>({
     // From here on any failure must still stop the server, or a broken setup
     // leaves an aiss process running for the rest of the session.
     const panel = await context.newPage();
+    // Surface what the pane says: a silent failure in the panel document is
+    // otherwise invisible to the test.
+    panel.on("console", (m) => {
+      if (m.type() === "error" || m.type() === "warning") console.log("[panel]", m.text());
+    });
+    panel.on("pageerror", (e) => console.log("[panel exception]", e.message));
     try {
       await panel.goto(`chrome-extension://${extensionId}/sidepanel.html`);
     } catch (err) {
@@ -175,11 +193,42 @@ export const test = base.extend<{ harness: Harness }>({
       }, 10000);
     };
 
-    await use({ context, extensionId, panel, serverUrl, projectDir, aiss, fixture, stopServer });
+    // The pane pairs itself in the tests; this token is for direct API calls.
+    const code = execFileSync(binary, ["pair"], { env, encoding: "utf8" }).split("\n")[0].split(":")[1].trim();
+    const paired = await fetch(`${serverUrl}/v1/pair`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, origin: `chrome-extension://${extensionId}`, label: "harness" }),
+    }).then((r) => r.json() as Promise<{ token: string }>);
+    const token = paired.token;
+
+    const addStubProvider = async () => {
+      const resp = await fetch(`${serverUrl}/v1/providers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          kind: "openai-compatible",
+          name: "stub.ai",
+          baseUrl: `http://127.0.0.1:${modelsPort}`,
+          key: "stub-key",
+          availableTo: ["custom:e2e"],
+        }),
+      });
+      if (!resp.ok) {
+        throw new Error(`stub provider was refused: ${resp.status} ${await resp.text()}`);
+      }
+      const created = (await resp.json()) as { models?: unknown[] };
+      if (!created.models?.length) {
+        throw new Error("the stub provider registered but reported no models");
+      }
+    };
+
+    await use({ context, extensionId, panel, serverUrl, projectDir, aiss, fixture, stopServer, addStubProvider, token });
 
     await context.close();
     fixtures.close();
     await stopServer().catch(() => {});
+    models.close();
     rmSync(work, { recursive: true, force: true });
   },
 });
@@ -191,5 +240,8 @@ export async function pair(h: Harness): Promise<void> {
   const code = h.aiss("pair").split("\n")[0].split(":")[1].trim();
   await h.panel.getByLabel("Pairing code").fill(code);
   await h.panel.getByRole("button", { name: "Pair", exact: true }).click();
-  await h.panel.getByRole("button", { name: /New chat/ }).waitFor({ timeout: 20000 });
+  // Wait for the composer, not the top bar: the top bar is on screen even
+  // before pairing, so waiting for it returns while the pairing request is
+  // still in flight — and a reload then throws the pairing away.
+  await h.panel.getByLabel("Message").waitFor({ state: "visible", timeout: 20000 });
 }

@@ -1,4 +1,20 @@
 import { test, expect, pair } from "./harness";
+import type { Page } from "@playwright/test";
+
+/**
+ * Sends a message the way a person would, answering the page-text question if
+ * the pane asks it. With page access on Ask — the default — a question with no
+ * attached context is asked about once per page.
+ */
+async function ask(panel: Page, text: string, includePage = true): Promise<void> {
+  await expect(panel.getByLabel("Message")).toBeVisible();
+  await panel.getByLabel("Message").fill(text);
+  await panel.getByLabel("Send").click();
+  const strip = panel.getByText("Send this page's text with your question?");
+  if (await strip.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await panel.getByRole("button", { name: includePage ? "Include page" : "Without it" }).click();
+  }
+}
 
 test.describe.configure({ mode: "serial" });
 
@@ -23,8 +39,7 @@ test("pairs with the server, then answers a question about the page", async ({ h
   await pageTab.goto(fixture("pricing.html"));
   await panel.bringToFront();
 
-  await panel.getByLabel("Message").fill("Is Growth enough for 40M events?");
-  await panel.getByLabel("Send").click();
+  await ask(panel, "Is Growth enough for 40M events?");
 
   // The answer streams in from the fake agent through the real server.
   await expect(panel.getByText(/Growth caps at 25M events/)).toBeVisible({ timeout: 30000 });
@@ -36,8 +51,7 @@ test("keeps the transcript, and undoes a delete", async ({ harness }) => {
   const { panel } = harness;
   await pair(harness);
 
-  await panel.getByLabel("Message").fill("What does the export section say?");
-  await panel.getByLabel("Send").click();
+  await ask(panel, "What does the export section say?");
   await expect(panel.getByText(/Growth caps at 25M events/)).toBeVisible({ timeout: 30000 });
 
   // History groups it under this page, and delete is reversible.
@@ -62,8 +76,7 @@ test("attaches a local file the server is allowed to read", async ({ harness }) 
 
   // The chip names the file, and the question carries it to the agent.
   await expect(panel.locator(".sk-tray .sk-ctx .sel")).toHaveText("README.md");
-  await panel.getByLabel("Message").fill("Summarize this file");
-  await panel.getByLabel("Send").click();
+  await ask(panel, "Summarize this file");
   await expect(panel.getByText(/Growth caps at 25M events/)).toBeVisible({ timeout: 30000 });
 });
 
@@ -104,4 +117,45 @@ test("says what is wrong when the server goes away", async ({ harness }) => {
   ).toBeVisible({ timeout: 30000 });
   // And it offers the way back rather than leaving the user stuck.
   await expect(panel.getByRole("button", { name: "Try again" })).toBeVisible();
+});
+
+test("summarizing a page actually sends the page", async ({ harness }) => {
+  // This is the bug the first real use found: the summarize button read the
+  // page's text and then dropped it, so the model was asked to summarize
+  // nothing and said so.
+  const { panel, context, fixture } = harness;
+  await pair(harness);
+
+  const pageTab = await context.newPage();
+  await pageTab.goto(fixture("pricing.html"));
+  await panel.bringToFront();
+  await panel.reload();
+  await expect(panel.getByLabel("Message")).toBeVisible();
+
+  await panel.getByRole("button", { name: /Summarize this page/ }).click();
+
+  // The fake agent echoes its prompt, so the page's own words prove it was sent.
+  await expect(panel.getByText(/capped at 25M events/).first()).toBeVisible({ timeout: 30000 });
+});
+
+test("asks before sending the page with a plain question", async ({ harness }) => {
+  const { panel, context, fixture } = harness;
+  await pair(harness);
+
+  const pageTab = await context.newPage();
+  await pageTab.goto(fixture("pricing.html"));
+  await panel.bringToFront();
+  await panel.reload();
+
+  // Wait for the pane to finish connecting before typing: until it does, the
+  // composer is not on screen at all.
+  await expect(panel.getByLabel("Message")).toBeVisible();
+  await panel.getByLabel("Message").fill("what is this page about?");
+  await panel.getByLabel("Send").click();
+
+  // Page access defaults to Ask, so the pane asks rather than silently
+  // sending a question with nothing to answer from.
+  await expect(panel.getByText("Send this page's text with your question?")).toBeVisible();
+  await panel.getByRole("button", { name: "Include page" }).click();
+  await expect(panel.getByText(/capped at 25M events/).first()).toBeVisible({ timeout: 30000 });
 });

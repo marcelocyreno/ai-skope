@@ -54,6 +54,9 @@ export async function initConnection(): Promise<void> {
     baseUrl: settings.baseUrl,
     token: settings.token,
     onUnauthorized: () => {
+      // Losing a pairing is rare and confusing; say so in the console, or a
+      // pane that silently returns to the pairing screen looks like a bug.
+      console.warn("[ai-skope] the server rejected our pairing; clearing it");
       void saveSettings({ token: "" });
       connection.state = "unpaired";
       connection.error = "This browser is no longer paired with the server.";

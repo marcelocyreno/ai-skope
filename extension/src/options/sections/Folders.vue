@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** The read allow-list: nothing outside these folders is ever opened. */
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { connection, api } from "@/stores/connection";
 import type { Folder } from "@/api/types";
 import Icon from "@/pane/components/Icon.vue";
@@ -11,6 +11,8 @@ const watchIt = ref(true);
 const error = ref("");
 
 onMounted(refresh);
+// The page mounts before the connection is up, so load again once it is.
+watch(() => connection.state, (state) => { if (state === "online") void refresh(); });
 
 async function refresh() {
   if (connection.state !== "online") return;

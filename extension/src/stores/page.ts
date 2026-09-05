@@ -89,11 +89,75 @@ export async function ensureAccess(): Promise<boolean> {
     return false;
   }
   const origin = new URL(page.url).origin + "/*";
-  if (await chrome.permissions.contains({ origins: [origin] })) return true;
+  if (await chrome.permissions.contains({ origins: [origin] })) {
+    await enableOnSite(origin);
+    return true;
+  }
   try {
-    return await chrome.permissions.request({ origins: [origin] });
+    const granted = await chrome.permissions.request({ origins: [origin] });
+    if (granted) await enableOnSite(origin);
+    return granted;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Selecting text has to work without the user asking for it first — the design
+ * shows the toolbar appearing on any drag-select. That means the content
+ * script must already be in the page, so once a site is allowed it is
+ * registered there permanently rather than injected per action.
+ */
+async function enableOnSite(origin: string): Promise<void> {
+  await registerContentScript(origin);
+  // A registration only affects future loads, so the page already on screen
+  // gets the script injected now — otherwise the first drag-select after
+  // granting access would do nothing.
+  if (page.tabId != null) {
+    try {
+      await chrome.scripting.executeScript({ target: { tabId: page.tabId }, files: ["content.js"] });
+    } catch {
+      /* the tab may have navigated; the registration covers the next load */
+    }
+  }
+}
+
+async function registerContentScript(origin: string): Promise<void> {
+  const id = `skope-${origin}`;
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [id] });
+    if (existing.length > 0) return;
+    await chrome.scripting.registerContentScripts([
+      {
+        id,
+        js: ["content.js"],
+        matches: [origin],
+        runAt: "document_idle",
+        persistAcrossSessions: true,
+      },
+    ]);
+  } catch {
+    // Registration is an optimisation: picking still works by injecting on
+    // demand, so a failure here must not stop the user.
+  }
+}
+
+/**
+ * Re-registers on every allowed origin at start-up, so a site allowed in an
+ * earlier session still shows the selection toolbar.
+ */
+export async function syncContentScripts(): Promise<void> {
+  try {
+    const perms = await chrome.permissions.getAll();
+    for (const origin of perms.origins ?? []) {
+      // A granted origin can be a specific site or a broad pattern such as
+      // <all_urls>; both are worth registering on.
+      if (origin.startsWith("http") || origin === "<all_urls>" || origin.startsWith("*://")) {
+        await registerContentScript(origin === "<all_urls>" ? "*://*/*" : origin);
+      }
+    }
+  } catch {
+    /* nothing to sync */
   }
 }
 

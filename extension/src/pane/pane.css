@@ -92,3 +92,15 @@ body {
   font-family: var(--font-mono);
   font-size: var(--t-11);
 }
+
+/* Asking whether the page's text may go with a question. It is a question,
+   not a failure, so it uses the focus colour rather than a status one. */
+.sk-strip.is-ask {
+  background: var(--focus-soft);
+}
+.sk-strip.is-ask .sk-ico {
+  color: var(--focus);
+}
+.sk-strip .act.plain {
+  color: var(--ink-2);
+}

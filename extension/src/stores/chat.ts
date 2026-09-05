@@ -72,16 +72,25 @@ export function removeContext(index: number): void {
   chat.tray.splice(index, 1);
 }
 
+/** How a message should treat the page's text. */
+export interface SendOptions {
+  /** Include the page's readable text with this message. */
+  includePage?: boolean;
+}
+
 /** Sends the draft and streams the answer into the transcript. */
-export async function send(): Promise<void> {
+export async function send(opts: SendOptions = {}): Promise<void> {
   const text = chat.draft.trim();
   if (!text || chat.sending) return;
   if (!chat.chat) await newChat();
   const chatId = chat.chat!.id;
 
+  // The page's text is only read when the user has allowed it — always, or
+  // for this message. "Never" means never, whatever was asked for.
   const settings = await loadSettings();
   let pageText: string | undefined;
-  if (settings.pageAccess === "always") {
+  const wantsPage = settings.pageAccess === "always" || (opts.includePage && settings.pageAccess !== "never");
+  if (wantsPage) {
     pageText = await readPageText().catch(() => "");
   }
 
@@ -185,10 +194,30 @@ export async function refresh(): Promise<void> {
 }
 
 /** Retries the last question after a failure. */
+/**
+ * What the user decided about each page's text this session — including a no,
+ * so the pane asks once per page rather than before every message. Decisions
+ * are not persisted: a new panel asks again.
+ */
+const pageDecisions = new Map<string, boolean>();
+
+export function rememberPageConsent(url: string, allowed = true): void {
+  if (url) pageDecisions.set(url, allowed);
+}
+
+export function pageConsentGiven(url: string): boolean {
+  return pageDecisions.get(url) === true;
+}
+
+/** Whether the user has already answered for this page. */
+export function pageDecided(url: string): boolean {
+  return pageDecisions.has(url);
+}
+
 export async function retryLast(): Promise<void> {
   const lastUser = [...chat.messages].reverse().find((m) => m.role === "user");
   if (!lastUser) return;
   chat.draft = lastUser.text;
   chat.tray = lastUser.context?.slice() ?? [];
-  await send();
+  await send({ includePage: pageConsentGiven(page.url) });
 }

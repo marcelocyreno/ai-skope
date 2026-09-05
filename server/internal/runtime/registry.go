@@ -138,12 +138,28 @@ func groupMembers(specs []Spec, group string) []string {
 	return out
 }
 
-// List returns the cached detection results, detecting once if needed.
+// List returns the cached detection results, detecting again when the set of
+// runtimes has changed.
+//
+// The cache matters because probing spawns a process per runtime, but it must
+// not hide a runtime that appeared since: `aiss runtimes command …` writes to
+// the database from a separate process, and without this the running server
+// would ignore it until its next scheduled probe, minutes later.
 func (r *Registry) List(ctx context.Context) []Info {
+	specs := r.specs()
 	r.mu.RLock()
 	n := len(r.infos)
+	changed := len(specs) != n
+	if !changed {
+		for _, s := range specs {
+			if _, known := r.infos[s.ID]; !known {
+				changed = true
+				break
+			}
+		}
+	}
 	r.mu.RUnlock()
-	if n == 0 {
+	if n == 0 || changed {
 		return r.Detect(ctx)
 	}
 	r.mu.RLock()

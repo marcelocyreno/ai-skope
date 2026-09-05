@@ -338,3 +338,45 @@ func TestServerXDGDirsAreNotInheritedByAgents(t *testing.T) {
 		t.Fatal("passthroughEnv must still be able to pass XDG_DATA_HOME")
 	}
 }
+
+func TestRuntimeAddedWhileRunningIsPickedUp(t *testing.T) {
+	// `aiss runtimes command …` writes the override from a separate process.
+	// A running server must notice, rather than serve a stale list until its
+	// next scheduled probe.
+	db, err := store.OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	cfg := config.Default()
+	cfg.ProbeTimeout = config.Duration(2 * time.Second)
+	reg := NewRegistry(db, cfg, provider.NewRegistry(db, nil), status.NewBus())
+	ctx := context.Background()
+
+	before := reg.List(ctx)
+	for _, i := range before {
+		if i.ID == "custom:added-later" {
+			t.Fatal("the runtime should not exist yet")
+		}
+	}
+
+	// Written the way the CLI writes it: straight to the database.
+	if err := db.SetRuntimeOverride(store.RuntimeOverride{
+		ID: "custom:added-later", Enabled: true, Command: fake(t, "versioned.sh"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	var found bool
+	for _, i := range reg.List(ctx) {
+		if i.ID == "custom:added-later" {
+			found = true
+			if !i.Available {
+				t.Fatalf("the new runtime should be detected as available: %+v", i)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("a runtime added while the server is running must appear in the list")
+	}
+}

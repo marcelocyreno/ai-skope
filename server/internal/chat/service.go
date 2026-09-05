@@ -121,8 +121,11 @@ func (s *Service) Send(ctx context.Context, chatID string, req SendRequest) (<-c
 		return nil, err
 	}
 
+	// The page is named whenever one is known, even when its text was not
+	// shared: the URL and title are what the tab already shows, and without
+	// them the model cannot even say which page it is being asked about.
 	var pageItem *store.ContextItem
-	if req.Page != nil && req.Page.Text != "" {
+	if req.Page != nil && (req.Page.URL != "" || req.Page.Text != "") {
 		pageItem = &store.ContextItem{
 			Type: store.ContextPage, URL: req.Page.URL, Title: req.Page.Title, Text: req.Page.Text,
 		}

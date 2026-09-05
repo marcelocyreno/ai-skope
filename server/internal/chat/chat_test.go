@@ -392,3 +392,41 @@ func TestAgentOutputShapes(t *testing.T) {
 		})
 	}
 }
+
+func TestPageIsNamedEvenWhenItsTextIsWithheld(t *testing.T) {
+	// With page access on Ask — the default — a question arrives with the
+	// page's URL and title but no text. The model must still be told which
+	// page it is being asked about, or it cannot even say what it is missing.
+	svc, db, _ := newService(t, "claude-like.sh")
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{
+		Text: "what is this about?",
+		Page: &PageRef{URL: "https://news.example/article", Title: "A headline"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The fake echoes its prompt, so the prompt itself can be inspected.
+	prompt := joinText(drain(t, ch))
+	if !strings.Contains(prompt, "https://news.example/article") {
+		t.Fatalf("the page's URL must reach the model: %q", prompt)
+	}
+	if !strings.Contains(prompt, "A headline") {
+		t.Fatalf("the page's title must reach the model: %q", prompt)
+	}
+}
+
+func TestPageTextIsIncludedWhenShared(t *testing.T) {
+	svc, db, _ := newService(t, "claude-like.sh")
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{
+		Text: "summarize",
+		Page: &PageRef{URL: "https://news.example/a", Title: "T", Text: "The report was criticised by allies."},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if prompt := joinText(drain(t, ch)); !strings.Contains(prompt, "criticised by allies") {
+		t.Fatalf("shared page text must reach the model: %q", prompt)
+	}
+}

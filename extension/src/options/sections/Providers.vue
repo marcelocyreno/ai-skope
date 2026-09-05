@@ -3,7 +3,7 @@
  * Providers whose keys the server holds. The key is typed here but stored by
  * the server in the OS keychain; the browser only ever sees a masked form.
  */
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { connection, api } from "@/stores/connection";
 import type { Capabilities, Provider, RuntimeInfo } from "@/api/types";
 import Icon from "@/pane/components/Icon.vue";
@@ -21,6 +21,8 @@ const form = ref({ kind: "", name: "", baseUrl: "", key: "", availableTo: [] as 
 const agentRuntimes = computed(() => runtimes.value.filter((r) => r.usesProviders));
 
 onMounted(refresh);
+// The page mounts before the connection is up, so load again once it is.
+watch(() => connection.state, (state) => { if (state === "online") void refresh(); });
 
 async function refresh() {
   if (connection.state !== "online") return;

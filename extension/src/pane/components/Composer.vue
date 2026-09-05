@@ -5,7 +5,7 @@
  * near the field but far from Send, so a slip cannot discard a draft.
  */
 import { ref, computed, nextTick } from "vue";
-import { chat, removeContext, send, cancel } from "@/stores/chat";
+import { chat, removeContext, cancel } from "@/stores/chat";
 import { connection } from "@/stores/connection";
 import { modelStatus } from "@/stores/models";
 import { page } from "@/stores/page";
@@ -15,6 +15,7 @@ import Icon from "./Icon.vue";
 
 const props = defineProps<{ switcherOpen?: boolean; pickerOpen?: boolean }>();
 const emit = defineEmits<{
+  (e: "submit"): void;
   (e: "pick"): void;
   (e: "select"): void;
   (e: "files"): void;
@@ -43,7 +44,7 @@ function autosize() {
 
 async function submit() {
   if (!canSend.value) return;
-  await send();
+  emit("submit");
   await nextTick();
   autosize();
 }

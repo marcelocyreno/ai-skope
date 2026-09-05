@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** The server itself, and the coding agents it can drive. */
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { connection, api, setBaseUrl, connect } from "@/stores/connection";
 import type { RuntimeInfo } from "@/api/types";
 import Icon from "@/pane/components/Icon.vue";
@@ -13,6 +13,13 @@ const error = ref("");
 onMounted(async () => {
   url.value = connection.settings?.baseUrl ?? "";
   await refresh();
+});
+// The page mounts before the connection is up, so load again once it is.
+watch(() => connection.state, (state) => {
+  if (state === "online") {
+    url.value = connection.settings?.baseUrl ?? url.value;
+    void refresh();
+  }
 });
 
 async function refresh() {

@@ -7,9 +7,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { connection, initConnection, stopConnection } from "@/stores/connection";
 import { loadModels } from "@/stores/models";
-import { chat, openForCurrentPage, newChat, addContext, send } from "@/stores/chat";
+import { chat, openForCurrentPage, newChat, addContext, send, rememberPageConsent, pageConsentGiven, pageDecided } from "@/stores/chat";
 import { loadNotes, addNote } from "@/stores/notes";
-import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, readPageText } from "@/stores/page";
+import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, syncContentScripts } from "@/stores/page";
 import { showToast } from "@/stores/toast";
 import type { ContextItem, FileEntry } from "@/api/types";
 
@@ -25,6 +25,7 @@ import History from "./components/History.vue";
 import Notes from "./components/Notes.vue";
 import QuickSettings from "./components/QuickSettings.vue";
 import Pairing from "./components/Pairing.vue";
+import Icon from "./components/Icon.vue";
 import Toast from "./components/Toast.vue";
 
 type Overlay = "none" | "switcher" | "files";
@@ -34,6 +35,8 @@ const tab = ref<"chat" | "notes">("chat");
 const overlay = ref<Overlay>("none");
 const panel = ref<Panel>("none");
 const composer = ref<InstanceType<typeof Composer> | null>(null);
+/** True while the pane is asking whether to include the page's text. */
+const askingPage = ref(false);
 
 const ready = computed(() => connection.state === "online");
 const showChat = computed(() => tab.value === "chat");
@@ -42,6 +45,7 @@ let unwatchTab: (() => void) | null = null;
 
 onMounted(async () => {
   await refreshActiveTab();
+  void syncContentScripts();
   unwatchTab = watchActiveTab(() => {
     // A new page means a new conversation context; the old one is in History.
     if (ready.value) void openForCurrentPage();
@@ -132,12 +136,47 @@ async function doNewChat() {
   showToast("New chat — the last one is in History", { icon: "i-history" });
 }
 
+/**
+ * Summarising is an explicit request for the whole page, so clicking it is the
+ * consent — there is nothing to ask about. It still respects "never".
+ */
 async function summarize() {
+  if (connection.settings?.pageAccess === "never") {
+    showToast("Page access is set to Never, so the page can't be summarized", { icon: "i-shield" });
+    return;
+  }
   chat.draft = "Summarize this page";
-  const text = await readPageText();
-  if (text) chat.draft = "Summarize this page";
-  composer.value?.focus();
-  await send();
+  rememberPageConsent(page.url);
+  await submitMessage({ includePage: true });
+}
+
+/**
+ * The composer asks to send. With page access on Ask — the default — a
+ * question carrying no context would reach the model with nothing to go on, so
+ * the pane asks first rather than sending a request that cannot be answered.
+ */
+async function submitMessage(opts: { includePage?: boolean } = {}) {
+  const access = connection.settings?.pageAccess ?? "ask";
+  const hasContext = chat.tray.length > 0;
+  const decided = opts.includePage !== undefined;
+
+  if (!decided && access === "ask" && !hasContext && !pageDecided(page.url) && page.url) {
+    askingPage.value = true;
+    return;
+  }
+  askingPage.value = false;
+  await send({ includePage: opts.includePage ?? pageConsentGiven(page.url) });
+}
+
+async function answerWithPage() {
+  rememberPageConsent(page.url);
+  await submitMessage({ includePage: true });
+}
+
+async function answerWithoutPage() {
+  // Remember the no as well, so the question is asked once per page.
+  rememberPageConsent(page.url, false);
+  await submitMessage({ includePage: false });
 }
 
 function openOptions(section: string) {
@@ -182,9 +221,17 @@ function onKeydown(e: KeyboardEvent) {
 
       <StatusStrip v-if="showChat" @switch-model="overlay = 'switcher'" />
 
+      <div v-if="showChat && askingPage" class="sk-strip is-ask" role="status">
+        <Icon id="i-shield" />
+        <span>Send this page's text with your question?</span>
+        <button type="button" class="act" @click="answerWithPage()">Include page</button>
+        <button type="button" class="act plain" @click="answerWithoutPage()">Without it</button>
+      </div>
+
       <Composer
         v-if="showChat"
         ref="composer"
+        @submit="submitMessage()"
         :switcher-open="overlay === 'switcher'"
         :picker-open="overlay === 'files'"
         @pick="doPick()"

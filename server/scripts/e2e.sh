@@ -28,7 +28,11 @@ cleanup() {
   sleep 0.3
   pkill -f "$WORK/aiss" >/dev/null 2>&1 || true
   # The stub provider would otherwise outlive the run and keep the pipe open.
-  [ -n "$PROVIDER_STUB_PID" ] && kill "$PROVIDER_STUB_PID" >/dev/null 2>&1
+  # Silence the shell's own "Terminated" notice for the stub.
+  if [ -n "$PROVIDER_STUB_PID" ]; then
+    kill "$PROVIDER_STUB_PID" >/dev/null 2>&1
+    wait "$PROVIDER_STUB_PID" 2>/dev/null
+  fi
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -202,8 +206,10 @@ expect_eq "note deleted" "$(api GET /v1/notes | jq_ 'len(d["notes"])')" "0"
 
 say "Providers (server-held keys)"
 FAKE_API="$WORK/provider.log"
-python3 - "$WORK/port.txt" >/dev/null 2>&1 <<'PY' &
-import http.server, json, socketserver, sys, threading
+# The stub provider is written to a file rather than fed on stdin: a heredoc
+# attached to a background job leaks its own text into this script's output.
+cat > "$WORK/stub_provider.py" <<'PY'
+import http.server, json, socketserver, sys
 class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         body = json.dumps({"data":[{"id":"GLM 5.3","context_length":200000},{"id":"GLM 5.3 Flash"}]}).encode()
@@ -214,6 +220,7 @@ with socketserver.TCPServer(("127.0.0.1", 0), H) as srv:
     open(sys.argv[1], "w").write(str(srv.server_address[1]))
     srv.serve_forever()
 PY
+python3 "$WORK/stub_provider.py" "$WORK/port.txt" >/dev/null 2>&1 &
 PROVIDER_STUB_PID=$!
 for i in $(seq 1 40); do [ -s "$WORK/port.txt" ] && break; sleep 0.1; done
 PPORT="$(cat "$WORK/port.txt")"
