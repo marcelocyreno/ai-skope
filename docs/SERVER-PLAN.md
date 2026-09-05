@@ -126,7 +126,7 @@ All JSON. Errors: `{ "error": { "code": "folder_not_allowed", "message": "…" }
   "context": [
     { "type": "element", "selector": "article.pg-tier.featured", "html": "<article…>", "text": "…", "rect": [320, 412] },
     { "type": "text", "quote": "Growth is free for 12 months…", "before": "…", "after": "…" },
-    { "type": "file", "path": "/Users/me/dev/finme/README.md" }
+    { "type": "file", "path": "/Users/me/dev/northwind/README.md" }
   ],
   "model": { "runtime": "pi", "provider": "z.ai", "model": "GLM 5.3", "effort": "high" }
 }
@@ -261,7 +261,7 @@ total). No telemetry leaves the machine.
 - Contract: an OpenAPI 3 document generated from the DTOs and checked in;
   the extension's client is generated from it.
 - Manual: `aiss doctor` and a `--demo` flag that seeds the design's example
-  data (Northwind chats, notes, finme files) for UI work.
+  data (Northwind chats, notes, northwind files) for UI work.
 
 ## 13. Milestones
 

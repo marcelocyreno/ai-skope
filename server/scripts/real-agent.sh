@@ -29,12 +29,12 @@ jq_(){ python3 -c "import sys,json;d=json.load(sys.stdin);print($1)" 2>/dev/null
 
 echo "Building"; go build -o "$W/aiss" ./cmd/aiss || exit 1
 
-PROJ="$W/dev/finme"; mkdir -p "$PROJ"; PROJ="$(cd "$PROJ" && pwd -P)"
+PROJ="$W/dev/northwind"; mkdir -p "$PROJ"; PROJ="$(cd "$PROJ" && pwd -P)"
 cat > "$PROJ/README.md" <<'EOF'
-# finme
+# northwind
 
 ## Export format
-Each statement month is written as CSV and JSON into ~/.finme/export.
+Each statement month is written as CSV and JSON into ~/.northwind/export.
 The JSON is the source of truth for re-imports; the CSV is for spreadsheets.
 EOF
 

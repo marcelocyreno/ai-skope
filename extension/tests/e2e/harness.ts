@@ -87,11 +87,11 @@ export const test = base.extend<{ harness: Harness }>({
     });
 
     // A project the server is allowed to read, and a fake agent to answer.
-    const projectDir = join(work, "dev", "finme");
+    const projectDir = join(work, "dev", "northwind");
     mkdirSync(projectDir, { recursive: true });
     writeFileSync(
       join(projectDir, "README.md"),
-      "# finme\n\n## Export format\nEach statement month is written as CSV and JSON.\n",
+      "# northwind\n\n## Export format\nEach statement month is written as CSV and JSON.\n",
     );
     aiss("folders", "add", projectDir);
     aiss("runtimes", "command", "custom:e2e", join(serverDir, "testdata/fakes/claude-like.sh"));

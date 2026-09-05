@@ -73,16 +73,16 @@ go build -o "$WORK/aiss" ./cmd/aiss || { bad "build"; exit 1; }
 ok "aiss built ($("$WORK/aiss" version))"
 
 say "Fixture: a project folder with a local page and notes"
-PROJ="$WORK/dev/finme"
+PROJ="$WORK/dev/northwind"
 mkdir -p "$PROJ/docs" "$PROJ/node_modules/dep"
 # The server resolves symlinks (on macOS /var -> /private/var), so compare
 # against the canonical path the way it will come back.
 PROJ="$(cd "$PROJ" && pwd -P)"
 cat > "$PROJ/README.md" <<'EOF'
-# finme
+# northwind
 
 ## Export format
-Each statement month is written as CSV and JSON into ~/.finme/export.
+Each statement month is written as CSV and JSON into ~/.northwind/export.
 The JSON is the source of truth for re-imports.
 EOF
 cat > "$PROJ/docs/pricing.html" <<'EOF'
@@ -236,7 +236,7 @@ api DELETE "/v1/providers/$PROV_ID" >/dev/null
 say "Diagnostics"
 check "aiss status reports running" "$("$WORK/aiss" status | grep -c 'running' | grep -v '^0$')"
 check "aiss doctor runs"            "$("$WORK/aiss" doctor | grep -c 'AI Skope Server' | grep -v '^0$')"
-check "aiss folders lists the folder" "$("$WORK/aiss" folders list | grep -c finme | grep -v '^0$')"
+check "aiss folders lists the folder" "$("$WORK/aiss" folders list | grep -c northwind | grep -v '^0$')"
 check "logs are written"            "$("$WORK/aiss" logs --tail 5 | grep -c 'aiss listening' | grep -v '^0$')"
 
 say "Shutdown"

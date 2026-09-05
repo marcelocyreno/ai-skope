@@ -207,7 +207,7 @@ test("the options page manages folders against the real server", async ({ harnes
   }
 
   // The folder the harness allowed is listed, and a new one can be added.
-  const listed = options.getByText(/dev\/finme/).first();
+  const listed = options.getByText(/dev\/northwind/).first();
   if (!(await listed.isVisible({ timeout: 10000 }).catch(() => false))) {
     throw new Error(`the options page did not list the allowed folder. It showed:\n${(
       await options.locator(".sk-opt-section[data-section='folders']").innerText()

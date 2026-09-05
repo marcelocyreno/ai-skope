@@ -54,7 +54,7 @@ right end (far from Send).
 |---|---|---|---|
 | element | pick mode, click | reticle · `article.pg-tier.featured` · `320 × 412` | selector, trimmed outerHTML, innerText, rect |
 | text | drag-select → **Add to chat / Ask… / Save note** | quote glyph · first ~80 chars | the selection, surrounding block for context |
-| file / folder | Add file → server picker | folder glyph · `README.md` · `~/dev/finme · 12 KB` | path (the runtime reads it inside an allowed folder) |
+| file / folder | Add file → server picker | folder glyph · `README.md` · `~/dev/northwind · 12 KB` | path (the runtime reads it inside an allowed folder) |
 | page (implicit) | per "Page access" setting: Ask / Always / Never | — | URL, title, readable text |
 
 ### Pick mode

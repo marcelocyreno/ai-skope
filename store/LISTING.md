@@ -107,7 +107,7 @@ AI Skope lets a user ask a coding agent running on their own computer about the 
 | `sidePanel` | The extension's entire user interface is the side panel. There is no other surface. |
 | `storage` | Stores the pairing token for the local server, the server address, and appearance settings (theme, palette, text size). Nothing is stored remotely. |
 | `scripting` | Injects the element picker and the text-selection toolbar into the page, and reads the page's text when the user asks a question about it. Only ever on a site the user has separately allowed. |
-| `tabs` | Reads the active tab's URL and title so the pane can describe the page the user is looking at, keep a separate conversation per page, and follow along when they navigate. |
+| `tabs` | Reads the active tab's URL and title so the pane can describe the page the user is looking at, keep a separate conversation per page, and follow along when they navigate. The URL and title are sent only to the companion application on the user's own machine, which stores the conversation locally. |
 | `contextMenus` | Adds "Ask AI Skope about this" to the right-click menu on selected text. |
 | Host permission `http://127.0.0.1/*`, `http://localhost/*` | Communicates with AI Skope Server, a companion application the user installs and runs on their own computer. This is the only network destination the extension contacts. |
 | Optional host permission `<all_urls>` | Requested per site, at the moment the user first picks an element or selects text on that site, from their own click. Nothing is requested at install time, and access to a site is never assumed. |
@@ -134,13 +134,18 @@ Everything executes from the package. No `eval`, no remotely-hosted scripts.
 | Authentication information | Not collected |
 | Personal communications | Not collected |
 | Location | Not collected |
-| Web history | Not collected |
+| Web history | **Collected** — see note below |
 | User activity | Not collected |
 | Website content | **Collected** — see note below |
 
-For "Website content", the honest position: page content is transmitted, but
-only to a server on the user's own machine, only on their action, and it is
-never sent to the developer. Then certify all three:
+Google defines collection as transmitting data off the user's device, and
+`127.0.0.1` is the user's own device — so a strict reading would answer "not
+collected" to both. These are answered the conservative way instead, because
+over-disclosure is never a policy violation and under-disclosure is. Both go to
+a companion application on the user's own machine, on their action, and neither
+ever reaches the developer. Say exactly that if review asks.
+
+Then certify all three:
 
 - not being sold to third parties
 - not being used or transferred for purposes unrelated to the single purpose
@@ -214,5 +219,5 @@ unfinished, but it is not required to submit.
   manifest currently points at `https://github.com/marcelocyreno/ai-skope`.
 - **`[INSTALL URL]`** and **`[PRIVACY POLICY URL]`** — both need somewhere to
   live. GitHub Pages on the same repository covers both.
-- **A licence.** The repository has none. Not required to submit, but "open
-  source" in the description is a claim you cannot back without one.
+- Nothing else. The repository is MIT licensed, which backs the "open source"
+  line in the description.

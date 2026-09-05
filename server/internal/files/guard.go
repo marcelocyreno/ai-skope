@@ -58,7 +58,7 @@ func Expand(p string) (string, error) {
 }
 
 // Tilde renders an absolute path with the home directory abbreviated, the way
-// the UI shows it (~/dev/finme/README.md).
+// the UI shows it (~/dev/northwind/README.md).
 func Tilde(p string) string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
