@@ -61,6 +61,54 @@ describe("rendering an answer", () => {
     expect(renderMarkdown("---")).toBe("<hr>");
   });
 
+  it("renders a table as a table, not a line of pipes", () => {
+    // The bug from an Amazon checkout summary: the totals table fell through
+    // to the paragraph branch and every row ran together into pipe soup.
+    const html = renderMarkdown("| Item | Cost |\n|---|---|\n| Frete | R$ 0,00 |\n| Total | R$ 114,59 |");
+    expect(html).toBe(
+      "<div class=\"sk-tbl\"><table><thead><tr><th>Item</th><th>Cost</th></tr></thead>" +
+        "<tbody><tr><td>Frete</td><td>R$ 0,00</td></tr>" +
+        "<tr><td>Total</td><td>R$ 114,59</td></tr></tbody></table></div>",
+    );
+  });
+
+  it("starts a table that follows a line of text directly", () => {
+    const html = renderMarkdown("**Totals**\n| | |\n|---|---|\n| Frete | R$ 0,00 |");
+    expect(html).toContain("<p><strong>Totals</strong></p>");
+    expect(html).toContain("<td>Frete</td>");
+    expect(html).not.toContain("|---|");
+  });
+
+  it("drops a header row the model left empty", () => {
+    // A key/value table is often written with no header at all.
+    const html = renderMarkdown("| | |\n|---|---|\n| Itens | R$ 259,99 |");
+    expect(html).not.toContain("<thead>");
+    expect(html).toContain("<tbody><tr><td>Itens</td><td>R$ 259,99</td></tr></tbody>");
+  });
+
+  it("aligns columns the delimiter row marks", () => {
+    const html = renderMarkdown("| a | b | c |\n| :-- | :-: | --: |\n| 1 | 2 | 3 |");
+    expect(html).toContain('<td>1</td><td class="sk-c">2</td><td class="sk-r">3</td>');
+  });
+
+  it("formats inside cells, and pads rows that are short", () => {
+    const html = renderMarkdown("| a | b |\n|---|---|\n| **bold** |");
+    expect(html).toContain("<td><strong>bold</strong></td><td></td>");
+  });
+
+  it("ends the table at the next block", () => {
+    const html = renderMarkdown("| a |\n|---|\n| 1 |\nAfter the table.");
+    expect(html).toContain("<td>1</td>");
+    expect(html).toContain("<p>After the table.</p>");
+  });
+
+  it("does not mistake a stray pipe for a table", () => {
+    expect(renderMarkdown("run `a | b`\nand then some")).toBe(
+      "<p>run <code>a | b</code> and then some</p>",
+    );
+    expect(renderMarkdown("a | b\n---")).toBe("<p>a | b</p><hr>");
+  });
+
   it("links only to schemes that cannot execute", () => {
     expect(renderMarkdown("[docs](https://example.com/x)")).toContain(
       '<a href="https://example.com/x" target="_blank" rel="noopener noreferrer">docs</a>',
@@ -109,6 +157,12 @@ describe("withCursor", () => {
 
   it("sits inside the last list item, not after the list", () => {
     expect(withCursor("<ul><li>a</li><li>b</li></ul>", C)).toBe(`<ul><li>a</li><li>b${C}</li></ul>`);
+  });
+
+  it("sits inside the last cell, not below the table", () => {
+    expect(withCursor('<div class="sk-tbl"><table><tbody><tr><td>a</td></tr></tbody></table></div>', C)).toBe(
+      `<div class="sk-tbl"><table><tbody><tr><td>a${C}</td></tr></tbody></table></div>`,
+    );
   });
 
   it("stands alone when there is nothing yet", () => {
