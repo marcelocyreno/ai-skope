@@ -5,6 +5,9 @@ const shortcuts = [
   { action: "Pick element", keys: ["⌘", "⇧", "K"] },
   { action: "Add the selected text", keys: ["⌘", "⇧", "S"] },
   { action: "New chat", keys: ["⌘", "⇧", "N"] },
+  // Chrome binds four suggested shortcuts per extension and the four above
+  // spend them, so this one ships unassigned rather than not at all.
+  { action: "Copy the last answer", keys: [] },
 ];
 
 function openChromeShortcuts() {
@@ -22,7 +25,10 @@ function openChromeShortcuts() {
         <tbody>
           <tr v-for="s in shortcuts" :key="s.action">
             <td>{{ s.action }}</td>
-            <td><span class="kbds"><kbd v-for="k in s.keys" :key="k">{{ k }}</kbd></span></td>
+            <td>
+              <span v-if="s.keys.length" class="kbds"><kbd v-for="k in s.keys" :key="k">{{ k }}</kbd></span>
+              <span v-else style="color: var(--ink-3)">Unassigned — set it in Chrome</span>
+            </td>
           </tr>
         </tbody>
       </table>

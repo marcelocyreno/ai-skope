@@ -9,6 +9,9 @@ import { chat, removeContext, cancel } from "@/stores/chat";
 import { connection } from "@/stores/connection";
 import { modelStatus } from "@/stores/models";
 import { page } from "@/stores/page";
+import { showToast } from "@/stores/toast";
+import { copyText } from "@/pane/clipboard";
+import { chatMarkdown } from "@/pane/transcript";
 import ContextChip from "./ContextChip.vue";
 import ModelChip from "./ModelChip.vue";
 import Icon from "./Icon.vue";
@@ -33,6 +36,17 @@ const placeholder = computed(() => {
   if (modelStatus.value === "offline") return "Waiting for the model to come back…";
   return "Ask about this page… pick an element or select text to add context";
 });
+
+/**
+ * The whole conversation as Markdown. Chat-level actions live here rather than
+ * in the top bar, which holds navigation only. This is the one copy that raises
+ * a toast: what it took is mostly off-screen, so nothing else would say so.
+ */
+async function copyChat() {
+  if (chat.messages.length === 0) return;
+  if (!(await copyText(chatMarkdown(chat.chat, chat.messages)))) return;
+  showToast("Conversation copied", { icon: "i-copy" });
+}
 
 /** The field starts at three rows and grows to eight. */
 function autosize() {
@@ -133,8 +147,16 @@ defineExpose({ focus: () => field.value?.focus() });
     <div class="sk-hint">
       <span><kbd>⏎</kbd> send</span>
       <span><kbd>⇧⏎</kbd> new line</span>
-      <span><kbd>⌘⇧K</kbd> pick element</span>
       <span class="grow" />
+      <button
+        type="button"
+        class="clear"
+        :disabled="chat.messages.length === 0"
+        title="Copy the whole conversation as Markdown"
+        @click="copyChat()"
+      >
+        <Icon id="i-copy" size="sm" />Copy chat
+      </button>
       <button
         type="button"
         class="clear"
