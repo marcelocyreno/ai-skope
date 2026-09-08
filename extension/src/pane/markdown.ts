@@ -13,7 +13,7 @@
  *
  * The supported subset is what answers actually use: headings, paragraphs,
  * bullet and numbered lists (with one level of nesting), fenced and inline
- * code, bold, italic, links, block quotes and rules.
+ * code, bold, italic, links, block quotes, rules and tables.
  */
 
 /** Marks a code span while the rest of the inline formatting runs. Built from
@@ -74,15 +74,73 @@ function isListItem(line: string): boolean {
   return BULLET.test(line) || NUMBER.test(line);
 }
 
-function isBlockStart(line: string): boolean {
+/** A column's alignment, taken from the `:` markers in the delimiter row. */
+type Align = "" | "r" | "c";
+
+/** Splits one table row into cells. A `\|` is a literal pipe, not a divider. */
+function splitRow(line: string): string[] {
+  let s = line.trim();
+  if (s.startsWith("|")) s = s.slice(1);
+  if (s.endsWith("|") && !s.endsWith("\\|")) s = s.slice(0, -1);
+  return s.split(/(?<!\\)\|/).map((cell) => cell.replace(/\\\|/g, "|").trim());
+}
+
+/**
+ * Reads the `|---|:--:|` line under a table's header — the line that makes the
+ * block a table at all. Returns one alignment per column, or null for an
+ * ordinary line that merely happens to contain a pipe.
+ */
+function delimiterRow(line: string): Align[] | null {
+  if (!line.includes("|")) return null;
+  const align: Align[] = [];
+  for (const cell of splitRow(line)) {
+    if (!/^:?-+:?$/.test(cell)) return null;
+    align.push(cell.endsWith(":") ? (cell.startsWith(":") ? "c" : "r") : "");
+  }
+  return align.length ? align : null;
+}
+
+function isTableStart(lines: string[], i: number): boolean {
+  return lines[i].includes("|") && i + 1 < lines.length && delimiterRow(lines[i + 1]) !== null;
+}
+
+function isBlockStart(lines: string[], i: number): boolean {
+  const line = lines[i];
   return (
     !line.trim() ||
     FENCE.test(line) ||
     HEADING.test(line) ||
     QUOTE.test(line) ||
     RULE.test(line) ||
-    isListItem(line)
+    isListItem(line) ||
+    isTableStart(lines, i)
   );
+}
+
+/** Renders a table: the header row, the delimiter row, then the body. */
+function renderTable(lines: string[], start: number): [string, number] {
+  const align = delimiterRow(lines[start + 1])!;
+  // The delimiter row fixes the width; short rows are padded, long ones cut.
+  const cells = (row: string[]) => Array.from({ length: align.length }, (_, c) => row[c] ?? "");
+
+  const head = cells(splitRow(lines[start]));
+  const body: string[][] = [];
+  let i = start + 2;
+  while (i < lines.length && lines[i].includes("|") && !isBlockStart(lines, i)) {
+    body.push(cells(splitRow(lines[i])));
+    i++;
+  }
+
+  const row = (tag: string, r: string[]) =>
+    `<tr>${r
+      .map((text, c) => `<${tag}${align[c] ? ` class="sk-${align[c]}"` : ""}>${inline(text)}</${tag}>`)
+      .join("")}</tr>`;
+
+  // A key/value table is often written with an empty header. Rendering it
+  // would put a blank stripe above the answer, so leave it out.
+  const thead = head.some((cell) => cell) ? `<thead>${row("th", head)}</thead>` : "";
+  const tbody = body.length ? `<tbody>${body.map((r) => row("td", r)).join("")}</tbody>` : "";
+  return [`<div class="sk-tbl"><table>${thead}${tbody}</table></div>`, i];
 }
 
 /** Renders one list, including a single level of nesting. */
@@ -96,7 +154,7 @@ function renderList(lines: string[], start: number): [string, number] {
     const match = lines[i].match(BULLET) ?? lines[i].match(NUMBER);
     if (!match) {
       // A plain line directly under an item continues that item.
-      if (items.length > 0 && lines[i].trim() && !isBlockStart(lines[i])) {
+      if (items.length > 0 && lines[i].trim() && !isBlockStart(lines, i)) {
         items[items.length - 1] += " " + inline(lines[i].trim());
         i++;
         continue;
@@ -183,8 +241,15 @@ export function renderMarkdown(source: string): string {
       continue;
     }
 
+    if (isTableStart(lines, i)) {
+      const [html, next] = renderTable(lines, i);
+      out.push(html);
+      i = next;
+      continue;
+    }
+
     const paragraph: string[] = [];
-    while (i < lines.length && lines[i].trim() && !isBlockStart(lines[i])) {
+    while (i < lines.length && lines[i].trim() && !isBlockStart(lines, i)) {
       paragraph.push(lines[i].trim());
       i++;
     }
@@ -204,6 +269,7 @@ export function renderPlain(source: string): string {
  * on a line of its own below the answer.
  */
 export function withCursor(html: string, cursor: string): string {
-  const tail = /(<\/(?:p|li|h[1-6]|blockquote|code)>)((?:<\/(?:ul|ol|pre|blockquote)>)*)$/;
+  const tail =
+    /(<\/(?:p|li|h[1-6]|blockquote|code|t[dh])>)((?:<\/(?:ul|ol|pre|blockquote|tr|thead|tbody|table|div)>)*)$/;
   return tail.test(html) ? html.replace(tail, `${cursor}$1$2`) : html + cursor;
 }

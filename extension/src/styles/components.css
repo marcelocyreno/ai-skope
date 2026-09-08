@@ -83,6 +83,12 @@
 .sk-ai-body pre { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line-2); overflow-x: auto; }
 .sk-ai-body pre code { padding: 0; border: 0; background: none; white-space: pre; }
 .sk-ai-body blockquote { padding-left: 10px; border-left: 2px solid var(--line); color: var(--ink-2); }
+.sk-ai-body .sk-tbl { overflow-x: auto; }
+.sk-ai-body table { width: 100%; border-collapse: collapse; font-size: var(--t-13); }
+.sk-ai-body th, .sk-ai-body td { padding: 4px 8px; border: 1px solid var(--line-2); text-align: left; vertical-align: top; }
+.sk-ai-body th { background: var(--surface-2); color: var(--ink-2); font-weight: 600; }
+.sk-ai-body th.sk-r, .sk-ai-body td.sk-r { text-align: right; }
+.sk-ai-body th.sk-c, .sk-ai-body td.sk-c { text-align: center; }
 .sk-ai-body hr { height: 1px; border: 0; background: var(--line-2); }
 .sk-ai-body strong { font-weight: 600; }
 .sk-ai-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
