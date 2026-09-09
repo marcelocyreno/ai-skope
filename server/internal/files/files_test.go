@@ -238,17 +238,54 @@ func TestIgnorerGitignore(t *testing.T) {
 	}
 }
 
-func TestPrimaryRootStaysInsideAllowList(t *testing.T) {
+func TestWorkDirIsTheProjectHoldingTheFile(t *testing.T) {
 	g, _, root := setup(t)
-	deep := filepath.Join(root, "pkg", "x.go")
-	write(t, deep, "package x")
-	got, err := g.PrimaryRoot([]string{"/etc/passwd", deep})
-	if err != nil || got != filepath.Dir(deep) {
-		t.Fatalf("primary root: %v %q", err, got)
+	// A repository nested inside the allowed folder, with a file deep in it.
+	repo := filepath.Join(root, "dev", "northwind")
+	if err := os.MkdirAll(filepath.Join(repo, ".git"), 0o755); err != nil {
+		t.Fatal(err)
 	}
-	got, err = g.PrimaryRoot(nil)
+	deep := filepath.Join(repo, "docs", "pricing.html")
+	write(t, deep, "<p>Growth</p>")
+
+	// A path outside the allow-list is skipped, and the agent runs in the
+	// repository, not in the file's own directory.
+	got, err := g.WorkDirFor([]string{"/etc/passwd", deep})
+	if err != nil || got != repo {
+		t.Fatalf("work dir should be the repository: %v %q", err, got)
+	}
+	got, err = g.WorkDirFor([]string{filepath.Join(repo, "docs")})
+	if err != nil || got != repo {
+		t.Fatalf("a directory resolves the same way: %v %q", err, got)
+	}
+
+	// With no repository around it, the allowed folder is the project.
+	loose := filepath.Join(root, "notes", "todo.md")
+	write(t, loose, "todo")
+	got, err = g.WorkDirFor([]string{loose})
+	if err != nil || got != root {
+		t.Fatalf("without a repository the allowed folder is the project: %v %q", err, got)
+	}
+
+	// Nothing usable: the first allowed folder.
+	got, err = g.WorkDirFor(nil)
 	if err != nil || got != root {
 		t.Fatalf("fallback root: %v %q", err, got)
+	}
+	if roots := g.RootPaths(); len(roots) != 1 || roots[0] != root {
+		t.Fatalf("root paths: %v", roots)
+	}
+}
+
+func TestWorkDirNeedsAnAllowedFolder(t *testing.T) {
+	db, err := store.OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	g := NewGuard(db, config.Default())
+	if _, err := g.WorkDirFor([]string{os.TempDir()}); err != ErrNoFolders {
+		t.Fatalf("want ErrNoFolders, got %v", err)
 	}
 }
 

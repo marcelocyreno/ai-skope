@@ -298,8 +298,12 @@ func TestPackBudget(t *testing.T) {
 	guard := files.NewGuard(db, config.Default())
 
 	big := strings.Repeat("word ", 20000)
-	packed := Pack(guard, "question?", &store.ContextItem{Type: store.ContextPage, Text: big, URL: "u"},
-		[]store.ContextItem{{Type: store.ContextElement, Selector: "div", Text: big}}, 4000)
+	packed := Pack(guard, Input{
+		Question: "question?",
+		Page:     &store.ContextItem{Type: store.ContextPage, Text: big, URL: "u"},
+		Items:    []store.ContextItem{{Type: store.ContextElement, Selector: "div", Text: big}},
+		Budget:   4000,
+	})
 	if packed.Bytes > 6000 {
 		t.Fatalf("packed prompt ignored the budget: %d bytes", packed.Bytes)
 	}
@@ -354,7 +358,7 @@ func TestAnswerIsNotRepeatedWhenTheAgentSendsItThreeWays(t *testing.T) {
 func TestAgentOutputShapes(t *testing.T) {
 	cases := []struct {
 		name, fake, want, session string
-		inputTokens              int64
+		inputTokens               int64
 	}{
 		{"pi and omp", "pi-like.sh", "one two", "01a06f28-pi-session", 2044},
 		{"opencode", "opencode-like.sh", "one two", "ses_opencode123", 11},
@@ -390,6 +394,166 @@ func TestAgentOutputShapes(t *testing.T) {
 				t.Fatalf("session %q, want %q", got.AgentSession, c.session)
 			}
 		})
+	}
+}
+
+func TestPromptTellsTheAgentAboutItsFolders(t *testing.T) {
+	// An agent that is not told it may look at the allowed folders never
+	// does, and answers "the page does not say" from inside a repository
+	// that does.
+	svc, db, root := newService(t, "claude-like.sh")
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "how does the export work?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prompt := joinText(drain(t, ch))
+	if !strings.Contains(prompt, "## Local folders") || !strings.Contains(prompt, files.Tilde(root)) {
+		t.Fatalf("the allowed folder must be named: %q", prompt)
+	}
+	if !strings.Contains(prompt, "do not propose a plan") {
+		t.Fatalf("the agent must be asked for an answer, not a plan: %q", prompt)
+	}
+}
+
+func TestIndexPointsTheAgentAtRelevantFiles(t *testing.T) {
+	svc, db, root := newService(t, "claude-like.sh")
+	writeFile(t, filepath.Join(root, "README.md"), "The export format writes CSV and JSON per month.")
+	writeFile(t, filepath.Join(root, "docs", "pricing.html"),
+		"<html><head><title>Plans</title></head><body><p>Growth costs $149 per month and caps at 25M events.</p></body></html>")
+	indexAll(t, db, svc.guard)
+
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "Is Growth enough for 40M events?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	prompt := joinText(drain(t, ch))
+	// The fake has no file tools, so the find is inlined rather than named.
+	if !strings.Contains(prompt, "## Possibly relevant local file") || !strings.Contains(prompt, "docs/pricing.html") {
+		t.Fatalf("the index's best match must reach the agent: %q", prompt)
+	}
+	if !strings.Contains(prompt, "caps at 25M events") {
+		t.Fatalf("a tool-less agent needs the content, not the path: %q", prompt)
+	}
+	if strings.Contains(prompt, "README.md") {
+		t.Fatalf("a file the question is not about must not be dragged in: %q", prompt)
+	}
+}
+
+func TestHintsAreListedByPathForAnAgentWithFileTools(t *testing.T) {
+	db, _ := store.OpenMemory()
+	defer db.Close()
+	root := t.TempDir()
+	if r, err := filepath.EvalSymlinks(root); err == nil {
+		root = r
+	}
+	db.AddFolder(root, store.AccessRead)
+	folders, _ := db.Folders()
+	guard := files.NewGuard(db, config.Default())
+	hit := filepath.Join(root, "docs", "pricing.html")
+	writeFile(t, hit, "<p>Growth costs $149</p>")
+
+	packed := Pack(guard, Input{
+		Question: "Is Growth enough?", Folders: folders, WorkDir: root,
+		Hits: []store.File{{Path: hit, Snippet: "Growth costs $149"}},
+	})
+	for _, want := range []string{"## Possibly relevant files", "docs/pricing.html", "Growth costs $149",
+		"Your working directory is " + files.Tilde(root), "Search, list and read these folders"} {
+		if !strings.Contains(packed.Prompt, want) {
+			t.Errorf("prompt missing %q:\n%s", want, packed.Prompt)
+		}
+	}
+	if strings.Contains(packed.Prompt, "## Possibly relevant local file:") {
+		t.Fatalf("an agent with file tools gets paths, not content:\n%s", packed.Prompt)
+	}
+	// Attached files are still inlined: the user aimed at them.
+	packed = Pack(guard, Input{Question: "q", Folders: folders, WorkDir: root,
+		Items: []store.ContextItem{{Type: store.ContextFile, Path: hit}}})
+	if !strings.Contains(packed.Prompt, "## Local file: ") || !strings.Contains(packed.Prompt, "Growth costs $149") {
+		t.Fatalf("attached file not inlined:\n%s", packed.Prompt)
+	}
+}
+
+func TestLocalPageRunsTheAgentInItsProject(t *testing.T) {
+	// The user opened a file from a repository in the browser. The agent
+	// should run in that repository and be told which file the page is.
+	svc, db, root := newService(t, "pwd.sh")
+	repo := filepath.Join(root, "dev", "northwind")
+	if err := os.MkdirAll(filepath.Join(repo, ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	page := filepath.Join(repo, "docs", "pricing.html")
+	writeFile(t, page, "<h1>Plans</h1>")
+
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{
+		Text: "what is this page about?",
+		Page: &PageRef{URL: "file://" + page, Title: "Plans"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := joinText(drain(t, ch))
+	if !strings.Contains(text, "cwd="+repo+" ") {
+		t.Fatalf("the agent should run in the repository holding the page: %q", text)
+	}
+	if !strings.Contains(text, "This page is the local file "+files.Tilde(page)) {
+		t.Fatalf("the page's own path must be stated: %q", text)
+	}
+}
+
+func TestNoAllowedFolderRunsTheAgentInAnEmptyScratchDir(t *testing.T) {
+	data := t.TempDir()
+	if r, err := filepath.EvalSymlinks(data); err == nil {
+		data = r
+	}
+	t.Setenv("XDG_DATA_HOME", data)
+	svc, db, _ := newService(t, "pwd.sh")
+	folders, _ := db.Folders()
+	if err := db.DeleteFolder(folders[0].ID); err != nil {
+		t.Fatal(err)
+	}
+
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "hi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := joinText(drain(t, ch))
+	scratch := config.ScratchDir()
+	if !strings.Contains(text, "cwd="+scratch+" ") {
+		t.Fatalf("with nothing allowed the agent must run in the scratch dir %s: %q", scratch, text)
+	}
+	if entries, _ := os.ReadDir(scratch); len(entries) != 0 {
+		t.Fatalf("the scratch dir must be empty: %v", entries)
+	}
+	if !strings.Contains(text, "has not allowed any folder") {
+		t.Fatalf("the agent must be told there is nothing to read: %q", text)
+	}
+}
+
+func writeFile(t *testing.T, path, body string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func indexAll(t *testing.T, db *store.DB, guard *files.Guard) {
+	t.Helper()
+	folders, err := db.Folders()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ix := files.NewIndexer(db, config.Default(), guard, status.NewBus())
+	for _, f := range folders {
+		if err := ix.IndexFolder(context.Background(), f); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

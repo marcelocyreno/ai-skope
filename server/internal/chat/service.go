@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -123,20 +124,53 @@ func (s *Service) Send(ctx context.Context, chatID string, req SendRequest) (<-c
 
 	// The page is named whenever one is known, even when its text was not
 	// shared: the URL and title are what the tab already shows, and without
-	// them the model cannot even say which page it is being asked about.
+	// them the model cannot even say which page it is being asked about. A
+	// page that is itself a file inside an allowed folder is the strongest
+	// hint of all about where to look, so it is resolved here.
 	var pageItem *store.ContextItem
+	var pageFile string
 	if req.Page != nil && (req.Page.URL != "" || req.Page.Text != "") {
+		pageFile = s.localPage(req.Page.URL)
 		pageItem = &store.ContextItem{
 			Type: store.ContextPage, URL: req.Page.URL, Title: req.Page.Title, Text: req.Page.Text,
+			Path: pageFile,
 		}
 	}
-	packed := Pack(s.guard, req.Text, pageItem, req.Context, s.cfg.MaxContextBytes)
 
-	workDir, err := s.guard.PrimaryRoot(packed.FilePaths)
+	// Where the agent runs: the project holding what the user aimed at, an
+	// attached file first, else the page itself when it is a local file.
+	attached := attachedPaths(req.Context)
+	workDir, err := s.guard.WorkDirFor(append(append([]string{}, attached...), pageFile))
 	if err != nil {
-		// With no allowed folder the agent still needs somewhere to run.
-		workDir = "."
+		// With no allowed folder the agent still needs somewhere to run, and
+		// it must not be anywhere it could read from.
+		workDir = scratchDir()
 	}
+	roots := s.guard.RootPaths()
+	folders, _ := s.guard.Roots()
+	spec, _ := s.runtimes.Spec(sel.Runtime)
+
+	// What the index thinks the question is about, beyond what was attached.
+	exclude := append(append([]string{}, attached...), pageFile)
+	for _, p := range attached {
+		if real, _, err := s.guard.Resolve(p); err == nil {
+			exclude = append(exclude, real)
+		}
+	}
+	limit := maxHints
+	if !spec.ReadsFiles {
+		limit = maxInlineHints
+	}
+	pageTitle := ""
+	if req.Page != nil {
+		pageTitle = req.Page.Title
+	}
+	hits := suggest(s.db, req.Text, pageTitle, exclude, limit)
+
+	packed := Pack(s.guard, Input{
+		Question: req.Text, Page: pageItem, Items: req.Context, Budget: s.cfg.MaxContextBytes,
+		Folders: folders, WorkDir: workDir, Hits: hits, InlineHits: !spec.ReadsFiles,
+	})
 	for _, p := range packed.FilePaths {
 		_ = s.db.TouchRecentFile(p)
 	}
@@ -160,6 +194,7 @@ func (s *Service) Send(ctx context.Context, chatID string, req SendRequest) (<-c
 		Effort:    sel.Effort,
 		SessionID: chat.AgentSession,
 		WorkDir:   workDir,
+		AddDirs:   addDirs(roots, workDir),
 		Timeout:   s.cfg.TurnTimeout.D(),
 	})
 	if err != nil {
@@ -325,6 +360,52 @@ func (s *Service) resolveSelection(ctx context.Context, chat store.Chat, req Sen
 		return runtime.Selection{Runtime: chat.Runtime, Provider: chat.Provider, Model: chat.Model, Effort: chat.Effort}
 	}
 	return s.runtimes.Default(ctx)
+}
+
+// localPage returns the path behind a file:// page URL when it lies inside an
+// allowed folder, and "" for any other page.
+func (s *Service) localPage(rawURL string) string {
+	if !strings.HasPrefix(rawURL, "file:") {
+		return ""
+	}
+	real, _, err := s.guard.ResolveFileURL(rawURL)
+	if err != nil {
+		return ""
+	}
+	return real
+}
+
+// attachedPaths lists the files the user attached, as sent.
+func attachedPaths(items []store.ContextItem) []string {
+	var out []string
+	for _, it := range items {
+		if it.Type == store.ContextFile && it.Path != "" {
+			out = append(out, it.Path)
+		}
+	}
+	return out
+}
+
+// addDirs is every allowed folder other than the working directory itself,
+// for agents that take the directories they may read on the command line.
+func addDirs(roots []string, workDir string) []string {
+	var out []string
+	for _, r := range roots {
+		if r != workDir {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// scratchDir is an empty directory of the server's own for an agent to run
+// in when no folder is allowed: never somewhere with anything to read.
+func scratchDir() string {
+	d := config.ScratchDir()
+	if err := os.MkdirAll(d, 0o700); err != nil {
+		return os.TempDir()
+	}
+	return d
 }
 
 // titleFrom turns the first message into a chat title.

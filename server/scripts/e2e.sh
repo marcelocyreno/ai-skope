@@ -179,6 +179,11 @@ check "the turn ended"                  "$(grep -c 'event: turn.end' "$STREAM" |
 check "the answer text came through"    "$(grep -c 'Growth caps at 25M events' "$STREAM" | grep -v '^0$')"
 check "the picked element reached the agent" "$(grep -c 'article.pg-tier.featured' "$STREAM" | grep -v '^0$')"
 check "the local file was inlined for the agent" "$(grep -c 'source of truth for re-imports' "$STREAM" | grep -v '^0$')"
+check "the agent was told which folder it may read" "$(grep -c -- "- $PROJ " "$STREAM" | grep -v '^0$')"
+# The question mentions Growth and events; nothing attached does, but the
+# indexed pricing page does, and the agent should be pointed at it.
+check "the index pointed the agent at the pricing page" "$(grep -c 'docs/pricing.html' "$STREAM" | grep -v '^0$')"
+check "the agent was asked for an answer, not a plan" "$(grep -c 'do not propose a plan' "$STREAM" | grep -v '^0$')"
 
 say "The transcript survives"
 GOT="$(api GET "/v1/chats/$CHAT_ID")"

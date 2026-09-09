@@ -163,6 +163,43 @@ func TestFileSearch(t *testing.T) {
 	}
 }
 
+func TestSuggestFilesMatchesAnyTermAndRanksTheBestFirst(t *testing.T) {
+	db := newTestDB(t)
+	f, err := db.AddFolder("/tmp/dev", AccessRead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	add := func(path, name, body string) {
+		t.Helper()
+		if err := db.UpsertFile(File{Path: path, FolderID: f.ID, Name: name, Ext: ".md"}, body); err != nil {
+			t.Fatal(err)
+		}
+	}
+	add("/tmp/dev/README.md", "README.md", "The export format writes CSV and JSON per statement month.")
+	add("/tmp/dev/docs/pricing.md", "pricing.md", "Growth costs $149 per month and caps at 25M events.")
+	add("/tmp/dev/main.go", "main.go", "package main")
+
+	// The words of a question are spread over files; no file has them all,
+	// and the file with the most of them comes first.
+	got, err := db.SuggestFiles([]string{"growth", "events", "export"}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("both matching files expected: %+v", got)
+	}
+	if got[0].Name != "pricing.md" || got[0].Snippet == "" {
+		t.Fatalf("the file matching more terms ranks first, with a snippet: %+v", got)
+	}
+	// Terms are literal text, never FTS syntax.
+	if _, err := db.SuggestFiles([]string{`"unbalanced`, "(OR*", "NEAR"}, 10); err != nil {
+		t.Fatalf("hostile terms must not error: %v", err)
+	}
+	if got, _ := db.SuggestFiles(nil, 10); len(got) != 0 {
+		t.Fatal("no terms, no hits")
+	}
+}
+
 func TestProvidersAndFolders(t *testing.T) {
 	db := newTestDB(t)
 	p := Provider{ID: NewID(), Kind: "zai", Name: "z.ai", KeyMasked: "zai-…0000", AvailableTo: []string{"pi", "opencode"}}

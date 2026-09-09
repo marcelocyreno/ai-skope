@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -167,6 +168,61 @@ func (db *DB) searchFTS(q string, limit int) ([]File, error) {
 	if fq == "" {
 		return nil, nil
 	}
+	return db.matchFTS(fq, limit)
+}
+
+// SuggestFiles ranks indexed files that contain ANY of the terms, best first.
+// This is how a question is matched against the index: no single file need
+// hold every word of it, and the rarest words count the most. Terms are
+// quoted as prefixes, so nothing in them is read as FTS syntax.
+func (db *DB) SuggestFiles(terms []string, limit int) ([]File, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 8
+	}
+	var quoted []string
+	for _, t := range terms {
+		t = strings.Trim(strings.TrimSpace(t), `"()*:`)
+		if t == "" {
+			continue
+		}
+		quoted = append(quoted, `"`+t+`"*`)
+	}
+	if len(quoted) == 0 {
+		return nil, nil
+	}
+	if db.hasFTS {
+		out, err := db.matchFTS(strings.Join(quoted, " OR "), limit)
+		if err == nil || !isFTSSyntaxErr(err) {
+			return out, err
+		}
+	}
+	// Without FTS only names can be matched. The longest terms are the most
+	// telling, so those are tried first.
+	sorted := append([]string{}, quoted...)
+	sort.SliceStable(sorted, func(i, j int) bool { return len(sorted[i]) > len(sorted[j]) })
+	seen := map[string]bool{}
+	out := []File{}
+	for _, t := range sorted {
+		hits, err := db.searchLike(strings.Trim(t, `"*`), limit)
+		if err != nil {
+			return nil, err
+		}
+		for _, h := range hits {
+			if h.IsDir || seen[h.Path] {
+				continue
+			}
+			seen[h.Path] = true
+			out = append(out, h)
+			if len(out) == limit {
+				return out, nil
+			}
+		}
+	}
+	return out, nil
+}
+
+// matchFTS runs one FTS5 MATCH expression and returns the files it ranks.
+func (db *DB) matchFTS(match string, limit int) ([]File, error) {
 	rows, err := db.sql.Query(`
 		SELECT f.path, f.folder_id, f.name, f.ext, f.size, f.mtime,
 		       snippet(files_fts, 2, '', '', '…', 12)
@@ -174,7 +230,7 @@ func (db *DB) searchFTS(q string, limit int) ([]File, error) {
 		JOIN files f ON f.path = files_fts.path
 		WHERE files_fts MATCH ?
 		ORDER BY bm25(files_fts, 0.0, 4.0, 1.0), f.mtime DESC
-		LIMIT ?`, fq, limit)
+		LIMIT ?`, match, limit)
 	if err != nil {
 		return nil, err
 	}

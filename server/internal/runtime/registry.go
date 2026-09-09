@@ -204,6 +204,16 @@ func (r *Registry) List(ctx context.Context) []Info {
 	return out
 }
 
+// Spec returns the spec a runtime id resolves to, custom commands included.
+func (r *Registry) Spec(id string) (Spec, bool) {
+	for _, s := range r.specs() {
+		if s.ID == id {
+			return s, true
+		}
+	}
+	return Spec{}, false
+}
+
 // Info returns one cached runtime description.
 func (r *Registry) Info(id string) (Info, bool) {
 	r.mu.RLock()

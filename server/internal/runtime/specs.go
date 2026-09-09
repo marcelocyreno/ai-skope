@@ -22,6 +22,10 @@ type Spec struct {
 	UsesProvider   bool          // models come from the provider registry
 	Models         []store.Model // static catalogue for agents with fixed models
 	PromptViaStdin bool          // never put a prompt on argv: it shows up in ps
+	// ReadsFiles says the agent can open files in its working directory
+	// itself. The prompt then points it at relevant files by path; an agent
+	// without file tools gets their content inlined instead.
+	ReadsFiles bool
 
 	// ListModelsArgs asks the agent which models it can reach, and ParseModels
 	// reads the answer. An agent carrying its own credentials knows models the
@@ -51,25 +55,37 @@ var Specs = []Spec{
 	{
 		ID: "claude-code", Name: "Claude Code", Bin: "claude",
 		VersionArgs: []string{"--version"},
-		// Verified against Claude Code 2.1.261: --effort takes these five
+		// Verified against Claude Code 2.1.266: --effort takes these five
 		// levels, and --model takes an alias for the latest model of a family
 		// (or a full model name). Aliases keep working as new models ship.
 		EffortLevels:   []string{"low", "medium", "high", "xhigh", "max"},
 		PromptViaStdin: true,
+		ReadsFiles:     true,
 		Models: []store.Model{
 			{Name: "opus", Ctx: 1000000},
 			{Name: "sonnet", Ctx: 1000000},
 			{Name: "haiku", Ctx: 200000},
 		},
 		Args: func(req TurnRequest) []string {
-			// -p is print (non-interactive) mode; stream-json needs --verbose.
-			// plan mode keeps the agent read-only: it may inspect the allowed
-			// folder but never write to it.
-			// --include-partial-messages turns the answer into token-level
+			// -p is print (non-interactive) mode; stream-json needs --verbose,
+			// and --include-partial-messages turns the answer into token-level
 			// deltas rather than one block at the end.
+			//
+			// Read-only is a tool set, not plan mode. Plan mode makes the
+			// agent draft a plan and wait for approval instead of answering.
+			// Instead the agent gets only Read, Grep and Glob, --restricted
+			// confines them to the working directory plus the --add-dir
+			// folders (every allowed folder), --permission-prompts none
+			// denies anything that would otherwise wait on a prompt, and
+			// --strict-mcp-config keeps the user's own MCP servers (mail,
+			// drive, browsers) out of a turn the server started.
 			a := []string{
-				"-p", "--output-format", "stream-json", "--verbose",
-				"--include-partial-messages", "--permission-mode", "plan",
+				"-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
+				"--restricted", "--strict-mcp-config", "--tools", "Read,Grep,Glob",
+				"--permission-prompts", "none",
+			}
+			for _, d := range req.AddDirs {
+				a = append(a, "--add-dir", d)
 			}
 			if req.Model != "" {
 				a = append(a, "--model", req.Model)
@@ -93,6 +109,7 @@ var Specs = []Spec{
 		// not a limit: any name the CLI accepts can be selected.
 		EffortLevels:   []string{"low", "medium", "high"},
 		PromptViaStdin: true,
+		ReadsFiles:     true,
 		Models: []store.Model{
 			{Name: "gpt-5.5", Ctx: 400000},
 			{Name: "gpt-5.5-codex", Ctx: 400000},
@@ -122,6 +139,7 @@ var Specs = []Spec{
 		EffortLevels:   []string{"minimal", "low", "medium", "high", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
+		ReadsFiles:     true,
 		// `models` prints one bare "provider/model" per line — the same
 		// selector --model takes.
 		ListModelsArgs: []string{"models"},
@@ -145,10 +163,11 @@ var Specs = []Spec{
 		VersionArgs: []string{"--version"},
 		// Verified against pi 0.84.3: -p is non-interactive, --mode json emits
 		// the event stream, and --thinking is its effort control. The tool
-		// allowlist keeps it read-only, matching Claude Code's plan mode.
+		// allowlist keeps it read-only.
 		EffortLevels:   []string{"off", "minimal", "low", "medium", "high", "xhigh", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
+		ReadsFiles:     true,
 		// pi has no machine-readable listing — --json is accepted and ignored
 		// — so this reads its aligned table.
 		ListModelsArgs: []string{"--list-models"},
@@ -179,9 +198,12 @@ var Specs = []Spec{
 		ParseModels:    parseOmpModels,
 		Args: func(req TurnRequest) []string {
 			// --no-tools rather than an allowlist: omp's tool names depend on
-			// which extensions are installed, and naming one it does not have
-			// is a hard error. No tools is always valid and always read-only;
-			// the context the pane attaches is inlined in the prompt anyway.
+			// which extensions are installed (the same binary listed a
+			// different set on two consecutive runs), and naming one it does
+			// not have is a hard error. No tools is always valid and always
+			// read-only; the context the pane attaches is inlined in the
+			// prompt, and so are the index's best matches for the question,
+			// since ReadsFiles is off.
 			a := []string{"-p", "--mode", "json", "--no-tools"}
 			if m := qualifiedModel(req); m != "" {
 				a = append(a, "--model", m)

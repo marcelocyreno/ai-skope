@@ -55,8 +55,11 @@ type TurnRequest struct {
 	Variant   string
 	SessionID string // the agent's own session, to continue a conversation
 	WorkDir   string
-	Env       []string
-	Timeout   time.Duration
+	// AddDirs are the other directories the agent may read besides WorkDir:
+	// every allowed folder, for agents that take them on the command line.
+	AddDirs []string
+	Env     []string
+	Timeout time.Duration
 }
 
 // Event kinds emitted by a turn. They map one-to-one onto the SSE events the
