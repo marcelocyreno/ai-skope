@@ -26,6 +26,8 @@ type Registry struct {
 
 	mu    sync.RWMutex
 	infos map[string]Info
+	// key fingerprints the database state the cached infos were built from.
+	key string
 }
 
 // NewRegistry builds a runtime registry.
@@ -99,7 +101,7 @@ func (r *Registry) Detect(ctx context.Context) []Info {
 		info.Available = true
 
 		started := time.Now()
-		out, verr := probeVersion(ctx, path, s.VersionArgs, r.cfg.ProbeTimeout.D())
+		out, verr := probeCommand(ctx, path, s.VersionArgs, r.cfg.ProbeTimeout.D(), nil)
 		info.LatencyMS = time.Since(started).Milliseconds()
 		if verr != nil {
 			info.Status = StatusDegraded
@@ -110,6 +112,21 @@ func (r *Registry) Detect(ctx context.Context) []Info {
 		} else {
 			info.Status = StatusOK
 			info.Version = parseVersion(string(out))
+			// Only worth asking a healthy agent, and only one that is going to
+			// be offered: this spawns a second process per runtime per probe.
+			//
+			// It must run with exactly the environment a turn gets, or the
+			// switcher lists models the agent could not actually reach — the
+			// XDG_* note above is precisely this trap: inheriting the server's
+			// environment points opencode at the server's data directory and
+			// it reports only its unauthenticated models.
+			if info.Enabled && s.ParseModels != nil && len(s.ListModelsArgs) > 0 {
+				env := append(BaseEnv(r.cfg.PassthroughEnv), r.providers.Env(s.ID)...)
+				mout, merr := probeCommand(ctx, path, s.ListModelsArgs, r.cfg.ProbeTimeout.D(), env)
+				if merr == nil {
+					info.Discovered = s.ParseModels(mout)
+				}
+			}
 		}
 		if !info.Enabled {
 			info.Status = StatusOffline
@@ -118,10 +135,12 @@ func (r *Registry) Detect(ctx context.Context) []Info {
 		infos = append(infos, info)
 	}
 
+	key := r.stateKey(specs)
 	r.mu.Lock()
 	for _, i := range infos {
 		r.infos[i.ID] = i
 	}
+	r.key = key
 	r.mu.Unlock()
 	r.bus.Emit("runtime.status", infos)
 	return infos
@@ -138,28 +157,41 @@ func groupMembers(specs []Spec, group string) []string {
 	return out
 }
 
-// List returns the cached detection results, detecting again when the set of
-// runtimes has changed.
+// stateKey fingerprints everything the database contributes to a detection:
+// which runtimes exist, and the override rows another process may have
+// written. Every field that changes what Detect would produce has to appear
+// here, or the cache goes stale without noticing.
+func (r *Registry) stateKey(specs []Spec) string {
+	parts := make([]string, 0, len(specs))
+	for _, s := range specs {
+		parts = append(parts, s.ID+"\x00"+s.Bin)
+	}
+	overrides, _ := r.db.RuntimeOverrides()
+	for id, ov := range overrides {
+		parts = append(parts, fmt.Sprintf("%s\x00%t\x00%s", id, ov.Enabled, ov.Command))
+	}
+	sort.Strings(parts)
+	return strings.Join(parts, "\x01")
+}
+
+// List returns the cached detection results, detecting again when anything the
+// detection depended on has changed.
 //
 // The cache matters because probing spawns a process per runtime, but it must
-// not hide a runtime that appeared since: `aiss runtimes command …` writes to
-// the database from a separate process, and without this the running server
-// would ignore it until its next scheduled probe, minutes later.
+// not hide a change made since: `aiss runtimes enable …` and `… command …`
+// write to the database from a *separate* process, so the SetEnabled call that
+// follows them refreshes that process's throwaway registry, never this one.
+// Comparing the set of runtime ids is not enough — enabling an already-known
+// runtime leaves the set identical, and the change would sit invisible until
+// the next scheduled probe, minutes later.
 func (r *Registry) List(ctx context.Context) []Info {
 	specs := r.specs()
+	key := r.stateKey(specs)
 	r.mu.RLock()
 	n := len(r.infos)
-	changed := len(specs) != n
-	if !changed {
-		for _, s := range specs {
-			if _, known := r.infos[s.ID]; !known {
-				changed = true
-				break
-			}
-		}
-	}
+	stale := r.key != key
 	r.mu.RUnlock()
-	if n == 0 || changed {
+	if n == 0 || stale {
 		return r.Detect(ctx)
 	}
 	r.mu.RLock()
@@ -267,12 +299,23 @@ func (r *Registry) Models(ctx context.Context) []ModelOption {
 			})
 		}
 		if spec.UsesProvider {
+			listed := 0
 			for _, p := range r.providers.ModelsFor(info.ID) {
 				for _, m := range p.Models {
 					// The agent addresses a model as <provider>/<model> using
 					// its own provider id — which is the kind, not whatever
 					// display name the user typed when adding the key.
 					add(p.Kind, m)
+					listed++
+				}
+			}
+			// Nothing in the registry for this agent: offer what it said it
+			// can reach on its own credentials. A provider scoped to this
+			// runtime is a deliberate override, so it wins outright rather
+			// than merging — the user asked for that key to be the source.
+			if listed == 0 {
+				for _, d := range info.Discovered {
+					add(d.Provider, d.Model)
 				}
 			}
 			continue
@@ -338,16 +381,22 @@ func (r *Registry) StartProbes(ctx context.Context) {
 	}()
 }
 
-// probeVersion asks a binary for its version under a hard time bound.
+// probeCommand runs a short, read-only query against an agent — its version,
+// or its model list — under a hard time bound.
 //
 // It uses the same process-group handling as a turn: an agent that hangs (or
 // that leaves a child holding its output pipe) must not stall detection, which
 // runs on a timer and blocks the settings page.
-func probeVersion(parent context.Context, path string, args []string, timeout time.Duration) ([]byte, error) {
+func probeCommand(parent context.Context, path string, args []string, timeout time.Duration, env []string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, path, args...)
+	// A nil env inherits the server's own, which is right for --version but
+	// never for a question whose answer depends on credentials.
+	if env != nil {
+		cmd.Env = env
+	}
 	configureProcAttr(cmd)
 	cmd.Stdin = strings.NewReader("")
 	var buf bytes.Buffer

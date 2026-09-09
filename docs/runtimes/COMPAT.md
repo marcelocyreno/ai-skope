@@ -48,6 +48,31 @@ turn. Each shape has a fake in `server/testdata/fakes/` and a case in
   by token; its streaming API is `opencode serve`, which the server does not
   use yet.
 
+## Asking an agent which models it can reach
+
+`pi`, `omp` and `opencode` carry their own credentials, so they know models the
+server holds no key for. Detection asks them, and the switcher falls back to
+that answer whenever no provider in the registry is scoped to the runtime. A
+provider that *is* scoped to it stays an override and wins outright.
+
+| runtime | command | shape | verified |
+|---|---|---|---|
+| `opencode` | `opencode models` | one bare `provider/model` per line | 1.18.20 — 14 models |
+| `pi` | `pi --list-models` | aligned table, columns `provider model context …`; `--json` is accepted and ignored | 0.84.3 — 38 models |
+| `omp` | `omp models --json` | `{"models":[{"provider","id","contextWindow"}]}` | 18.1.6 — 18 models |
+
+Parsers live in `internal/runtime/models.go` with fixtures in
+`models_test.go`. None of these is a stable contract, so every parser skips
+what it does not recognise: a listing that changes shape costs rows, never the
+whole switcher. `pi`'s table is the fragile one — a row is only accepted when
+its third column parses as a context size, which is what keeps prose and error
+text off the list.
+
+The probe runs with **the same scrubbed environment a turn gets**, for the
+`XDG_*` reason below: inheriting the server's environment points opencode at
+the server's data directory, and it then reports only its unauthenticated
+models (7 of 14, in the case that caught this).
+
 ## The contract every adapter satisfies
 
 - The **prompt goes to stdin**, never argv, where `ps` would expose it. A test

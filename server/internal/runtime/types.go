@@ -13,19 +13,30 @@ import (
 
 // Info is what the settings page shows for one runtime.
 type Info struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	Version      string        `json:"version,omitempty"`
-	Path         string        `json:"path,omitempty"`
-	Available    bool          `json:"available"`
-	Enabled      bool          `json:"enabled"`
-	Variants     []string      `json:"variants,omitempty"`
-	EffortLevels []string      `json:"effortLevels,omitempty"`
-	UsesProvider bool          `json:"usesProviders"`
-	Status       string        `json:"status"` // ok | degraded | offline
-	LatencyMS    int64         `json:"latencyMs,omitempty"`
-	Detail       string        `json:"detail,omitempty"`
-	Models       []store.Model `json:"-"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Version      string   `json:"version,omitempty"`
+	Path         string   `json:"path,omitempty"`
+	Available    bool     `json:"available"`
+	Enabled      bool     `json:"enabled"`
+	Variants     []string `json:"variants,omitempty"`
+	EffortLevels []string `json:"effortLevels,omitempty"`
+	UsesProvider bool     `json:"usesProviders"`
+	Status       string   `json:"status"` // ok | degraded | offline
+	LatencyMS    int64    `json:"latencyMs,omitempty"`
+	Detail       string   `json:"detail,omitempty"`
+	// Discovered is what the agent said it can reach when asked, used when the
+	// server's own provider registry has nothing for it.
+	Discovered []DiscoveredModel `json:"-"`
+}
+
+// DiscoveredModel is one model an agent reported for itself. Agents that carry
+// their own credentials — a subscription, a config file, a local daemon — know
+// models the server was never given a key for, and address them as
+// <provider>/<model>.
+type DiscoveredModel struct {
+	Provider string
+	Model    store.Model
 }
 
 // Status values reported for a runtime and its models.
