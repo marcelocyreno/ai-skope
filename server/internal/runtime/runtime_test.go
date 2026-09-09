@@ -275,13 +275,22 @@ func TestRegistryStartRefusesDisabled(t *testing.T) {
 
 func TestSpecArgs(t *testing.T) {
 	cc, _ := SpecByID("claude-code")
-	args := cc.Args(TurnRequest{Model: "opus-5", SessionID: "s1", Effort: "High"})
+	args := cc.Args(TurnRequest{Model: "opus-5", SessionID: "s1", Effort: "High", AddDirs: []string{"/a", "/b"}})
 	joined := strings.Join(args, " ")
-	for _, want := range []string{"-p", "--output-format stream-json", "--verbose", "--permission-mode plan",
-		"--model opus-5", "--resume s1", "--effort high"} {
+	for _, want := range []string{"-p", "--output-format stream-json", "--verbose", "--include-partial-messages",
+		"--restricted", "--strict-mcp-config", "--tools Read,Grep,Glob", "--permission-prompts none",
+		"--add-dir /a --add-dir /b", "--model opus-5", "--resume s1", "--effort high"} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("claude args missing %q: %v", want, args)
 		}
+	}
+	// Plan mode makes the agent draft a plan and wait for approval instead
+	// of answering. Read-only is the tool set, not a permission mode.
+	if strings.Contains(joined, "--permission-mode") || strings.Contains(joined, "plan") {
+		t.Errorf("claude must not run in plan mode: %s", joined)
+	}
+	if joined2 := strings.Join(cc.Args(TurnRequest{}), " "); strings.Contains(joined2, "--add-dir") {
+		t.Errorf("no extra folders, no --add-dir: %s", joined2)
 	}
 	cx, _ := SpecByID("codex")
 	joined = strings.Join(cx.Args(TurnRequest{Model: "gpt-5", Effort: "medium"}), " ")
@@ -298,6 +307,23 @@ func TestSpecArgs(t *testing.T) {
 	joined = strings.Join(oc.Args(TurnRequest{Provider: "z.ai", Model: "GLM 5.3"}), " ")
 	if !strings.Contains(joined, "--model z.ai/GLM 5.3") {
 		t.Errorf("opencode should address models as provider/model: %s", joined)
+	}
+}
+
+func TestWhichAgentsCanReadFilesThemselves(t *testing.T) {
+	// The prompt points an agent with file tools at files by path, and
+	// inlines them for one without. Getting this wrong either way loses the
+	// folder: paths an agent cannot open, or content it never needed.
+	for _, id := range []string{"claude-code", "codex", "pi", "opencode"} {
+		if s, _ := SpecByID(id); !s.ReadsFiles {
+			t.Errorf("%s has read tools and must be marked so", id)
+		}
+	}
+	if omp, _ := SpecByID("omp"); omp.ReadsFiles {
+		t.Error("omp runs with --no-tools, so it cannot read files")
+	}
+	if customSpec("custom:x", "x --flag").ReadsFiles {
+		t.Error("an unknown command is not assumed to have file tools")
 	}
 }
 

@@ -27,6 +27,11 @@ func DataDir() string { return xdg("XDG_DATA_HOME", ".local/share") }
 // StateDir holds logs and the pid file.
 func StateDir() string { return xdg("XDG_STATE_HOME", ".local/state") }
 
+// ScratchDir is where an agent runs when no folder has been allowed yet: an
+// empty directory of the server's own, so it is never somewhere that holds
+// anything readable.
+func ScratchDir() string { return filepath.Join(DataDir(), "scratch") }
+
 // ConfigFile is the path of the YAML configuration file.
 func ConfigFile() string { return filepath.Join(ConfigDir(), "config.yaml") }
 

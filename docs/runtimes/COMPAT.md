@@ -11,7 +11,7 @@ same agent session.
 
 | runtime | version | invocation | resume | effort | status |
 |---|---|---|---|---|---|
-| `claude-code` | 2.1.261 | `claude -p --output-format stream-json --verbose --include-partial-messages --permission-mode plan [--model M] [--effort E]` | `--resume <session_id>` | `--effort low\|medium\|high\|xhigh\|max` | **verified** |
+| `claude-code` | 2.1.266 | `claude -p --output-format stream-json --verbose --include-partial-messages --restricted --strict-mcp-config --tools Read,Grep,Glob --permission-prompts none [--add-dir D]… [--model M] [--effort E]` | `--resume <session_id>` | `--effort low\|medium\|high\|xhigh\|max` | **verified** |
 | `pi` | 0.84.3 | `pi -p --mode json --tools read,grep,find,ls [--model P/M] [--session-id ID] [--thinking E]` | `--session-id <id>` | `--thinking off\|minimal\|low\|medium\|high\|xhigh\|max` | **verified** |
 | `omp` | 18.1.6 | `omp -p --mode json --no-tools [--model P/M] [--resume ID] [--thinking E]` | `--resume <id>` | `--thinking …\|auto` | **verified** |
 | `opencode` | 1.18.20 | `opencode run --format json [--model P/M] [--session ID] [--variant E]` | `--session <id>` | `--variant minimal\|low\|medium\|high\|max` | **verified** |
@@ -77,17 +77,39 @@ models (7 of 14, in the case that caught this).
 
 - The **prompt goes to stdin**, never argv, where `ps` would expose it. A test
   enforces this for every built-in spec.
-- The process runs **read-only**: `--permission-mode plan` (Claude Code), a
-  read-only tool allowlist (pi), no tools at all (omp, whose tool names depend
-  on installed extensions), and no `--auto` (opencode).
+- The process runs **read-only**, as a tool set rather than a permission
+  mode. Claude Code gets only `Read`, `Grep` and `Glob`; `--restricted`
+  confines them to the working directory plus every allowed folder (passed
+  as `--add-dir`), and `--permission-prompts none` denies anything that would
+  otherwise wait on a prompt nobody is there to answer. Plan mode is **not**
+  used: it makes the agent draft a plan and wait for approval instead of
+  answering the question. `--strict-mcp-config` keeps the user's own MCP
+  servers (mail, drive, browsers…) out of a turn the server started — without
+  it every one of them is loaded, `--tools` notwithstanding. Verified on
+  2.1.266: a read inside `--add-dir` succeeds, a read outside is refused with
+  "is outside …" rather than hanging, and the init frame lists exactly three
+  tools. Note that `--restricted` also ignores the user's settings files, so
+  an `apiKeyHelper` configured there is not seen; login via `claude` itself
+  (OAuth, keychain) and `passthroughEnv` both still work.
+  Codex runs in its `read-only` sandbox, pi with a read-only tool allowlist,
+  omp with no tools at all (its tool names depend on installed extensions —
+  the same binary listed different sets on consecutive runs — and naming a
+  missing one is a hard error), and opencode without `--auto`.
+- The agent is **told about the allowed folders** in the prompt, runs in the
+  project that holds what the user aimed at (the nearest repository around
+  an attached file or a `file://` page, else the allowed folder), and is
+  pointed at the index's best matches for the question. An agent with file
+  tools gets those as paths to open; one without (omp, custom commands) gets
+  their content inlined under the same context budget.
 - It starts with a **scrubbed environment** plus only the credentials the
   provider registry injects for that runtime. **`XDG_*` is deliberately not
   inherited**: those point at the *server's* config and data, and agents keep
   their own credentials under the same paths — passing ours down makes an
   authenticated agent look unauthenticated (opencode fails outright). Anyone
   who needs one can name it in `passthroughEnv`.
-- Its working directory is inside an allowed folder, and cancelling a turn
-  kills the whole process group.
+- Its working directory is inside an allowed folder — or, when none is
+  allowed yet, an empty scratch directory of the server's own — and
+  cancelling a turn kills the whole process group.
 
 ## Verifying a runtime yourself
 

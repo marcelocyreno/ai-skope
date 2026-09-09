@@ -178,28 +178,69 @@ func (g *Guard) Denied(path string) bool {
 	return false
 }
 
-// Roots returns the allowed folders as canonical paths.
+// Roots returns the allowed folders.
 func (g *Guard) Roots() ([]store.Folder, error) { return g.db.Folders() }
 
-// PrimaryRoot picks the working directory an agent should run in for a set of
-// context paths: the folder holding the first file, else the first allowed
-// folder. Agents never get a working directory outside the allow-list.
-func (g *Guard) PrimaryRoot(paths []string) (string, error) {
-	for _, p := range paths {
-		if real, folder, err := g.Resolve(p); err == nil {
-			if fi, err := os.Stat(real); err == nil && fi.IsDir() {
-				return real, nil
-			}
-			_ = folder
-			return filepath.Dir(real), nil
-		}
-	}
+// RootPaths returns every allowed folder as a canonical path, for agents
+// that take the directories they may read on the command line.
+func (g *Guard) RootPaths() []string {
 	folders, err := g.db.Folders()
 	if err != nil {
-		return "", err
+		return nil
 	}
-	if len(folders) > 0 {
-		return folders[0].Path, nil
+	out := make([]string, 0, len(folders))
+	for _, f := range folders {
+		p, err := realPath(f.Path)
+		if err != nil {
+			p = f.Path
+		}
+		out = append(out, p)
+	}
+	return out
+}
+
+// WorkDirFor picks the directory an agent runs in for a turn. The first path
+// that resolves inside the allow-list decides, and the agent runs in the
+// project that holds it: the nearest ancestor with a .git entry, up to the
+// allowed folder itself. A question about one file then sees the whole
+// repository it belongs to, not just its own directory, which is what makes
+// "how does this project do X" answerable. With no usable path the first
+// allowed folder is used. Agents never run outside the allow-list.
+func (g *Guard) WorkDirFor(paths []string) (string, error) {
+	for _, p := range paths {
+		if p == "" {
+			continue
+		}
+		real, folder, err := g.Resolve(p)
+		if err != nil {
+			continue
+		}
+		root, err := realPath(folder.Path)
+		if err != nil {
+			root = folder.Path
+		}
+		dir := real
+		if fi, err := os.Stat(real); err != nil || !fi.IsDir() {
+			dir = filepath.Dir(real)
+		}
+		return projectRoot(dir, root), nil
+	}
+	if roots := g.RootPaths(); len(roots) > 0 {
+		return roots[0], nil
 	}
 	return "", ErrNoFolders
+}
+
+// projectRoot walks up from dir to root looking for a repository marker and
+// returns the first directory that has one, else root.
+func projectRoot(dir, root string) string {
+	for d := dir; within(root, d); d = filepath.Dir(d) {
+		if _, err := os.Lstat(filepath.Join(d, ".git")); err == nil {
+			return d
+		}
+		if d == root {
+			break
+		}
+	}
+	return root
 }

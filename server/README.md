@@ -63,6 +63,12 @@ scripts/e2e.sh        end-to-end test against a real server
   Agents start with a scrubbed environment plus only the credentials the
   provider registry injects for that runtime, with their working directory
   inside the allow-list, and are killed as a process group on cancellation.
+- **Agents run read-only**, through their tool sets rather than a plan mode:
+  Claude Code gets only its read, search and glob tools, confined to the
+  allowed folders, with the user's own MCP servers left out. The prompt names
+  the allowed folders, runs the agent in the project holding what the user
+  aimed at, and points it at the files the index matches to the question.
+  See `../docs/runtimes/COMPAT.md` for what each agent gets.
 - **Provider keys live in the OS keychain** (encrypted file fallback); the API
   and the database only ever hold a masked form.
 
