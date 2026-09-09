@@ -60,6 +60,8 @@ func TestKeystoreFileIsEncrypted(t *testing.T) {
 func TestMask(t *testing.T) {
 	cases := map[string]string{
 		"":                         "",
+		"x":                        "…", // one rune has no two-rune tail
+		"ab":                       "…ab",
 		"abc":                      "…bc",
 		"sk-ant-api03-longkey1234": "sk-ant…1234",
 	}

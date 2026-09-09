@@ -230,6 +230,10 @@ func Mask(secret string) string {
 		return ""
 	}
 	r := []rune(secret)
+	// A one-rune secret has no two-rune tail to show; slicing it panics.
+	if len(r) < 2 {
+		return "…"
+	}
 	if len(r) <= 10 {
 		return "…" + string(r[len(r)-2:])
 	}
