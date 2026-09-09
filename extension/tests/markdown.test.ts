@@ -47,8 +47,20 @@ describe("rendering an answer", () => {
 
   it("renders fenced code, and an unfinished fence while streaming", () => {
     // The language tag on the fence is not part of the code.
-    expect(renderMarkdown("```go\nfmt.Println()\n```")).toBe("<pre><code>fmt.Println()</code></pre>");
-    expect(renderMarkdown("```\nhalf a fen")).toBe("<pre><code>half a fen</code></pre>");
+    expect(renderMarkdown("```go\nfmt.Println()\n```")).toContain("<pre><code>fmt.Println()</code></pre>");
+    expect(renderMarkdown("```\nhalf a fen")).toContain("<pre><code>half a fen</code></pre>");
+  });
+
+  it("gives every fenced block its own copy button, ahead of the code", () => {
+    // The button leads so the streaming cursor still lands inside the code.
+    expect(renderMarkdown("```\nfmt.Println()\n```")).toBe(
+      '<div class="sk-pre">' +
+        '<button type="button" class="sk-iconbtn sm sk-copy-code" aria-label="Copy code">' +
+        '<svg class="sk-ico" aria-hidden="true"><use href="#i-copy"></use></svg>' +
+        "</button>" +
+        "<pre><code>fmt.Println()</code></pre>" +
+        "</div>",
+    );
   });
 
   it("renders headings a couple of levels down", () => {
@@ -167,5 +179,10 @@ describe("withCursor", () => {
 
   it("stands alone when there is nothing yet", () => {
     expect(withCursor("", C)).toBe(C);
+  });
+
+  it("sits inside a half-arrived code block, not after its copy button", () => {
+    const html = renderMarkdown("```\nhalf a fen");
+    expect(withCursor(html, C)).toContain(`half a fen${C}</code></pre>`);
   });
 });

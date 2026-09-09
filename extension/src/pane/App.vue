@@ -11,7 +11,9 @@ import { chat, openForCurrentPage, newChat, addContext, send, rememberPageConsen
 import { loadNotes, addNote } from "@/stores/notes";
 import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, syncContentScripts } from "@/stores/page";
 import { showToast } from "@/stores/toast";
+import { announcement } from "@/stores/announce";
 import { escapeHtml } from "@/pane/markdown";
+import { copyText } from "@/pane/clipboard";
 import type { ContextItem, FileEntry } from "@/api/types";
 
 import TopBar from "./components/TopBar.vue";
@@ -115,6 +117,25 @@ async function drainPending() {
   if (cmd?.command === "pick-element") await doPick();
   if (cmd?.command === "add-selection") await doSelection();
   if (cmd?.command === "new-chat") await doNewChat();
+  if (cmd?.command === "copy-last-answer") await copyLastAnswer();
+}
+
+/**
+ * The last answer, to the clipboard. It ships without a default key: Chrome
+ * allows four suggested shortcuts and the extension already spends them, and
+ * ⌘⇧C — the obvious spelling — is the browser's own inspect-element shortcut,
+ * which an extension cannot take. It is bound from chrome://extensions/shortcuts.
+ */
+async function copyLastAnswer() {
+  const last = [...chat.messages].reverse().find((m) => m.role === "assistant" && m.text.trim());
+  if (!last) {
+    showToast("No answer to copy yet", { icon: "i-copy" });
+    return;
+  }
+  if (!(await copyText(last.text))) return;
+  // A toast, not the quiet glyph swap: this can fire with the pane freshly
+  // opened, where there is no button under the pointer to have changed.
+  showToast("Answer copied", { icon: "i-copy" });
 }
 
 async function doPick() {
@@ -283,5 +304,6 @@ function onKeydown(e: KeyboardEvent) {
     <Pairing v-else />
 
     <Toast />
+    <span class="sk-sr" role="status">{{ announcement }}</span>
   </div>
 </template>

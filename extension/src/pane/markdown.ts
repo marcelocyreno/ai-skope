@@ -205,7 +205,19 @@ export function renderMarkdown(source: string): string {
         i++;
       }
       if (i < lines.length) i++; // closing fence
-      out.push(`<pre><code>${body.join("\n")}</code></pre>`);
+      // The block carries its own copy button — still markup the renderer wrote
+      // itself, with nothing from the model in it. The wrapper exists because
+      // <pre> scrolls: an absolute child inside it would scroll away with the
+      // code, and the button leads so the streaming cursor still lands in the
+      // code rather than after the block.
+      out.push(
+        '<div class="sk-pre">' +
+          '<button type="button" class="sk-iconbtn sm sk-copy-code" aria-label="Copy code">' +
+          '<svg class="sk-ico" aria-hidden="true"><use href="#i-copy"></use></svg>' +
+          "</button>" +
+          `<pre><code>${body.join("\n")}</code></pre>` +
+          "</div>",
+      );
       continue;
     }
 

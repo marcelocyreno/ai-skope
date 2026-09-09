@@ -94,6 +94,21 @@
 .sk-ai-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .sk-time { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); opacity: 0; transition: opacity var(--dur) var(--ease); }
 .sk-msg:hover .sk-time, .sk-msg:focus-within .sk-time { opacity: 1; }
+.sk-msg-meta { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-msg:hover .sk-msg-meta, .sk-msg:focus-within .sk-msg-meta { opacity: 1; }
+/* The actions hug the message's own alignment edge, with the optical inset .sk-note .acts uses; the timestamp trails. */
+.sk-msg.ai .sk-msg-meta { margin: -4px 0 -2px -6px; }
+.sk-msg.user .sk-msg-meta { flex-direction: row-reverse; margin: -4px -6px -2px 0; }
+.sk-msg-meta .sk-time { opacity: 1; padding: 0 4px; }
+/* Copied: the glyph swaps to a check in full-strength ink. Green stays model status. */
+.sk-iconbtn.is-copied { color: var(--ink); }
+/* A fenced block gets its own button. The wrapper exists because <pre> scrolls, and an absolute child inside it would scroll away with the code. */
+.sk-pre { position: relative; }
+.sk-copy-code { position: absolute; top: 5px; right: 5px; background: var(--surface); border: 1px solid var(--line-2); opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-copy-code:hover { background: var(--surface-3); }
+.sk-pre:hover .sk-copy-code, .sk-pre:focus-within .sk-copy-code { opacity: 1; }
+/* Nothing whole to copy mid-turn. */
+.sk-msg.is-streaming .sk-copy-code { display: none; }
 .sk-msg-ctx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .sk-cursor { display: inline-block; width: 2px; height: 1em; vertical-align: -0.15em; margin-left: 2px; background: var(--accent); animation: sk-blink 1s steps(2, start) infinite; }
 @keyframes sk-blink { to { visibility: hidden; } }
@@ -136,7 +151,9 @@
 .sk-send .sk-ico { width: 16px; height: 16px; stroke-width: 2; }
 .sk-hint { display: flex; gap: 10px; align-items: center; padding: 0 2px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
 .sk-hint .grow { flex: 1; }
-.sk-hint .clear { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; margin-right: -6px; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-3); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-11); }
+.sk-hint .clear { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-3); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-11); }
+/* Only the row's last button pulls out to the optical edge; earlier ones keep the row's gap. */
+.sk-hint .clear:last-child { margin-right: -6px; }
 .sk-hint .clear .sk-ico { width: 12px; height: 12px; }
 .sk-hint .clear:hover { color: var(--ink); background: var(--surface-2); }
 .sk-hint .clear:disabled { opacity: .4; cursor: default; background: transparent; color: var(--ink-3); }
@@ -438,3 +455,7 @@
 .sk-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .sk-view[hidden] { display: none; }
 [hidden] { display: none !important; }
+
+/* ---------- announced but not drawn ---------- */
+/* A live region for confirmations too small for a toast. */
+.sk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; white-space: nowrap; clip-path: inset(50%); }

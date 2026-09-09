@@ -64,6 +64,9 @@
         "mac": "Command+Shift+N"
       },
       "description": "Start a new chat"
+    },
+    "copy-last-answer": {
+      "description": "Copy the last answer"
     }
   },
   "web_accessible_resources": [
