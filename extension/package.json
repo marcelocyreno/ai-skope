@@ -1,6 +1,6 @@
 {
   "name": "ai-skope-extension",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "AI Skope \u2014 a Chrome extension that aims at the page and asks a local agent about it",
   "type": "module",

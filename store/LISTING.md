@@ -19,9 +19,10 @@ Upload `store/ai-skope-<version>.zip`, built by `task store:package` — a zip o
 the *contents* of `extension/dist`, manifest at the root, no source maps,
 around 80 KB.
 
-Before the first upload, confirm in `extension/manifest.json`:
+Before each upload, confirm in `extension/manifest.json`:
 
-- `version` matches what you want the store to show (currently **0.1.0**)
+- `version` is higher than the one the store already has — 0.1.0 is live,
+  the next upload is **0.1.1**
 - `homepage_url` points at a page that exists
 
 ---

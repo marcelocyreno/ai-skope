@@ -1,12 +1,23 @@
-# Submitting to the Chrome Web Store — where this stands
+# Chrome Web Store — where this stands
 
-**Last updated: 5 September 2026.** Pick this up cold: everything below is
+**Last updated: 8 September 2026.** Pick this up cold: everything below is
 either done, or a step you can do in one sitting.
 
 `LISTING.md` holds the text to paste, field by field, in the order the
 dashboard asks. This file is the checklist around it.
 
 ---
+
+## Live
+
+**AI Skope 0.1.0 is published, unlisted, since 7 September 2026.** The item
+lives in the [developer dashboard](https://chrome.google.com/webstore/devconsole).
+It was built from the package of 5 September, so the store build predates
+everything merged after that day — see "Next: 0.1.1" below.
+
+Unlisted was the choice. The review is identical to public, and switching
+later is a dropdown on the Distribution tab that keeps the extension ID and
+the existing users. Going public is the only listing decision left.
 
 ## Done — do not redo
 
@@ -21,47 +32,64 @@ dashboard asks. This file is the checklist around it.
 - [x] **Docs published** — [install guide](https://marcelocyreno.github.io/ai-skope/install)
       and [privacy policy](https://marcelocyreno.github.io/ai-skope/privacy),
       both returning 200.
-- [x] **Package built** — `store/ai-skope-0.1.0.zip`, 80 KB, manifest at the
-      root, no source maps.
 - [x] **Six screenshots** at 1280×800 in `store/screenshots/`.
 - [x] **Listing text written** — descriptions, single purpose, seven permission
       justifications, data-usage answers. All in `LISTING.md`.
 - [x] **First run explains itself** — an unpaired pane with no server shows the
       install command rather than assuming the reader has `aiss`.
+- [x] **Developer account registered** — US$5 paid, 2-Step Verification on,
+      publisher email verified.
+- [x] **First submission** — package uploaded, store listing, five
+      screenshots, privacy tab (single purpose, seven justifications, no
+      remote code, data usage, privacy policy URL) and distribution (unlisted,
+      all regions, free) filled in. Review passed; published 7 September 2026.
 
-## Pending — the actual submission
+## Updating — the checklist for every new version
 
-Nothing here needs code. It is roughly twenty minutes of forms.
+Nothing here is new work, but the order matters. The store rejects a package
+whose `version` is not higher than the one it already has, and it reviews
+every update.
 
-- [ ] **1. Register.** [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole)
-      — US$5 one-time. Turn on 2-Step Verification (required) and verify the
-      publisher email that will show on the listing.
-- [ ] **2. Upload the package.** `store/ai-skope-0.1.0.zip`.
-      Rebuild first if the extension changed: `task store:package`.
-- [ ] **3. Store listing tab.** Name, short description, detailed description,
-      category **Developer Tools**, language **English (United States)** — all
-      under "Store listing tab" in `LISTING.md`.
-- [ ] **4. Screenshots.** Upload five, in this order:
+- [ ] **1. Bump the version** in `extension/manifest.json`,
+      `extension/package.json` and the root entry of
+      `extension/package-lock.json`. One to four dot-separated integers only —
+      Chrome does not accept `0.1.1-beta`. The server tag moves with it
+      (step 7).
+- [ ] **2. Build the package.** `task test && task store:package` writes
+      `store/ai-skope-<version>.zip`. Delete the previous zip by hand; the
+      task only removes one with the same name.
+- [ ] **3. Upload.** Dashboard → AI Skope → **Package** tab → **Upload new
+      package**.
+- [ ] **4. Listing and privacy tabs.** Leave them alone unless something
+      changed. A new permission needs a new justification on the Privacy tab
+      and triggers a fuller review — add them rarely. A new keyboard shortcut
+      is not a permission.
+- [ ] **5. Screenshots** — only if the UI changed visibly. `task store:shots`
+      recaptures all six; upload the same five as the first time:
       `1-answer`, `2-picker`, `3-selection`, `4-files`, `6-first-run`.
-      `5-settings` is the spare — see `LISTING.md` for why the first-run frame
-      earns its place over it.
-- [ ] **5. Privacy tab.** Single purpose, one justification per permission
-      (seven of them), remote code = **No**, data usage: tick **Website
-      content** and **Web history** as collected, then certify all three
-      statements. Privacy policy URL:
-      `https://marcelocyreno.github.io/ai-skope/privacy`
-- [ ] **6. Distribution tab.** Visibility (see below), all regions, free.
-- [ ] **7. Submit.**
+- [ ] **6. Submit for review.** "Publish automatically after it has passed
+      review" is ticked by default; untick it to pick the moment yourself.
+      Installed users update on their own within a few hours of publish.
+- [ ] **7. Release the server** at the same version:
+      `git tag vX.Y.Z && git push origin vX.Y.Z && task release`.
 
-### The one decision left
+### Next: 0.1.1
 
-**Unlisted or public.** The review is identical — same policies, same
-justifications, same privacy requirement. Visibility is a dropdown, and
-switching later keeps the extension ID and existing users.
+What 0.1.0 on the store does not have:
 
-The case for unlisted first is no longer about the install path, which is now
-one Homebrew command. It is only that this has never been installed by anyone
-who did not build it. Unlisted lets you hand the link to a few people first.
+- Markdown tables in the transcript (#1)
+- Copy any message from the chat, plus the `copy-last-answer` shortcut (#3)
+- The model switcher: agent-reported models, runtime toggles, a Mask panic (#2)
+- Server: answer read-only from the allowed folders instead of plan mode (#4)
+
+Permissions are unchanged, so the seven justifications in `LISTING.md` still
+hold and the review should be the quick kind.
+
+- [x] Version bumped to 0.1.1 — 8 September 2026
+- [x] Package built — `store/ai-skope-0.1.1.zip`, 84 KB, manifest at the
+      root, no source maps
+- [ ] Uploaded and submitted
+- [ ] Server `v0.1.1` tagged and released
 
 ### If review pushes back
 
@@ -80,23 +108,29 @@ The second likely question is the companion application. It is a normal
 pattern (password managers, hardware wallets), the code is public, and the
 extension contacts nothing but `127.0.0.1`.
 
+### Going public
+
+A dropdown on the **Distribution** tab. No new review; the extension ID and
+the existing users stay. The case for waiting was only that nobody who did
+not build it had installed it. Once a few people have used it from the
+unlisted link and nothing came back, flip it.
+
 ---
 
-## After it is live
+## Still to do on the release side
 
 - [ ] **`HOMEBREW_TAP_GITHUB_TOKEN` secret** so CI can cut releases without a
       workstation. Steps in `../docs/PUBLISHING.md` → "The tap token".
       Until then: `task release` after pushing a tag.
-- [ ] **Version bumps go together.** `extension/manifest.json` and the server
-      tag should move as a pair. `/v1/capabilities` already reports
-      `apiVersion`, which is what the extension should check when the server is
-      older than it expects.
-- [ ] **Support** — GitHub issues, linked from the listing.
-- [ ] Adding a permission later triggers a fuller review. Add them rarely.
+- [ ] **Support URL** on the Store listing tab — GitHub issues. Not filled in
+      at the first submission.
+- [ ] **Say when the server is older than the extension expects.**
+      `/v1/capabilities` already reports `apiVersion`, which is what the
+      extension should check.
 
 ## Still open in the product
 
-Not blocking submission, in rough order of value:
+Not blocking anything, in rough order of value:
 
 - [ ] **A service file** so the server survives a reboot — launchd plist on
       macOS, systemd user unit on Linux.
