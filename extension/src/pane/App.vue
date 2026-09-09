@@ -6,7 +6,7 @@
  */
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { connection, initConnection, stopConnection } from "@/stores/connection";
-import { loadModels } from "@/stores/models";
+import { loadModels, refreshForRuntimes } from "@/stores/models";
 import { chat, openForCurrentPage, newChat, addContext, send, rememberPageConsent, pageConsentGiven, pageDecided } from "@/stores/chat";
 import { loadNotes, addNote } from "@/stores/notes";
 import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, syncContentScripts } from "@/stores/page";
@@ -87,6 +87,15 @@ watch(ready, async (isReady) => {
   if (!isReady) return;
   await Promise.all([loadModels(), openForCurrentPage(), loadNotes()]);
 });
+
+// Enabling or disabling a runtime changes which models can answer. That
+// happens in the options page, so the pane only learns of it through the
+// runtime.status event behind connection.runtimes.
+watch(
+  () => connection.runtimes,
+  () => void refreshForRuntimes(),
+  { deep: true },
+);
 
 /** The selection toolbar in the page reports the user's choice here. */
 function onRuntimeMessage(msg: { kind?: string; action?: string; selection?: ContextItem }): undefined {

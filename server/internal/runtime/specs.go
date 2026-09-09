@@ -23,6 +23,13 @@ type Spec struct {
 	Models         []store.Model // static catalogue for agents with fixed models
 	PromptViaStdin bool          // never put a prompt on argv: it shows up in ps
 
+	// ListModelsArgs asks the agent which models it can reach, and ParseModels
+	// reads the answer. An agent carrying its own credentials knows models the
+	// server holds no key for, so without this a user who never added a
+	// provider sees an empty switcher for it.
+	ListModelsArgs []string
+	ParseModels    func(out []byte) []DiscoveredModel
+
 	// Args builds the command line for one turn.
 	Args func(req TurnRequest) []string
 	// Parse overrides the tolerant parser for agents needing special handling.
@@ -115,6 +122,10 @@ var Specs = []Spec{
 		EffortLevels:   []string{"minimal", "low", "medium", "high", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
+		// `models` prints one bare "provider/model" per line — the same
+		// selector --model takes.
+		ListModelsArgs: []string{"models"},
+		ParseModels:    parseOpencodeModels,
 		Args: func(req TurnRequest) []string {
 			a := []string{"run", "--format", "json"}
 			if m := qualifiedModel(req); m != "" {
@@ -138,6 +149,10 @@ var Specs = []Spec{
 		EffortLevels:   []string{"off", "minimal", "low", "medium", "high", "xhigh", "max"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
+		// pi has no machine-readable listing — --json is accepted and ignored
+		// — so this reads its aligned table.
+		ListModelsArgs: []string{"--list-models"},
+		ParseModels:    parsePiModels,
 		Args: func(req TurnRequest) []string {
 			a := []string{"-p", "--mode", "json", "--tools", "read,grep,find,ls"}
 			if m := qualifiedModel(req); m != "" {
@@ -160,6 +175,8 @@ var Specs = []Spec{
 		EffortLevels:   []string{"off", "minimal", "low", "medium", "high", "xhigh", "max", "auto"},
 		UsesProvider:   true,
 		PromptViaStdin: true,
+		ListModelsArgs: []string{"models", "--json"},
+		ParseModels:    parseOmpModels,
 		Args: func(req TurnRequest) []string {
 			// --no-tools rather than an allowlist: omp's tool names depend on
 			// which extensions are installed, and naming one it does not have
