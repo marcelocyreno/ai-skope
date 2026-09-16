@@ -1,14 +1,76 @@
 <script setup lang="ts">
 /** The server itself, and the coding agents it can drive. */
-import { ref, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { connection, api, setBaseUrl, connect } from "@/stores/connection";
-import type { RuntimeInfo } from "@/api/types";
+import { models, loadModels, setDefaultModel, shortModel } from "@/stores/models";
+import type { ModelOption, RuntimeInfo } from "@/api/types";
 import Icon from "@/pane/components/Icon.vue";
 
 const url = ref("");
 const runtimes = ref<RuntimeInfo[]>([]);
 const busy = ref(false);
 const error = ref("");
+
+/**
+ * The default model: what every new chat and every fresh pane starts from.
+ *
+ * The server has stored one all along and nothing ever wrote it, so a pane
+ * reload silently fell back to "the first runtime reporting OK, no effort" —
+ * and an effort chosen in the switcher lived only until the pane closed.
+ *
+ * The key identifies an option across a reload, since runtime, provider and
+ * model are what a Selection is made of. The <select> cannot carry an object.
+ */
+const keyOf = (o: { runtime: string; provider?: string; model: string }) =>
+  `${o.runtime}\u0000${o.provider ?? ""}\u0000${o.model}`;
+
+const chosen = ref("");
+const savedEffort = ref("");
+const saving = ref(false);
+const saved = ref(false);
+
+const chosenOption = computed<ModelOption | undefined>(() =>
+  models.options.find((o) => keyOf(o) === chosen.value),
+);
+
+/** Only the runtimes that reason offer a level; the rest show no control. */
+const efforts = computed<string[]>(() => chosenOption.value?.effortLevels ?? []);
+
+/** How a row reads in the list: the runtime, then the model by its own name. */
+function optionLabel(o: ModelOption): string {
+  const model = o.provider ? `${o.provider} / ${shortModel(o.model)}` : shortModel(o.model);
+  return `${o.runtimeName} · ${model}`;
+}
+
+/** Reads the stored default back into the controls. */
+function showStoredDefault() {
+  const current = models.options.find((o) => o.default);
+  chosen.value = current ? keyOf(current) : "";
+  savedEffort.value = models.stored?.effort ?? "";
+}
+
+async function saveDefault() {
+  const option = chosenOption.value;
+  if (!option) return;
+  saving.value = true;
+  saved.value = false;
+  error.value = "";
+  try {
+    await setDefaultModel({
+      runtime: option.runtime,
+      provider: option.provider,
+      model: option.model,
+      // A runtime that reports no levels stores none: the agent decides.
+      effort: efforts.value.includes(savedEffort.value) ? savedEffort.value : undefined,
+    });
+    showStoredDefault();
+    saved.value = true;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    saving.value = false;
+  }
+}
 
 onMounted(async () => {
   url.value = connection.settings?.baseUrl ?? "";
@@ -26,6 +88,8 @@ async function refresh() {
   if (connection.state !== "online") return;
   try {
     runtimes.value = await api().runtimes();
+    await loadModels();
+    showStoredDefault();
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   }
@@ -80,6 +144,43 @@ const glyph = (id: string) =>
       <input v-model="url" class="sk-input mono" style="width: 240px" aria-label="Server URL" />
       <button class="sk-btn secondary sm" @click="setBaseUrl(url)">Save</button>
       <button class="sk-btn ghost sm" @click="connect()">Reconnect</button>
+    </div>
+
+    <div class="sk-row">
+      <div class="lbl">
+        <b>Default model</b>
+        <small>What every new chat and every fresh pane starts from.</small>
+      </div>
+      <span class="sk-selectwrap">
+        <select v-model="chosen" class="sk-select" style="width: 260px" aria-label="Default model">
+          <option value="" disabled>Choose a model</option>
+          <option v-for="o in models.options" :key="keyOf(o)" :value="keyOf(o)">
+            {{ optionLabel(o) }}
+          </option>
+        </select>
+        <Icon id="i-chevron-down" />
+      </span>
+      <button class="sk-btn secondary sm" :disabled="!chosenOption || saving" @click="saveDefault()">
+        {{ saving ? "Saving…" : saved ? "Saved" : "Save" }}
+      </button>
+    </div>
+
+    <div v-if="efforts.length" class="sk-row">
+      <div class="lbl">
+        <b>Effort</b>
+        <small>{{ chosenOption?.runtimeName }} reasons harder the higher this goes.</small>
+      </div>
+      <span class="sk-seg" role="group" aria-label="Effort">
+        <button
+          v-for="level in efforts"
+          :key="level"
+          type="button"
+          :aria-pressed="savedEffort === level"
+          @click="savedEffort = level"
+        >
+          {{ level }}
+        </button>
+      </span>
     </div>
 
     <div class="sk-tablewrap">

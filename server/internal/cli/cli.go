@@ -32,7 +32,7 @@ Usage:
   aiss runtimes <list|detect|enable ID|disable ID|command ID CMD>
   aiss providers <list|add|remove ID|test ID>
   aiss folders <list|add PATH [--watch]|remove ID|reindex ID>
-  aiss models [--set RUNTIME MODEL]
+  aiss models [--set RUNTIME MODEL [--provider P] [--effort LEVEL]]
   aiss logs [--tail N]
   aiss config <show|set KEY VALUE>
   aiss reset [--yes]             Delete everything it stores, keys included

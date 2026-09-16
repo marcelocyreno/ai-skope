@@ -441,6 +441,28 @@ func TestRuntimesAndModels(t *testing.T) {
 
 	h.do("PUT", "/v1/models/default", map[string]string{"runtime": "claude-code", "model": "opus-5"}, nil, http.StatusOK)
 	h.do("PUT", "/v1/models/default", map[string]string{"runtime": "claude-code"}, nil, http.StatusBadRequest)
+
+	// The default carries the whole choice, effort included: a pane that
+	// reopens reads it back from here and starts where the user left off.
+	full := map[string]string{
+		"runtime": "claude-code", "provider": "anthropic", "model": "opus-5", "effort": "high",
+	}
+	h.do("PUT", "/v1/models/default", full, nil, http.StatusOK)
+	var back struct {
+		Default map[string]string `json:"default"`
+	}
+	h.do("GET", "/v1/models", nil, &back, http.StatusOK)
+	for k, want := range full {
+		if back.Default[k] != want {
+			t.Fatalf("default %s = %q, want %q (whole default: %+v)", k, back.Default[k], want, back.Default)
+		}
+	}
+
+	// The level goes straight to the agent's own flag, so one the runtime does
+	// not take is refused rather than stored and discovered at the next turn.
+	h.do("PUT", "/v1/models/default", map[string]string{
+		"runtime": "claude-code", "model": "opus-5", "effort": "ludicrous",
+	}, nil, http.StatusBadRequest)
 }
 
 func TestSettingsAndCapabilities(t *testing.T) {

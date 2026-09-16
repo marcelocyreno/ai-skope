@@ -31,7 +31,7 @@ it attached. `aiss stop` shuts it down.
 | `aiss runtimes list\|enable ID\|disable ID\|command ID CMD` | the agents it can drive |
 | `aiss providers list\|add --kind K --for pi,opencode\|test ID\|remove ID` | provider keys held by the server |
 | `aiss folders list\|add PATH [--watch]\|remove ID\|reindex` | the read allow-list |
-| `aiss models [--set RUNTIME MODEL]` | what the switcher offers, and the default |
+| `aiss models [--set RUNTIME MODEL [--provider P] [--effort LEVEL]]` | what the switcher offers, and the default — runtime, provider, model and effort |
 | `aiss logs [-f]`, `aiss config show\|set K V` | diagnostics |
 
 ## Layout

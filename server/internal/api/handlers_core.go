@@ -189,6 +189,13 @@ func (s *Server) putDefaultModel(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "bad_request", "A default needs a runtime and a model.")
 		return
 	}
+	// Effort rides along on the selection and is handed to the agent's own
+	// flag, so a level the runtime does not take is rejected here rather than
+	// stored and discovered at the next turn.
+	if err := s.Runtimes.CheckEffort(sel.Runtime, sel.Effort); err != nil {
+		writeErr(w, http.StatusBadRequest, "bad_request", err.Error())
+		return
+	}
 	if err := s.Runtimes.SetDefault(sel); err != nil {
 		writeStoreErr(w, err)
 		return

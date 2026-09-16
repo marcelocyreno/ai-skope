@@ -406,3 +406,32 @@ func TestRuntimeAddedWhileRunningIsPickedUp(t *testing.T) {
 		t.Fatal("a runtime added while the server is running must appear in the list")
 	}
 }
+
+// The effort level is handed straight to the agent's own flag — --effort,
+// model_reasoning_effort, --variant, --thinking — so an unknown one is not a
+// preference but a turn that will fail.
+func TestCheckEffort(t *testing.T) {
+	db, err := store.OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	r := NewRegistry(db, config.Default(), provider.NewRegistry(db, nil), status.NewBus())
+
+	if err := r.CheckEffort("claude-code", "high"); err != nil {
+		t.Errorf("a level Claude Code reports should pass: %v", err)
+	}
+	if err := r.CheckEffort("claude-code", ""); err != nil {
+		t.Errorf("no level means the agent decides, which every runtime allows: %v", err)
+	}
+	if err := r.CheckEffort("claude-code", "ludicrous"); err == nil {
+		t.Error("a level no runtime reports must be refused")
+	}
+	// Codex stops at high; xhigh belongs to Claude Code.
+	if err := r.CheckEffort("codex", "xhigh"); err == nil {
+		t.Error("a level from another runtime must be refused")
+	}
+	if err := r.CheckEffort("nope", "high"); err == nil {
+		t.Error("an unknown runtime must be refused")
+	}
+}

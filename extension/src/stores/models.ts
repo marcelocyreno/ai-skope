@@ -31,6 +31,8 @@ export function shortModelLabel(label: string): string {
 interface ModelStore {
   options: ModelOption[];
   selection: Selection | null;
+  /** What the server has stored as the default — what a fresh pane starts on. */
+  stored: Selection | null;
   loading: boolean;
   error: string;
 }
@@ -38,6 +40,7 @@ interface ModelStore {
 export const models = reactive<ModelStore>({
   options: [],
   selection: null,
+  stored: null,
   loading: false,
   error: "",
 });
@@ -78,6 +81,7 @@ export async function loadModels(): Promise<void> {
   try {
     const out = await api().models();
     models.options = out.models ?? [];
+    models.stored = out.default ?? null;
     // A runtime switched off in settings must not stay selected, or the
     // composer chip names something that cannot answer. The stored default can
     // be the disabled one too, so fall through to whatever is still listed.

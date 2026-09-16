@@ -459,10 +459,26 @@ func cmdModels(args []string) error {
 
 	if len(args) >= 3 && args[0] == "--set" {
 		sel := runtime.Selection{Runtime: args[1], Model: args[2]}
+		// A model on pi, omp or opencode is addressed as <provider>/<model>,
+		// and every runtime that reasons has an effort level. Setting a
+		// default without them stored only half of the choice.
+		for i := 3; i < len(args)-1; i++ {
+			switch args[i] {
+			case "--provider":
+				i++
+				sel.Provider = args[i]
+			case "--effort":
+				i++
+				sel.Effort = args[i]
+			}
+		}
+		if err := reg.CheckEffort(sel.Runtime, sel.Effort); err != nil {
+			return err
+		}
 		if err := reg.SetDefault(sel); err != nil {
 			return err
 		}
-		fmt.Printf("default is now %s on %s\n", sel.Model, sel.Runtime)
+		fmt.Printf("default is now %s\n", describeSelection(sel))
 		return nil
 	}
 	def := reg.Default(ctx)
@@ -472,10 +488,26 @@ func cmdModels(args []string) error {
 		star := ""
 		if m.Runtime == def.Runtime && m.Model == def.Model && m.Provider == def.Provider {
 			star = "*"
+			if def.Effort != "" {
+				star = "* " + def.Effort
+			}
 		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\t%s\n", m.Runtime, m.Provider, m.Model, m.Ctx, m.Status, star)
 	}
 	return w.Flush()
+}
+
+// describeSelection reads a stored default back the way it was set.
+func describeSelection(sel runtime.Selection) string {
+	model := sel.Model
+	if sel.Provider != "" {
+		model = sel.Provider + "/" + model
+	}
+	out := fmt.Sprintf("%s on %s", model, sel.Runtime)
+	if sel.Effort != "" {
+		out += ", effort " + sel.Effort
+	}
+	return out
 }
 
 func cmdLogs(args []string) error {

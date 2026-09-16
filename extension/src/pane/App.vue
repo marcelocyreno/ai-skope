@@ -73,6 +73,7 @@ onMounted(async () => {
     await Promise.all([loadModels(), openForCurrentPage()]);
   }
   chrome.runtime.onMessage.addListener(onRuntimeMessage);
+  document.addEventListener("visibilitychange", onVisible);
   void drainPending();
 });
 
@@ -80,7 +81,22 @@ onUnmounted(() => {
   unwatchTab?.();
   stopConnection();
   chrome.runtime.onMessage.removeListener(onRuntimeMessage);
+  document.removeEventListener("visibilitychange", onVisible);
 });
+
+/**
+ * The default model is chosen in the options page, which is a different
+ * document with its own copy of the store. Coming back to the pane is the
+ * moment to find out what it decided — otherwise the switcher goes on marking
+ * the old row as the default until the panel is closed and opened again.
+ *
+ * loadModels only adopts a selection when there is none, so this refreshes
+ * what is offered without overriding the model the user picked for this
+ * session.
+ */
+function onVisible() {
+  if (document.visibilityState === "visible" && ready.value) void loadModels();
+}
 
 // Once the connection comes up (or comes back), load what needs the server.
 watch(ready, async (isReady) => {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -274,6 +275,30 @@ func (r *Registry) Default(ctx context.Context) Selection {
 // SetDefault stores the default selection.
 func (r *Registry) SetDefault(sel Selection) error {
 	return r.db.SetSettingJSON(defaultModelKey, sel)
+}
+
+// CheckEffort reports whether a runtime accepts an effort level.
+//
+// The level is handed straight to the agent's own flag — --effort for Claude
+// Code, model_reasoning_effort for Codex, --variant and --thinking for the
+// rest — so an unknown string is not a setting the user picked but a flag that
+// will make the next turn fail. An empty level always passes: it means the
+// agent decides, which every runtime supports.
+func (r *Registry) CheckEffort(runtimeID, effort string) error {
+	if effort == "" {
+		return nil
+	}
+	spec, ok := r.Spec(runtimeID)
+	if !ok {
+		return fmt.Errorf("unknown runtime %q", runtimeID)
+	}
+	if len(spec.EffortLevels) == 0 {
+		return fmt.Errorf("%s takes no effort level", spec.Name)
+	}
+	if slices.Contains(spec.EffortLevels, effort) {
+		return nil
+	}
+	return fmt.Errorf("%s takes %s, not %q", spec.Name, strings.Join(spec.EffortLevels, ", "), effort)
 }
 
 // Models flattens every runtime and provider into the switcher's list.
