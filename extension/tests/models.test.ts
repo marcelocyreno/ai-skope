@@ -19,7 +19,9 @@ vi.mock("@/stores/connection", () => ({
   }),
 }));
 
-const { models, loadModels, refreshForRuntimes } = await import("@/stores/models");
+const { models, loadModels, refreshForRuntimes, shortModel, shortModelLabel } = await import(
+  "@/stores/models"
+);
 
 function runtime(id: string, enabled: boolean, status = "ok"): RuntimeInfo {
   return { id, name: id, enabled, status } as RuntimeInfo;
@@ -103,5 +105,33 @@ describe("model store and runtime availability", () => {
     h.connection.runtimes = [runtime("omp", false, "offline")];
     await refreshForRuntimes();
     expect(h.calls.models).toBe(3);
+  });
+});
+
+describe("reading a model's name", () => {
+  it("keeps an id that is already a name", () => {
+    expect(shortModel("opus")).toBe("opus");
+    expect(shortModel("gpt-5.5")).toBe("gpt-5.5");
+    expect(shortModel("glm-4.7")).toBe("glm-4.7");
+  });
+
+  it("drops the namespace a provider puts in front of the name", () => {
+    // Every Fireworks model shares the first three segments, so truncating
+    // the id from the right made seven rows read "accounts/fi\u2026".
+    expect(shortModel("accounts/fireworks/models/glm-5p3-flash")).toBe("glm-5p3-flash");
+    expect(shortModel("accounts/fireworks/models/qwen3-coder-480b")).toBe("qwen3-coder-480b");
+  });
+
+  it("survives the shapes an id is not supposed to have", () => {
+    expect(shortModel("zai/")).toBe("zai");
+    expect(shortModel("")).toBe("");
+    expect(shortModel("/")).toBe("/");
+  });
+
+  it("shortens each half of a provider / model label", () => {
+    expect(shortModelLabel("fireworks / accounts/fireworks/models/glm-5p3-flash")).toBe(
+      "fireworks / glm-5p3-flash",
+    );
+    expect(shortModelLabel("opus")).toBe("opus");
   });
 });

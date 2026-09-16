@@ -202,7 +202,7 @@
 .sk-group .sk-ico { width: 12px; height: 12px; }
 .sk-group > span { display: inline-flex; align-items: center; gap: 6px; }
 .sk-seg.mini button { height: 20px; padding: 0 7px; font-size: 10px; letter-spacing: 0; text-transform: none; }
-.sk-model .prov { color: var(--ink-3); font-weight: 500; }
+.sk-model .prov { color: var(--ink-3); font-weight: 500; flex: 0 20 auto; min-width: 0; }
 .sk-switcher .effort { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--line); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--ink-2); }
 .sk-switcher .effort small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 10px; color: var(--ink-3); }
 .sk-model { width: 100%; display: grid; grid-template-columns: 8px 1fr auto auto; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: var(--r-ctl); background: transparent; text-align: left; color: var(--ink); }
@@ -210,6 +210,11 @@
 .sk-model[aria-checked="true"] { background: var(--surface-2); }
 .sk-model .nm { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); display: flex; align-items: center; gap: 6px; min-width: 0; }
 .sk-model .nm span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The provider repeats down the whole group, the model name is what tells
+   the rows apart: the prefix gives up its width first, and only a name too
+   long on its own is ever ellipsised. */
+.sk-model .nm .mdl { flex: 0 1 auto; min-width: 0; }
+.sk-model .nm .sk-tag { flex: none; }
 .sk-model .meta { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
 .sk-model .chk { width: 14px; height: 14px; color: var(--ink); visibility: hidden; }
 .sk-model[aria-checked="true"] .chk { visibility: visible; }

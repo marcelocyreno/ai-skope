@@ -4,7 +4,15 @@
  * server's own hierarchy: runtime → provider / model → effort.
  */
 import { ref, computed } from "vue";
-import { models, groupedOptions, selectModel, setEffort, effortLevels, currentOption } from "@/stores/models";
+import {
+  models,
+  groupedOptions,
+  selectModel,
+  setEffort,
+  effortLevels,
+  currentOption,
+  shortModel,
+} from "@/stores/models";
 import { connection } from "@/stores/connection";
 import type { ModelOption } from "@/api/types";
 import Icon from "./Icon.vue";
@@ -76,6 +84,7 @@ const serverLine = computed(() => {
           :class="{ 'is-off': o.status === 'offline' }"
           role="option"
           :aria-checked="isSelected(o)"
+          :title="o.label || o.model"
           @click="choose(o)"
         >
           <span
@@ -83,7 +92,8 @@ const serverLine = computed(() => {
             :class="o.status === 'degraded' ? 'is-degraded' : o.status === 'offline' ? 'is-offline' : ''"
           />
           <span class="nm">
-            <span><span v-if="o.provider" class="prov">{{ o.provider }} /</span> {{ o.model }}</span>
+            <span v-if="o.provider" class="prov">{{ o.provider }} /</span>
+            <span class="mdl">{{ shortModel(o.model) }}</span>
             <span v-if="o.default" class="sk-tag">default</span>
           </span>
           <span class="meta">
@@ -104,7 +114,7 @@ const serverLine = computed(() => {
     <div v-if="effortLevels.length" class="effort">
       <span>
         Effort
-        <small>{{ currentOption?.runtimeName }} · {{ models.selection?.model }}</small>
+        <small>{{ currentOption?.runtimeName }} · {{ shortModel(models.selection?.model ?? "") }}</small>
       </span>
       <span class="sk-seg mini" role="group" aria-label="Effort">
         <button

@@ -5,7 +5,7 @@
  * model's name is never squeezed out.
  */
 import { computed } from "vue";
-import { models, modelStatus, currentOption } from "@/stores/models";
+import { models, modelStatus, currentOption, shortModel } from "@/stores/models";
 import { connection } from "@/stores/connection";
 import Icon from "./Icon.vue";
 
@@ -22,7 +22,11 @@ const glyph = computed(() => {
   return "i-server";
 });
 
-const name = computed(() => models.selection?.model ?? "No model");
+// The chip has one line for the name, and the tooltip below already
+// carries the full id, so a namespaced one is shown by its last segment.
+const name = computed(() =>
+  models.selection ? shortModel(models.selection.model) : "No model",
+);
 
 const title = computed(() => {
   const o = currentOption.value;

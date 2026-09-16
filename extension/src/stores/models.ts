@@ -3,6 +3,31 @@ import { reactive, computed } from "vue";
 import { api, connection } from "./connection";
 import type { ModelOption, Selection } from "@/api/types";
 
+/**
+ * The name a model is known by, for a list that has to be read at a glance.
+ *
+ * Providers that namespace their catalogue return ids like
+ * `accounts/fireworks/models/glm-5p3-flash`, where every model shares the
+ * first three segments. A row that truncates such an id keeps the shared
+ * prefix and drops the one part that tells it apart, so seven different
+ * models all render as `accounts/fi…`. The last segment is the name; the path
+ * in front of it is addressing, and belongs in the tooltip.
+ *
+ * An id that is not a path — `opus`, `gpt-5.5` — is already the name.
+ */
+export function shortModel(id: string): string {
+  return id.split("/").filter(Boolean).pop() ?? id;
+}
+
+/**
+ * The same, for a label the server already assembled as `provider / model`:
+ * each half is shortened, so the provider survives rather than being mistaken
+ * for one more path segment.
+ */
+export function shortModelLabel(label: string): string {
+  return label.split(" / ").map(shortModel).join(" / ");
+}
+
 interface ModelStore {
   options: ModelOption[];
   selection: Selection | null;

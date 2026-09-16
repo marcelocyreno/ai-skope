@@ -11,6 +11,7 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import type { Message } from "@/api/types";
 import { renderMarkdown, renderPlain, withCursor } from "@/pane/markdown";
 import { copyText } from "@/pane/clipboard";
+import { shortModelLabel } from "@/stores/models";
 import { announce } from "@/stores/announce";
 import ContextChip from "./ContextChip.vue";
 import Icon from "./Icon.vue";
@@ -35,6 +36,13 @@ const answer = computed(() => {
   const html = renderMarkdown(props.message.text);
   return props.streaming ? withCursor(html, CURSOR) : html;
 });
+
+/**
+ * The model that answered, by name. The label the server stored reads
+ * `provider / model`, and a namespaced model turns that into a path nobody
+ * reads — see shortModelLabel.
+ */
+const model = computed(() => (props.message.model ? shortModelLabel(props.message.model) : ""));
 
 const isUser = computed(() => props.message.role === "user");
 const copyLabel = computed(() => (isUser.value ? "Copy message" : "Copy answer"));
@@ -103,7 +111,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
   <div v-else class="sk-msg ai" :class="{ 'is-streaming': streaming }">
     <div class="sk-ai-head">
-      <Icon id="i-reticle" />AI Skope<template v-if="message.model"> · {{ message.model }}</template>
+      <Icon id="i-reticle" />AI Skope<template v-if="model"> · {{ model }}</template>
     </div>
 
     <div v-for="(tool, i) in message.tools ?? []" :key="i" class="sk-tool">
