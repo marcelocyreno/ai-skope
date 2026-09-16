@@ -33,6 +33,7 @@
   --surface-3: #E9EDF1;   /* hover fills, segmented track */
   --inverse:   #1B2026;   /* floating instrument toolbar */
   --inverse-ink: #F2F5F7;
+  --inverse-accent: #F2A23A;            /* the aim color ON that surface */
 
   /* ink */
   --ink:   #161A1F;
@@ -92,7 +93,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
-    --inverse: #EAEEF2; --inverse-ink: #161A1F;
+    --inverse: #EAEEF2; --inverse-ink: #161A1F; --inverse-accent: #8A4D05;
     --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
     --line: #2A3138; --line-2: #222830;
     --accent: #F2A23A; --accent-ink: #F6B658;
@@ -110,7 +111,7 @@
 :root[data-theme="dark"], [data-theme="dark"] {
   color-scheme: dark;
   --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
-  --inverse: #EAEEF2; --inverse-ink: #161A1F;
+  --inverse: #EAEEF2; --inverse-ink: #161A1F; --inverse-accent: #8A4D05;
   --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
   --line: #2A3138; --line-2: #222830;
   --accent: #F2A23A; --accent-ink: #F6B658;
@@ -229,16 +230,40 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-ai-body pre { padding: 8px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line-2); overflow-x: auto; }
 .sk-ai-body pre code { padding: 0; border: 0; background: none; white-space: pre; }
 .sk-ai-body blockquote { padding-left: 10px; border-left: 2px solid var(--line); color: var(--ink-2); }
+.sk-ai-body .sk-tbl { overflow-x: auto; }
+.sk-ai-body table { width: 100%; border-collapse: collapse; font-size: var(--t-13); }
+.sk-ai-body th, .sk-ai-body td { padding: 4px 8px; border: 1px solid var(--line-2); text-align: left; vertical-align: top; }
+.sk-ai-body th { background: var(--surface-2); color: var(--ink-2); font-weight: 600; }
+.sk-ai-body th.sk-r, .sk-ai-body td.sk-r { text-align: right; }
+.sk-ai-body th.sk-c, .sk-ai-body td.sk-c { text-align: center; }
 .sk-ai-body hr { height: 1px; border: 0; background: var(--line-2); }
 .sk-ai-body strong { font-weight: 600; }
 .sk-ai-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .sk-time { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); opacity: 0; transition: opacity var(--dur) var(--ease); }
 .sk-msg:hover .sk-time, .sk-msg:focus-within .sk-time { opacity: 1; }
+.sk-msg-meta { display: flex; align-items: center; gap: 2px; opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-msg:hover .sk-msg-meta, .sk-msg:focus-within .sk-msg-meta { opacity: 1; }
+/* The actions hug the message's own alignment edge, with the optical inset .sk-note .acts uses; the timestamp trails. */
+.sk-msg.ai .sk-msg-meta { margin: -4px 0 -2px -6px; }
+.sk-msg.user .sk-msg-meta { flex-direction: row-reverse; margin: -4px -6px -2px 0; }
+.sk-msg-meta .sk-time { opacity: 1; padding: 0 4px; }
+/* Copied: the glyph swaps to a check in full-strength ink. Green stays model status. */
+.sk-iconbtn.is-copied { color: var(--ink); }
+/* A fenced block gets its own button. The wrapper exists because <pre> scrolls, and an absolute child inside it would scroll away with the code. */
+.sk-pre { position: relative; }
+.sk-copy-code { position: absolute; top: 5px; right: 5px; background: var(--surface); border: 1px solid var(--line-2); opacity: 0; transition: opacity var(--dur) var(--ease); }
+.sk-copy-code:hover { background: var(--surface-3); }
+.sk-pre:hover .sk-copy-code, .sk-pre:focus-within .sk-copy-code { opacity: 1; }
+/* Nothing whole to copy mid-turn. */
+.sk-msg.is-streaming .sk-copy-code { display: none; }
 .sk-msg-ctx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .sk-cursor { display: inline-block; width: 2px; height: 1em; vertical-align: -0.15em; margin-left: 2px; background: var(--accent); animation: sk-blink 1s steps(2, start) infinite; }
 @keyframes sk-blink { to { visibility: hidden; } }
 .sk-tool { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--ink-2); font-size: var(--t-12); font-family: var(--font-ui); font-weight: 500; }
 .sk-tool code { font-size: var(--t-11); color: var(--accent-ink); }
+/* A tool that failed says so: the row keeps its shape, the state changes colour. */
+.sk-tool.is-failed { background: var(--bad-soft); }
+.sk-tool.is-failed .sk-ico { color: var(--bad); }
 .sk-spin { width: 12px; height: 12px; border-radius: 50%; border: 1.75px solid var(--line); border-top-color: var(--accent); animation: sk-spin .9s linear infinite; flex: none; }
 @keyframes sk-spin { to { transform: rotate(360deg); } }
 .sk-err { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-ctl); background: var(--bad-soft); color: var(--ink); font-size: var(--t-13); }
@@ -276,7 +301,9 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-send .sk-ico { width: 16px; height: 16px; stroke-width: 2; }
 .sk-hint { display: flex; gap: 10px; align-items: center; padding: 0 2px; font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); }
 .sk-hint .grow { flex: 1; }
-.sk-hint .clear { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; margin-right: -6px; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-3); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-11); }
+.sk-hint .clear { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; border: 0; border-radius: var(--r-ctl); background: transparent; color: var(--ink-3); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-11); }
+/* Only the row's last button pulls out to the optical edge; earlier ones keep the row's gap. */
+.sk-hint .clear:last-child { margin-right: -6px; }
 .sk-hint .clear .sk-ico { width: 12px; height: 12px; }
 .sk-hint .clear:hover { color: var(--ink); background: var(--surface-2); }
 .sk-hint .clear:disabled { opacity: .4; cursor: default; background: transparent; color: var(--ink-3); }
@@ -325,7 +352,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-group .sk-ico { width: 12px; height: 12px; }
 .sk-group > span { display: inline-flex; align-items: center; gap: 6px; }
 .sk-seg.mini button { height: 20px; padding: 0 7px; font-size: 10px; letter-spacing: 0; text-transform: none; }
-.sk-model .prov { color: var(--ink-3); font-weight: 500; }
+.sk-model .prov { color: var(--ink-3); font-weight: 500; flex: 0 20 auto; min-width: 0; }
 .sk-switcher .effort { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--line); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--ink-2); }
 .sk-switcher .effort small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 10px; color: var(--ink-3); }
 .sk-model { width: 100%; display: grid; grid-template-columns: 8px 1fr auto auto; align-items: center; gap: 10px; padding: 7px 8px; border: 0; border-radius: var(--r-ctl); background: transparent; text-align: left; color: var(--ink); }
@@ -333,6 +360,11 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-model[aria-checked="true"] { background: var(--surface-2); }
 .sk-model .nm { font-family: var(--font-ui); font-weight: 600; font-size: var(--t-13); display: flex; align-items: center; gap: 6px; min-width: 0; }
 .sk-model .nm span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The provider repeats down the whole group, the model name is what tells
+   the rows apart: the prefix gives up its width first, and only a name too
+   long on its own is ever ellipsised. */
+.sk-model .nm .mdl { flex: 0 1 auto; min-width: 0; }
+.sk-model .nm .sk-tag { flex: none; }
 .sk-model .meta { font-family: var(--font-mono); font-size: var(--t-11); color: var(--ink-3); white-space: nowrap; }
 .sk-model .chk { width: 14px; height: 14px; color: var(--ink); visibility: hidden; }
 .sk-model[aria-checked="true"] .chk { visibility: visible; }
@@ -355,7 +387,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-seltool { display: inline-flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); box-shadow: var(--shadow-float); }
 .sk-seltool button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: inherit; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); white-space: nowrap; }
 .sk-seltool button:hover { background: rgba(127,127,127,.22); }
-.sk-seltool button.aim { color: var(--accent); }
+.sk-seltool button.aim { color: var(--inverse-accent); }
 .sk-seltool .sk-ico { width: 14px; height: 14px; }
 .sk-seltool .sep { width: 1px; height: 16px; background: rgba(127,127,127,.35); margin: 0 2px; }
 .sk-seltool::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; background: var(--inverse); transform: rotate(45deg); border-radius: 2px; }
@@ -371,11 +403,11 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-aim i:nth-child(3) { left: -2px; bottom: -2px; border-left-width: 3px; border-bottom-width: 3px; }
 .sk-aim i:nth-child(4) { right: -2px; bottom: -2px; border-right-width: 3px; border-bottom-width: 3px; }
 .sk-aim-tag { position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 8px; height: 24px; padding: 0 8px; border-radius: 5px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-mono); font-size: var(--t-11); white-space: nowrap; box-shadow: var(--shadow-float); }
-.sk-aim-tag b { color: var(--accent); font-weight: 500; }
+.sk-aim-tag b { color: var(--inverse-accent); font-weight: 500; }
 .sk-aim-tag .dim { opacity: .65; }
 .sk-aim.is-top .sk-aim-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
 .sk-aim-hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
-.sk-aim-hint .sk-ico { width: 16px; height: 16px; color: var(--accent); }
+.sk-aim-hint .sk-ico { width: 16px; height: 16px; color: var(--inverse-accent); }
 .sk-aim-hint kbd { font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.25); }
 .is-picking, .is-picking * { cursor: crosshair !important; }
 .is-picking ::selection { background: transparent; }
@@ -385,10 +417,14 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-content .sk-hl { background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-line); border-radius: 2px; }
 
 /* ---------- toast ---------- */
-.sk-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
-.sk-toast .sk-ico { color: var(--accent); }
-.sk-toast code { font-weight: 400; color: var(--accent); }
-.sk-toast .undo { display: inline-flex; align-items: center; gap: 4px; margin: -4px -6px -4px 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(127,127,127,.22); color: var(--accent); font: inherit; }
+.sk-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
+/* A picked selector can be longer than the pane; the message gives way
+   rather than pushing the dismiss button off the edge. */
+.sk-toast > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sk-toast .sk-ico, .sk-toast .undo { flex: none; }
+.sk-toast .sk-ico { color: var(--inverse-accent); }
+.sk-toast code { font-weight: 400; color: var(--inverse-accent); }
+.sk-toast .undo { display: inline-flex; align-items: center; gap: 4px; margin: -4px -6px -4px 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(127,127,127,.22); color: var(--inverse-accent); font: inherit; }
 .sk-toast .undo:hover { background: rgba(127,127,127,.34); }
 
 /* ---------- notes ---------- */
@@ -579,6 +615,10 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-view[hidden] { display: none; }
 [hidden] { display: none !important; }
 
+/* ---------- announced but not drawn ---------- */
+/* A live region for confirmations too small for a toast. */
+.sk-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; white-space: nowrap; clip-path: inset(50%); }
+
 /* ============================================================
    AI Skope — palettes ("theme colors")
    Loaded after tokens.css. A palette overrides COLOR tokens only;
@@ -594,14 +634,16 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
    Every palette lists its light block first, then its dark blocks.
    The same rule applies to all: --accent is the aim color (≥ 3:1 on
    --surface), --accent-ink is amber-as-text (≥ 4.5:1 on --surface),
-   --focus is never the accent hue, status colors stay their own.
+   --inverse-accent is the aim color for things sitting ON --inverse and
+   so belongs to the *opposite* theme (≥ 4.5:1 on --inverse), --focus is
+   never the accent hue, status colors stay their own.
    ============================================================ */
 
 /* ---------- Nocturne — midnight indigo · lavender ink · brass aim (dark is the hero) ---------- */
 [data-palette="nocturne"] {
   color-scheme: light;
   --bg: #EEEDF6; --surface: #FBFBFE; --surface-2: #F2F1FA; --surface-3: #E6E5F2;
-  --inverse: #1E2140; --inverse-ink: #F2F1FA;
+  --inverse: #1E2140; --inverse-ink: #F2F1FA; --inverse-accent: #D9A94A;
   --ink: #1A1C33; --ink-2: #5B5D7E; --ink-3: #8A8CA8;
   --line: #D9D8E8; --line-2: #E7E6F1;
   --accent: #A9781A; --accent-ink: #7A5510; --accent-soft: rgba(169,120,26,.13); --accent-line: rgba(169,120,26,.45); --accent-on: #FFFFFF;
@@ -617,7 +659,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
   :root:not([data-theme="light"])[data-palette="nocturne"] {
     color-scheme: dark;
     --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
-    --inverse: #ECEAF7; --inverse-ink: #14172B;
+    --inverse: #ECEAF7; --inverse-ink: #14172B; --inverse-accent: #7A5510;
     --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
     --line: #2A3054; --line-2: #232847;
     --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
@@ -633,7 +675,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="nocturne"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
-  --inverse: #ECEAF7; --inverse-ink: #14172B;
+  --inverse: #ECEAF7; --inverse-ink: #14172B; --inverse-accent: #7A5510;
   --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
   --line: #2A3054; --line-2: #232847;
   --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
@@ -650,7 +692,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="sage"] {
   color-scheme: light;
   --bg: #EEF1EC; --surface: #FCFDFB; --surface-2: #F3F6F1; --surface-3: #E6EBE3;
-  --inverse: #222A24; --inverse-ink: #F2F5F0;
+  --inverse: #222A24; --inverse-ink: #F2F5F0; --inverse-accent: #E8794A;
   --ink: #1B211C; --ink-2: #5C685E; --ink-3: #88948A;
   --line: #D6DDD5; --line-2: #E4E9E2;
   --accent: #C25A26; --accent-ink: #96421A; --accent-soft: rgba(194,90,38,.12); --accent-line: rgba(194,90,38,.45); --accent-on: #FFFFFF;
@@ -666,7 +708,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
   :root:not([data-theme="light"])[data-palette="sage"] {
     color-scheme: dark;
     --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
-    --inverse: #E8EDE6; --inverse-ink: #161A17;
+    --inverse: #E8EDE6; --inverse-ink: #161A17; --inverse-accent: #96421A;
     --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
     --line: #2B342C; --line-2: #232B24;
     --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
@@ -682,7 +724,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="sage"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
-  --inverse: #E8EDE6; --inverse-ink: #161A17;
+  --inverse: #E8EDE6; --inverse-ink: #161A17; --inverse-accent: #96421A;
   --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
   --line: #2B342C; --line-2: #232B24;
   --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
@@ -699,7 +741,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="ember"] {
   color-scheme: light;
   --bg: #F1EEEB; --surface: #FFFDFB; --surface-2: #F6F2EE; --surface-3: #EBE5E0;
-  --inverse: #26221F; --inverse-ink: #F6F2EE;
+  --inverse: #26221F; --inverse-ink: #F6F2EE; --inverse-accent: #F2694F;
   --ink: #1E1B19; --ink-2: #66605B; --ink-3: #948D87;
   --line: #DFD8D2; --line-2: #EBE5E0;
   --accent: #D0402C; --accent-ink: #A02E1E; --accent-soft: rgba(208,64,44,.12); --accent-line: rgba(208,64,44,.45); --accent-on: #FFFFFF;
@@ -715,7 +757,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
   :root:not([data-theme="light"])[data-palette="ember"] {
     color-scheme: dark;
     --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
-    --inverse: #EFE9E4; --inverse-ink: #1A1614;
+    --inverse: #EFE9E4; --inverse-ink: #1A1614; --inverse-accent: #A02E1E;
     --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
     --line: #352E2A; --line-2: #2B2522;
     --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
@@ -731,7 +773,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="ember"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
-  --inverse: #EFE9E4; --inverse-ink: #1A1614;
+  --inverse: #EFE9E4; --inverse-ink: #1A1614; --inverse-accent: #A02E1E;
   --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
   --line: #352E2A; --line-2: #2B2522;
   --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
@@ -748,7 +790,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="arctic"] {
   color-scheme: light;
   --bg: #EAF1F7; --surface: #FFFFFF; --surface-2: #F3F7FB; --surface-3: #E4ECF3;
-  --inverse: #14263A; --inverse-ink: #F0F5FA;
+  --inverse: #14263A; --inverse-ink: #F0F5FA; --inverse-accent: #F2AE3C;
   --ink: #10202E; --ink-2: #4E6579; --ink-3: #7E93A6;
   --line: #D2DEE8; --line-2: #E1EAF1;
   --accent: #C9741A; --accent-ink: #925310; --accent-soft: rgba(201,116,26,.12); --accent-line: rgba(201,116,26,.45); --accent-on: #FFFFFF;
@@ -764,7 +806,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
   :root:not([data-theme="light"])[data-palette="arctic"] {
     color-scheme: dark;
     --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
-    --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+    --inverse: #E4EDF5; --inverse-ink: #0F1A24; --inverse-accent: #925310;
     --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
     --line: #263645; --line-2: #1F2D3A;
     --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
@@ -780,7 +822,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="arctic"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
-  --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+  --inverse: #E4EDF5; --inverse-ink: #0F1A24; --inverse-accent: #925310;
   --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
   --line: #263645; --line-2: #1F2D3A;
   --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
@@ -797,7 +839,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="mono"] {
   color-scheme: light;
   --bg: #EFEFEF; --surface: #FFFFFF; --surface-2: #F5F5F5; --surface-3: #E8E8E8;
-  --inverse: #1A1A1A; --inverse-ink: #F5F5F5;
+  --inverse: #1A1A1A; --inverse-ink: #F5F5F5; --inverse-accent: #6B9BFF;
   --ink: #171717; --ink-2: #5F5F5F; --ink-3: #8C8C8C;
   --line: #DADADA; --line-2: #E8E8E8;
   --accent: #2F6BFF; --accent-ink: #1E4FCC; --accent-soft: rgba(47,107,255,.12); --accent-line: rgba(47,107,255,.45); --accent-on: #FFFFFF;
@@ -813,7 +855,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
   :root:not([data-theme="light"])[data-palette="mono"] {
     color-scheme: dark;
     --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
-    --inverse: #EDEDED; --inverse-ink: #161616;
+    --inverse: #EDEDED; --inverse-ink: #161616; --inverse-accent: #1E4FCC;
     --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
     --line: #2C2C2C; --line-2: #242424;
     --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;
@@ -829,7 +871,7 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 [data-palette="mono"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
-  --inverse: #EDEDED; --inverse-ink: #161616;
+  --inverse: #EDEDED; --inverse-ink: #161616; --inverse-accent: #1E4FCC;
   --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
   --line: #2C2C2C; --line-2: #242424;
   --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;
