@@ -1,6 +1,6 @@
 # Chrome Web Store — where this stands
 
-**Last updated: 8 September 2026.** Pick this up cold: everything below is
+**Last updated: 15 September 2026.** Pick this up cold: everything below is
 either done, or a step you can do in one sitting.
 
 `LISTING.md` holds the text to paste, field by field, in the order the
@@ -10,14 +10,30 @@ dashboard asks. This file is the checklist around it.
 
 ## Live
 
-**AI Skope 0.1.0 is published, unlisted, since 7 September 2026.** The item
-lives in the [developer dashboard](https://chrome.google.com/webstore/devconsole).
-It was built from the package of 5 September, so the store build predates
-everything merged after that day — see "Next: 0.1.1" below.
+**AI Skope is published, unlisted, since 7 September 2026.** The item lives in
+the [developer dashboard](https://chrome.google.com/webstore/devconsole).
+
+**Which version the store serves is not recorded here.** 0.1.0 went up on 7
+September. Whether the 0.1.1 package followed was never ticked off below, and
+it cannot be read from the repository. Check the item's Package tab before
+uploading — the store only accepts a version higher than the one it holds.
 
 Unlisted was the choice. The review is identical to public, and switching
 later is a dropdown on the Distribution tab that keeps the extension ID and
 the existing users. Going public is the only listing decision left.
+
+## Released
+
+| Tag | Cut | GitHub release | Homebrew tap |
+|---|---|---|---|
+| `v0.1.0` | 5 September 2026 | four archives + `checksums.txt` | cask written |
+| `v0.1.1` | 10 September 2026 | four archives + `checksums.txt` | **not written** |
+
+The `v0.1.1` workflow failed *after* publishing the release: goreleaser could
+not write the cask, `401 Bad credentials` against `marcelocyreno/homebrew-tap`.
+The cask still pins **0.1.0**, so `brew install marcelocyreno/tap/aiss` hands
+out the older server while the release page has the newer one. The token is the
+first item under "Still to do on the release side".
 
 ## Done — do not redo
 
@@ -73,23 +89,46 @@ every update.
 - [ ] **7. Release the server** at the same version:
       `git tag vX.Y.Z && git push origin vX.Y.Z && task release`.
 
-### Next: 0.1.1
+### Next: 0.1.2
 
-What 0.1.0 on the store does not have:
+`v0.1.1` is taken — the tag is pushed and the release is published — so the
+next package and the next server tag are both **0.1.2**. Eight commits are
+waiting on `main`, none of them pushed:
 
-- Markdown tables in the transcript (#1)
-- Copy any message from the chat, plus the `copy-last-answer` shortcut (#3)
-- The model switcher: agent-reported models, runtime toggles, a Mask panic (#2)
-- Server: answer read-only from the allowed folders instead of plan mode (#4)
+- Show the model's name, not the path in front of it
+- Give the inverted surfaces an accent of their own
+- The right-click menu is opt-in, off by default
+- Server: tie a tool call's frames together by its id
+- Notes hidden until the feature is finished
+- Walk the sent messages with Up and Down
+- Choose the default runtime, model and effort
+- The design kit rebuilt so the previews match the tokens
 
 Permissions are unchanged, so the seven justifications in `LISTING.md` still
-hold and the review should be the quick kind.
+hold and the review should be the quick kind. `LISTING.md` already carries two
+of these: the `contextMenus` justification says the entries are off by default,
+and Notes is gone from the feature list.
 
-- [x] Version bumped to 0.1.1 — 8 September 2026
-- [x] Package built — `store/ai-skope-0.1.1.zip`, 84 KB, manifest at the
+- [x] Version bumped to 0.1.2 — 15 September 2026
+- [ ] **Recapture the screenshots** — `task store:shots`. All six frames are
+      from 5 September, before Notes was hidden. `3-selection.png` still shows
+      a "save note" button the extension no longer has, and the pane still
+      carries a Notes tab. The listing text was corrected for this; the images
+      were not.
+- [x] Package built — `store/ai-skope-0.1.2.zip`, 85 KB, manifest at the
       root, no source maps
+- [ ] **Two end-to-end tests fail on `main` — do not upload until they pass.**
+      `the model switcher lists what the server offers and changes the chip`
+      and `the options page manages folders against the real server`, both in
+      `extension/tests/e2e/design-states.spec.ts`. They fail on every run, not
+      intermittently. The switcher no longer offers a provider's models, and
+      the folders table resolves to seven rows where the test expects one.
+      Suspect "choose the default runtime, model and effort", the newest
+      commit: it added a Default model control and changed how effort is
+      stored, and it is the only recent change to that area that left the spec
+      untouched. The packaged zip above was built from this same code.
 - [ ] Uploaded and submitted
-- [ ] Server `v0.1.1` tagged and released
+- [ ] `main` pushed, `v0.1.2` tagged, server released
 
 ### If review pushes back
 
@@ -119,9 +158,10 @@ unlisted link and nothing came back, flip it.
 
 ## Still to do on the release side
 
-- [ ] **`HOMEBREW_TAP_GITHUB_TOKEN` secret** so CI can cut releases without a
-      workstation. Steps in `../docs/PUBLISHING.md` → "The tap token".
-      Until then: `task release` after pushing a tag.
+- [ ] **`HOMEBREW_TAP_GITHUB_TOKEN` secret** — missing or expired, and it has
+      already cost a release. Steps in `../docs/PUBLISHING.md` → "The tap
+      token". Until it is fixed, every tag needs `task release` from a
+      workstation, and the tap lags the release page.
 - [ ] **Support URL** on the Store listing tab — GitHub issues. Not filled in
       at the first submission.
 - [ ] **Say when the server is older than the extension expects.**
