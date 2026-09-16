@@ -16,6 +16,12 @@ export interface Settings {
   /** Sites the extension never reads. */
   blockedHosts: string[];
   openAutomatically: boolean;
+  /**
+   * Whether AI Skope puts its two entries in the page's right-click menu.
+   * Off by default: the menu belongs to the page, and the pane's own
+   * selection toolbar and shortcuts already do the same two things.
+   */
+  contextMenu: boolean;
 }
 
 export const DEFAULTS: Settings = {
@@ -28,6 +34,7 @@ export const DEFAULTS: Settings = {
   pageAccess: "ask",
   blockedHosts: [],
   openAutomatically: false,
+  contextMenu: false,
 };
 
 const KEY = "settings";

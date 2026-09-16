@@ -123,7 +123,7 @@ AI Skope lets a user ask a coding agent running on their own computer about the 
 | `storage` | Stores the pairing token for the local server, the server address, and appearance settings (theme, palette, text size). Nothing is stored remotely. |
 | `scripting` | Injects the element picker and the text-selection toolbar into the page, and reads the page's text when the user asks a question about it. Only ever on a site the user has separately allowed. |
 | `tabs` | Reads the active tab's URL and title so the pane can describe the page the user is looking at, keep a separate conversation per page, and follow along when they navigate. The URL and title are sent only to the companion application on the user's own machine, which stores the conversation locally. |
-| `contextMenus` | Adds "Ask AI Skope about this" to the right-click menu on selected text. |
+| `contextMenus` | Adds "Ask AI Skope about this" to the right-click menu on selected text. Off by default: a fresh install leaves the page's own menu untouched, and the entries appear only while the user has switched them on in the options page. |
 | Host permission `http://127.0.0.1/*`, `http://localhost/*` | Communicates with AI Skope Server, a companion application the user installs and runs on their own computer. This is the only network destination the extension contacts. |
 | Optional host permission `<all_urls>` | Requested per site, at the moment the user first picks an element or selects text on that site, from their own click. Nothing is requested at install time, and access to a site is never assumed. |
 

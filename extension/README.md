@@ -48,7 +48,7 @@ had open.
 | Side panel | `src/pane/` | the AI Pane: top bar, tabs, transcript, composer, switcher, history, quick settings |
 | Options page | `src/options/` | server, runtimes, folders, providers, privacy, shortcuts |
 | Content script | `src/content/` | element picker, selection toolbar, page text — injected on demand, drawn in a Shadow DOM |
-| Service worker | `src/worker/` | opens the panel, keyboard commands, context menu |
+| Service worker | `src/worker/` | opens the panel, keyboard commands, the opt-in context menu |
 | API client | `src/api/` | typed wrapper over the server, plus the SSE parser |
 | Stores | `src/stores/` | reactive state: connection, models, chat, history, notes, files, page |
 | Styles | `src/styles/` | copied unchanged from `design/tokens` — tokens, six palettes, every `sk-*` component |

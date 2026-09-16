@@ -113,7 +113,7 @@ that is the product in one image, and it is what the design was built around.
   | `storage` | Remembers the pairing token, server address and appearance. |
   | `scripting` | Injects the element picker and selection toolbar into the page, only after the user allows that site. |
   | `tabs` | Reads the active tab's URL and title so answers are about the page in front of the user. |
-  | `contextMenus` | "Ask AI Skope about this" on a text selection. |
+  | `contextMenus` | "Ask AI Skope about this" on a text selection. Off by default — the entries exist only while the user has switched them on. |
   | `host_permissions` for 127.0.0.1 / localhost | Talks to the AI Skope Server, a companion application the user installs and runs on their own machine. |
   | `optional_host_permissions` `<all_urls>` | Requested **per site, at the moment the user picks an element or selects text**. Nothing is requested at install time. |
 

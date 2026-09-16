@@ -54,5 +54,18 @@ const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember"
         @click="set({ openAutomatically: !s?.openAutomatically })"
       />
     </div>
+    <div class="sk-row">
+      <div class="lbl">
+        <b>Right-click menu</b>
+        <small>Add "Ask AI Skope" and "Save as a note" to selected text.</small>
+      </div>
+      <button
+        type="button"
+        class="sk-switch"
+        role="switch"
+        :aria-checked="s?.contextMenu"
+        @click="set({ contextMenu: !s?.contextMenu })"
+      />
+    </div>
   </section>
 </template>
