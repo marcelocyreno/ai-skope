@@ -13,14 +13,16 @@
    Every palette lists its light block first, then its dark blocks.
    The same rule applies to all: --accent is the aim color (≥ 3:1 on
    --surface), --accent-ink is amber-as-text (≥ 4.5:1 on --surface),
-   --focus is never the accent hue, status colors stay their own.
+   --inverse-accent is the aim color for things sitting ON --inverse and
+   so belongs to the *opposite* theme (≥ 4.5:1 on --inverse), --focus is
+   never the accent hue, status colors stay their own.
    ============================================================ */
 
 /* ---------- Nocturne — midnight indigo · lavender ink · brass aim (dark is the hero) ---------- */
 [data-palette="nocturne"] {
   color-scheme: light;
   --bg: #EEEDF6; --surface: #FBFBFE; --surface-2: #F2F1FA; --surface-3: #E6E5F2;
-  --inverse: #1E2140; --inverse-ink: #F2F1FA;
+  --inverse: #1E2140; --inverse-ink: #F2F1FA; --inverse-accent: #D9A94A;
   --ink: #1A1C33; --ink-2: #5B5D7E; --ink-3: #8A8CA8;
   --line: #D9D8E8; --line-2: #E7E6F1;
   --accent: #A9781A; --accent-ink: #7A5510; --accent-soft: rgba(169,120,26,.13); --accent-line: rgba(169,120,26,.45); --accent-on: #FFFFFF;
@@ -36,7 +38,7 @@
   :root:not([data-theme="light"])[data-palette="nocturne"] {
     color-scheme: dark;
     --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
-    --inverse: #ECEAF7; --inverse-ink: #14172B;
+    --inverse: #ECEAF7; --inverse-ink: #14172B; --inverse-accent: #7A5510;
     --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
     --line: #2A3054; --line-2: #232847;
     --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
@@ -52,7 +54,7 @@
 [data-palette="nocturne"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0E1020; --surface: #161A30; --surface-2: #1E2340; --surface-3: #272D4E;
-  --inverse: #ECEAF7; --inverse-ink: #14172B;
+  --inverse: #ECEAF7; --inverse-ink: #14172B; --inverse-accent: #7A5510;
   --ink: #E8E7F4; --ink-2: #A8A6C4; --ink-3: #7A789C;
   --line: #2A3054; --line-2: #232847;
   --accent: #D9A94A; --accent-ink: #E4B95E; --accent-soft: rgba(217,169,74,.16); --accent-line: rgba(217,169,74,.50); --accent-on: #1E1604;
@@ -69,7 +71,7 @@
 [data-palette="sage"] {
   color-scheme: light;
   --bg: #EEF1EC; --surface: #FCFDFB; --surface-2: #F3F6F1; --surface-3: #E6EBE3;
-  --inverse: #222A24; --inverse-ink: #F2F5F0;
+  --inverse: #222A24; --inverse-ink: #F2F5F0; --inverse-accent: #E8794A;
   --ink: #1B211C; --ink-2: #5C685E; --ink-3: #88948A;
   --line: #D6DDD5; --line-2: #E4E9E2;
   --accent: #C25A26; --accent-ink: #96421A; --accent-soft: rgba(194,90,38,.12); --accent-line: rgba(194,90,38,.45); --accent-on: #FFFFFF;
@@ -85,7 +87,7 @@
   :root:not([data-theme="light"])[data-palette="sage"] {
     color-scheme: dark;
     --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
-    --inverse: #E8EDE6; --inverse-ink: #161A17;
+    --inverse: #E8EDE6; --inverse-ink: #161A17; --inverse-accent: #96421A;
     --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
     --line: #2B342C; --line-2: #232B24;
     --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
@@ -101,7 +103,7 @@
 [data-palette="sage"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #111512; --surface: #181D19; --surface-2: #1F2620; --surface-3: #283029;
-  --inverse: #E8EDE6; --inverse-ink: #161A17;
+  --inverse: #E8EDE6; --inverse-ink: #161A17; --inverse-accent: #96421A;
   --ink: #E6EBE5; --ink-2: #9AA79C; --ink-3: #6F7C71;
   --line: #2B342C; --line-2: #232B24;
   --accent: #E8794A; --accent-ink: #F0946B; --accent-soft: rgba(232,121,74,.16); --accent-line: rgba(232,121,74,.50); --accent-on: #1F0E06;
@@ -118,7 +120,7 @@
 [data-palette="ember"] {
   color-scheme: light;
   --bg: #F1EEEB; --surface: #FFFDFB; --surface-2: #F6F2EE; --surface-3: #EBE5E0;
-  --inverse: #26221F; --inverse-ink: #F6F2EE;
+  --inverse: #26221F; --inverse-ink: #F6F2EE; --inverse-accent: #F2694F;
   --ink: #1E1B19; --ink-2: #66605B; --ink-3: #948D87;
   --line: #DFD8D2; --line-2: #EBE5E0;
   --accent: #D0402C; --accent-ink: #A02E1E; --accent-soft: rgba(208,64,44,.12); --accent-line: rgba(208,64,44,.45); --accent-on: #FFFFFF;
@@ -134,7 +136,7 @@
   :root:not([data-theme="light"])[data-palette="ember"] {
     color-scheme: dark;
     --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
-    --inverse: #EFE9E4; --inverse-ink: #1A1614;
+    --inverse: #EFE9E4; --inverse-ink: #1A1614; --inverse-accent: #A02E1E;
     --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
     --line: #352E2A; --line-2: #2B2522;
     --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
@@ -150,7 +152,7 @@
 [data-palette="ember"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #141110; --surface: #1C1816; --surface-2: #241F1C; --surface-3: #2E2825;
-  --inverse: #EFE9E4; --inverse-ink: #1A1614;
+  --inverse: #EFE9E4; --inverse-ink: #1A1614; --inverse-accent: #A02E1E;
   --ink: #EFE9E4; --ink-2: #A3998F; --ink-3: #776E67;
   --line: #352E2A; --line-2: #2B2522;
   --accent: #F2694F; --accent-ink: #F68A74; --accent-soft: rgba(242,105,79,.16); --accent-line: rgba(242,105,79,.50); --accent-on: #23100A;
@@ -167,7 +169,7 @@
 [data-palette="arctic"] {
   color-scheme: light;
   --bg: #EAF1F7; --surface: #FFFFFF; --surface-2: #F3F7FB; --surface-3: #E4ECF3;
-  --inverse: #14263A; --inverse-ink: #F0F5FA;
+  --inverse: #14263A; --inverse-ink: #F0F5FA; --inverse-accent: #F2AE3C;
   --ink: #10202E; --ink-2: #4E6579; --ink-3: #7E93A6;
   --line: #D2DEE8; --line-2: #E1EAF1;
   --accent: #C9741A; --accent-ink: #925310; --accent-soft: rgba(201,116,26,.12); --accent-line: rgba(201,116,26,.45); --accent-on: #FFFFFF;
@@ -183,7 +185,7 @@
   :root:not([data-theme="light"])[data-palette="arctic"] {
     color-scheme: dark;
     --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
-    --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+    --inverse: #E4EDF5; --inverse-ink: #0F1A24; --inverse-accent: #925310;
     --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
     --line: #263645; --line-2: #1F2D3A;
     --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
@@ -199,7 +201,7 @@
 [data-palette="arctic"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0B131B; --surface: #121C26; --surface-2: #18242F; --surface-3: #21303D;
-  --inverse: #E4EDF5; --inverse-ink: #0F1A24;
+  --inverse: #E4EDF5; --inverse-ink: #0F1A24; --inverse-accent: #925310;
   --ink: #E4EDF5; --ink-2: #8FA4B6; --ink-3: #64798C;
   --line: #263645; --line-2: #1F2D3A;
   --accent: #F2AE3C; --accent-ink: #F5BE5C; --accent-soft: rgba(242,174,60,.16); --accent-line: rgba(242,174,60,.50); --accent-on: #1B1204;
@@ -216,7 +218,7 @@
 [data-palette="mono"] {
   color-scheme: light;
   --bg: #EFEFEF; --surface: #FFFFFF; --surface-2: #F5F5F5; --surface-3: #E8E8E8;
-  --inverse: #1A1A1A; --inverse-ink: #F5F5F5;
+  --inverse: #1A1A1A; --inverse-ink: #F5F5F5; --inverse-accent: #6B9BFF;
   --ink: #171717; --ink-2: #5F5F5F; --ink-3: #8C8C8C;
   --line: #DADADA; --line-2: #E8E8E8;
   --accent: #2F6BFF; --accent-ink: #1E4FCC; --accent-soft: rgba(47,107,255,.12); --accent-line: rgba(47,107,255,.45); --accent-on: #FFFFFF;
@@ -232,7 +234,7 @@
   :root:not([data-theme="light"])[data-palette="mono"] {
     color-scheme: dark;
     --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
-    --inverse: #EDEDED; --inverse-ink: #161616;
+    --inverse: #EDEDED; --inverse-ink: #161616; --inverse-accent: #1E4FCC;
     --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
     --line: #2C2C2C; --line-2: #242424;
     --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;
@@ -248,7 +250,7 @@
 [data-palette="mono"][data-theme="dark"] {
   color-scheme: dark;
   --bg: #0F0F0F; --surface: #171717; --surface-2: #1F1F1F; --surface-3: #292929;
-  --inverse: #EDEDED; --inverse-ink: #161616;
+  --inverse: #EDEDED; --inverse-ink: #161616; --inverse-accent: #1E4FCC;
   --ink: #EDEDED; --ink-2: #9A9A9A; --ink-3: #6E6E6E;
   --line: #2C2C2C; --line-2: #242424;
   --accent: #6B9BFF; --accent-ink: #8FB3FF; --accent-soft: rgba(107,155,255,.16); --accent-line: rgba(107,155,255,.50); --accent-on: #06152E;

@@ -237,7 +237,7 @@
 .sk-seltool { display: inline-flex; align-items: center; gap: 2px; padding: 4px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); box-shadow: var(--shadow-float); }
 .sk-seltool button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: inherit; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); white-space: nowrap; }
 .sk-seltool button:hover { background: rgba(127,127,127,.22); }
-.sk-seltool button.aim { color: var(--accent); }
+.sk-seltool button.aim { color: var(--inverse-accent); }
 .sk-seltool .sk-ico { width: 14px; height: 14px; }
 .sk-seltool .sep { width: 1px; height: 16px; background: rgba(127,127,127,.35); margin: 0 2px; }
 .sk-seltool::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; background: var(--inverse); transform: rotate(45deg); border-radius: 2px; }
@@ -253,11 +253,11 @@
 .sk-aim i:nth-child(3) { left: -2px; bottom: -2px; border-left-width: 3px; border-bottom-width: 3px; }
 .sk-aim i:nth-child(4) { right: -2px; bottom: -2px; border-right-width: 3px; border-bottom-width: 3px; }
 .sk-aim-tag { position: absolute; left: -2px; bottom: 100%; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 8px; height: 24px; padding: 0 8px; border-radius: 5px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-mono); font-size: var(--t-11); white-space: nowrap; box-shadow: var(--shadow-float); }
-.sk-aim-tag b { color: var(--accent); font-weight: 500; }
+.sk-aim-tag b { color: var(--inverse-accent); font-weight: 500; }
 .sk-aim-tag .dim { opacity: .65; }
 .sk-aim.is-top .sk-aim-tag { bottom: auto; top: 100%; margin: 6px 0 0; }
 .sk-aim-hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
-.sk-aim-hint .sk-ico { width: 16px; height: 16px; color: var(--accent); }
+.sk-aim-hint .sk-ico { width: 16px; height: 16px; color: var(--inverse-accent); }
 .sk-aim-hint kbd { font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.25); }
 .is-picking, .is-picking * { cursor: crosshair !important; }
 .is-picking ::selection { background: transparent; }
@@ -267,10 +267,14 @@
 .sk-content .sk-hl { background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent-line); border-radius: 2px; }
 
 /* ---------- toast ---------- */
-.sk-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
-.sk-toast .sk-ico { color: var(--accent); }
-.sk-toast code { font-weight: 400; color: var(--accent); }
-.sk-toast .undo { display: inline-flex; align-items: center; gap: 4px; margin: -4px -6px -4px 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(127,127,127,.22); color: var(--accent); font: inherit; }
+.sk-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); padding: 8px 12px 8px 10px; border-radius: 999px; background: var(--inverse); color: var(--inverse-ink); font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); box-shadow: var(--shadow-float); white-space: nowrap; }
+/* A picked selector can be longer than the pane; the message gives way
+   rather than pushing the dismiss button off the edge. */
+.sk-toast > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sk-toast .sk-ico, .sk-toast .undo { flex: none; }
+.sk-toast .sk-ico { color: var(--inverse-accent); }
+.sk-toast code { font-weight: 400; color: var(--inverse-accent); }
+.sk-toast .undo { display: inline-flex; align-items: center; gap: 4px; margin: -4px -6px -4px 4px; height: 26px; padding: 0 10px; border: 0; border-radius: 999px; background: rgba(127,127,127,.22); color: var(--inverse-accent); font: inherit; }
 .sk-toast .undo:hover { background: rgba(127,127,127,.34); }
 
 /* ---------- notes ---------- */

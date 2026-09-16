@@ -23,6 +23,7 @@
   --surface-3: #E9EDF1;   /* hover fills, segmented track */
   --inverse:   #1B2026;   /* floating instrument toolbar */
   --inverse-ink: #F2F5F7;
+  --inverse-accent: #F2A23A;            /* the aim color ON that surface */
 
   /* ink */
   --ink:   #161A1F;
@@ -82,7 +83,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
-    --inverse: #EAEEF2; --inverse-ink: #161A1F;
+    --inverse: #EAEEF2; --inverse-ink: #161A1F; --inverse-accent: #8A4D05;
     --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
     --line: #2A3138; --line-2: #222830;
     --accent: #F2A23A; --accent-ink: #F6B658;
@@ -100,7 +101,7 @@
 :root[data-theme="dark"], [data-theme="dark"] {
   color-scheme: dark;
   --bg: #0F1216; --surface: #171B20; --surface-2: #1E2328; --surface-3: #262C33;
-  --inverse: #EAEEF2; --inverse-ink: #161A1F;
+  --inverse: #EAEEF2; --inverse-ink: #161A1F; --inverse-accent: #8A4D05;
   --ink: #E9EDF1; --ink-2: #8E98A4; --ink-3: #6B7684;
   --line: #2A3138; --line-2: #222830;
   --accent: #F2A23A; --accent-ink: #F6B658;
