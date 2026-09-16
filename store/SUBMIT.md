@@ -27,13 +27,24 @@ the existing users. Going public is the only listing decision left.
 | Tag | Cut | GitHub release | Homebrew tap |
 |---|---|---|---|
 | `v0.1.0` | 5 September 2026 | four archives + `checksums.txt` | cask written |
-| `v0.1.1` | 10 September 2026 | four archives + `checksums.txt` | **not written** |
+| `v0.1.1` | 10 September 2026 | four archives + `checksums.txt` | **never written** |
+| `v0.1.2` | 16 September 2026 | four archives + `checksums.txt` | written by hand |
 
-The `v0.1.1` workflow failed *after* publishing the release: goreleaser could
-not write the cask, `401 Bad credentials` against `marcelocyreno/homebrew-tap`.
-The cask still pins **0.1.0**, so `brew install marcelocyreno/tap/aiss` hands
-out the older server while the release page has the newer one. The token is the
-first item under "Still to do on the release side".
+Both workflows failed *after* publishing the release: goreleaser could not
+write the cask, `401 Bad credentials` against `marcelocyreno/homebrew-tap`. The
+CI log shows `HOMEBREW_TAP_GITHUB_TOKEN:` empty, so the secret was never set
+rather than expired.
+
+For `v0.1.2` the cask was written by hand instead — the four archives were
+downloaded, checked against the release's own `checksums.txt`, and the cask
+updated from 0.1.0 straight to 0.1.2. `brew upgrade --cask aiss` now offers
+0.1.0 → 0.1.2. **0.1.1 never reached the tap and never will**; anyone on brew
+goes from 0.1.0 to 0.1.2 in one step.
+
+Homebrew warns that the generated cask calls `postflight`, which is deprecated
+in favour of `postflight_steps`. It comes from the `homebrew_casks` hook in
+`../.goreleaser.yaml`, it is a warning rather than a failure, and every install
+prints it.
 
 ## Done — do not redo
 
@@ -127,8 +138,9 @@ and Notes is gone from the feature list.
       commit: it added a Default model control and changed how effort is
       stored, and it is the only recent change to that area that left the spec
       untouched. The packaged zip above was built from this same code.
-- [ ] Uploaded and submitted
-- [ ] `main` pushed, `v0.1.2` tagged, server released
+- [ ] Uploaded and submitted — **the only step left**
+- [x] `main` pushed, `v0.1.2` tagged, server released, tap updated —
+      16 September 2026
 
 ### If review pushes back
 
@@ -158,10 +170,10 @@ unlisted link and nothing came back, flip it.
 
 ## Still to do on the release side
 
-- [ ] **`HOMEBREW_TAP_GITHUB_TOKEN` secret** — missing or expired, and it has
-      already cost a release. Steps in `../docs/PUBLISHING.md` → "The tap
-      token". Until it is fixed, every tag needs `task release` from a
-      workstation, and the tap lags the release page.
+- [ ] **`HOMEBREW_TAP_GITHUB_TOKEN` secret** — never set, and it has now cost
+      two releases. Steps in `../docs/PUBLISHING.md` → "The tap token". Until
+      it is set, the tap has to be written by hand after every tag, and it
+      lags the release page until someone does.
 - [ ] **Support URL** on the Store listing tab — GitHub issues. Not filled in
       at the first submission.
 - [ ] **Say when the server is older than the extension expects.**
