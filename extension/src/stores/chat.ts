@@ -58,6 +58,7 @@ export async function newChat(): Promise<void> {
   chat.messages = [];
   chat.tray = [];
   chat.error = "";
+  leaveHistory();
 }
 
 export async function openChat(id: string): Promise<void> {
@@ -66,6 +67,72 @@ export async function openChat(id: string): Promise<void> {
   chat.messages = got.messages ?? [];
   chat.tray = [];
   chat.error = "";
+  leaveHistory();
+}
+
+/**
+ * Walking back through what has been sent, the way a shell's history or Claude
+ * Code's prompt does.
+ *
+ * recall.at counts back from the newest message — 0 is the last thing sent —
+ * and null means the user is writing rather than recalling. recall.draft holds
+ * whatever they had in the field when they stepped into history, so stepping
+ * back out returns it rather than the empty string.
+ *
+ * Nothing is stored separately: the messages are the history. Only the text
+ * comes back, not the context that went with it — the tray is what the next
+ * message is aimed at, and silently re-aiming it would be a surprise.
+ */
+const recall: { at: number | null; draft: string } = { at: null, draft: "" };
+
+/** This chat's own turns, oldest first. */
+function sentTexts(): string[] {
+  return chat.messages.filter((m) => m.role === "user").map((m) => m.text);
+}
+
+/**
+ * One step back through the sent messages. Returns the text to put in the
+ * field, or null when there is nothing to recall and the caret should move
+ * as it normally would.
+ */
+export function recallPrevious(): string | null {
+  const sent = sentTexts();
+  if (sent.length === 0) return null;
+  if (recall.at === null) {
+    recall.draft = chat.draft;
+    recall.at = 0;
+  } else if (recall.at < sent.length - 1) {
+    recall.at += 1;
+  }
+  // At the oldest entry this returns the same text again, which is the point:
+  // the key is still consumed, so the caret does not jump away from it.
+  return sent[sent.length - 1 - recall.at];
+}
+
+/**
+ * One step forward. Stepping past the newest entry returns the draft that was
+ * being written when history was entered — which may be the empty string, and
+ * so is not the same as null.
+ */
+export function recallNext(): string | null {
+  if (recall.at === null) return null;
+  const sent = sentTexts();
+  if (recall.at === 0 || sent.length === 0) {
+    recall.at = null;
+    return recall.draft;
+  }
+  recall.at -= 1;
+  return sent[sent.length - 1 - recall.at];
+}
+
+/**
+ * Back to writing. Called when the user types, and after sending, so the next
+ * step back reaches the message that was just sent rather than resuming from
+ * wherever the cursor had wandered to.
+ */
+export function leaveHistory(): void {
+  recall.at = null;
+  recall.draft = "";
 }
 
 export function addContext(item: ContextItem): void {
@@ -133,6 +200,7 @@ export async function send(opts: SendOptions = {}): Promise<void> {
   chat.draft = "";
   chat.tray = [];
   chat.sending = true;
+  leaveHistory();
   chat.error = "";
   abort = new AbortController();
 

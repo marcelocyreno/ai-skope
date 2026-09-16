@@ -5,13 +5,14 @@
  * near the field but far from Send, so a slip cannot discard a draft.
  */
 import { ref, computed, nextTick } from "vue";
-import { chat, removeContext, cancel } from "@/stores/chat";
+import { chat, removeContext, cancel, recallPrevious, recallNext, leaveHistory } from "@/stores/chat";
 import { connection } from "@/stores/connection";
 import { modelStatus } from "@/stores/models";
 import { page } from "@/stores/page";
 import { showToast } from "@/stores/toast";
 import { copyText } from "@/pane/clipboard";
 import { chatMarkdown } from "@/pane/transcript";
+import { atFirstLine, atLastLine } from "@/pane/caret";
 import ContextChip from "./ContextChip.vue";
 import ModelChip from "./ModelChip.vue";
 import Icon from "./Icon.vue";
@@ -67,7 +68,44 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     void submit();
+    return;
   }
+  if (e.key === "ArrowUp" || e.key === "ArrowDown") void onArrow(e);
+}
+
+/**
+ * Up and Down walk the sent messages once the caret has nowhere left to go in
+ * that direction — a shell's rule, and Claude Code's. See caret.ts for what
+ * counts as the first and last line.
+ */
+async function onArrow(e: KeyboardEvent) {
+  const el = field.value;
+  if (!el) return;
+  // A modifier or a live selection means the user is editing or navigating on
+  // purpose; neither is a request for history.
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  if (el.selectionStart !== el.selectionEnd) return;
+
+  const up = e.key === "ArrowUp";
+  const atEdge = up
+    ? atFirstLine(el.value, el.selectionStart)
+    : atLastLine(el.value, el.selectionEnd);
+  if (!atEdge) return;
+
+  const recalled = up ? recallPrevious() : recallNext();
+  if (recalled === null) return; // nothing to recall: let the caret move
+
+  e.preventDefault();
+  chat.draft = recalled;
+  await nextTick();
+  autosize();
+  el.setSelectionRange(recalled.length, recalled.length);
+}
+
+/** Typing is the end of recalling: what is in the field is the draft again. */
+function onInput() {
+  leaveHistory();
+  autosize();
 }
 
 defineExpose({ focus: () => field.value?.focus() });
@@ -93,7 +131,7 @@ defineExpose({ focus: () => field.value?.focus() });
         :placeholder="placeholder"
         :disabled="blocked"
         aria-label="Message"
-        @input="autosize()"
+        @input="onInput()"
         @keydown="onKeydown"
       />
       <div class="sk-toolrow">
@@ -147,6 +185,7 @@ defineExpose({ focus: () => field.value?.focus() });
     <div class="sk-hint">
       <span><kbd>⏎</kbd> send</span>
       <span><kbd>⇧⏎</kbd> new line</span>
+      <span v-if="chat.messages.length"><kbd>↑</kbd> history</span>
       <span class="grow" />
       <button
         type="button"
