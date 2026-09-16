@@ -1,14 +1,18 @@
 <script setup lang="ts">
 /**
  * The AI Pane. Chrome's side panel is the right half of the split canvas, so
- * this document renders the pane itself: top bar, tabs, body, composer, and
- * the overlays that rise from the composer.
+ * this document renders the pane itself: top bar, body, composer, and the
+ * overlays that rise from the composer.
+ *
+ * Notes is built but not finished — page scoping, editing, a real undo, an
+ * annotatable quote and a link back to the source page are all missing — so
+ * the pane offers no way into it. The store, the component and the server's
+ * endpoints all stay; only the entry points are gone. See issue #11.
  */
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { connection, initConnection, stopConnection } from "@/stores/connection";
 import { loadModels, refreshForRuntimes } from "@/stores/models";
 import { chat, openForCurrentPage, newChat, addContext, send, rememberPageConsent, pageConsentGiven, pageDecided } from "@/stores/chat";
-import { loadNotes, addNote } from "@/stores/notes";
 import { page, refreshActiveTab, watchActiveTab, pickElement, cancelPick, readSelection, syncContentScripts } from "@/stores/page";
 import { showToast } from "@/stores/toast";
 import { announcement } from "@/stores/announce";
@@ -17,7 +21,6 @@ import { copyText } from "@/pane/clipboard";
 import type { ContextItem, FileEntry } from "@/api/types";
 
 import TopBar from "./components/TopBar.vue";
-import Tabs from "./components/Tabs.vue";
 import Thread from "./components/Thread.vue";
 import Composer from "./components/Composer.vue";
 import ModelSwitcher from "./components/ModelSwitcher.vue";
@@ -25,7 +28,6 @@ import FilePicker from "./components/FilePicker.vue";
 import StatusStrip from "./components/StatusStrip.vue";
 import EmptyState from "./components/EmptyState.vue";
 import History from "./components/History.vue";
-import Notes from "./components/Notes.vue";
 import QuickSettings from "./components/QuickSettings.vue";
 import Pairing from "./components/Pairing.vue";
 import Icon from "./components/Icon.vue";
@@ -34,7 +36,6 @@ import Toast from "./components/Toast.vue";
 type Overlay = "none" | "switcher" | "files";
 type Panel = "none" | "history" | "settings";
 
-const tab = ref<"chat" | "notes">("chat");
 const overlay = ref<Overlay>("none");
 const panel = ref<Panel>("none");
 const composer = ref<InstanceType<typeof Composer> | null>(null);
@@ -42,7 +43,6 @@ const composer = ref<InstanceType<typeof Composer> | null>(null);
 const askingPage = ref(false);
 
 const ready = computed(() => connection.state === "online");
-const showChat = computed(() => tab.value === "chat");
 
 let unwatchTab: (() => void) | null = null;
 
@@ -70,7 +70,7 @@ onMounted(async () => {
 
   await initConnection();
   if (ready.value) {
-    await Promise.all([loadModels(), openForCurrentPage(), loadNotes()]);
+    await Promise.all([loadModels(), openForCurrentPage()]);
   }
   chrome.runtime.onMessage.addListener(onRuntimeMessage);
   void drainPending();
@@ -85,7 +85,7 @@ onUnmounted(() => {
 // Once the connection comes up (or comes back), load what needs the server.
 watch(ready, async (isReady) => {
   if (!isReady) return;
-  await Promise.all([loadModels(), openForCurrentPage(), loadNotes()]);
+  await Promise.all([loadModels(), openForCurrentPage()]);
 });
 
 // Enabling or disabling a runtime changes which models can answer. That
@@ -105,12 +105,6 @@ function onRuntimeMessage(msg: { kind?: string; action?: string; selection?: Con
 }
 
 function applySelectionAction(action: string, selection: ContextItem) {
-  if (action === "note") {
-    void addNote("", selection.quote);
-    tab.value = "notes";
-    showToast("Saved to Notes", { icon: "i-note" });
-    return;
-  }
   addContext(selection);
   showToast("Added the selection to context", { icon: "i-select-text" });
   if (action === "ask") composer.value?.focus();
@@ -258,10 +252,8 @@ function onKeydown(e: KeyboardEvent) {
     />
 
     <template v-if="ready">
-      <Tabs v-model="tab" />
-
       <div class="sk-body">
-        <section v-show="showChat" class="sk-view">
+        <section class="sk-view">
           <Thread v-if="chat.messages.length" />
           <EmptyState
             v-else
@@ -271,14 +263,11 @@ function onKeydown(e: KeyboardEvent) {
             @select="doSelection()"
           />
         </section>
-        <section v-show="!showChat" class="sk-view sk-notes">
-          <Notes />
-        </section>
       </div>
 
-      <StatusStrip v-if="showChat" @switch-model="overlay = 'switcher'" />
+      <StatusStrip @switch-model="overlay = 'switcher'" />
 
-      <div v-if="showChat && askingPage" class="sk-strip is-ask" role="status">
+      <div v-if="askingPage" class="sk-strip is-ask" role="status">
         <Icon id="i-shield" />
         <span>Send this page's text with your question?</span>
         <button type="button" class="act" @click="answerWithPage()">Include page</button>
@@ -286,7 +275,6 @@ function onKeydown(e: KeyboardEvent) {
       </div>
 
       <Composer
-        v-if="showChat"
         ref="composer"
         @submit="submitMessage()"
         :switcher-open="overlay === 'switcher'"

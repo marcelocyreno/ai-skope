@@ -247,7 +247,6 @@ function watchSelection(): void {
       ui().showToolbar(range.getBoundingClientRect(), [
         { label: "Add to chat", aim: true, run: () => send("add") },
         { label: "Ask…", run: () => send("ask") },
-        { label: "Save note", run: () => send("note") },
       ]);
     }, 0);
   });

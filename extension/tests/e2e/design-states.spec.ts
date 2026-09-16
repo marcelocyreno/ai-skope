@@ -1,6 +1,6 @@
 /**
  * Each state the design specifies, exercised in a real browser against a real
- * server: notes, history, the model switcher, quick settings and palettes, the
+ * server: history, the model switcher, quick settings and palettes, the
  * options page, the selection toolbar, and the first-run screen.
  */
 import { test, expect, pair } from "./harness";
@@ -51,30 +51,14 @@ test("first run shows the empty state and its four suggestions", async ({ harnes
   }
 });
 
-test("notes: write, search, delete and undo", async ({ harness }) => {
+test("notes: the pane offers no way in while the feature is unfinished", async ({ harness }) => {
   const { panel } = harness;
   await pair(harness);
 
-  await panel.getByRole("tab", { name: /Notes/ }).click();
-  await expect(panel.getByText(/No notes yet/)).toBeVisible();
-
-  await panel.getByLabel("New note").fill("Ask finance about the SAFE");
-  await panel.getByRole("button", { name: "Save note" }).click();
-  await expect(panel.locator(".sk-note")).toHaveCount(1);
-  await expect(panel.getByText("Ask finance about the SAFE")).toBeVisible();
-
-  // The tab's badge counts what is stored.
-  await expect(panel.getByRole("tab", { name: /Notes/ }).locator(".sk-badge")).toHaveText("1");
-
-  await panel.getByLabel("Search notes").fill("nothing matches this");
-  await expect(panel.getByText(/No notes match/)).toBeVisible();
-  await panel.getByLabel("Search notes").fill("");
-  await expect(panel.locator(".sk-note")).toHaveCount(1);
-
-  await panel.locator(".sk-note").getByLabel("Delete note").click();
-  await expect(panel.locator(".sk-note")).toHaveCount(0);
-  await panel.getByRole("button", { name: "Undo" }).click();
-  await expect(panel.locator(".sk-note")).toHaveCount(1);
+  // One section left means no tab bar at all, and nothing that reaches Notes.
+  await expect(panel.getByRole("tablist")).toHaveCount(0);
+  await expect(panel.getByRole("tab", { name: /Notes/ })).toHaveCount(0);
+  await expect(panel.locator(".sk-notes")).toHaveCount(0);
 });
 
 test("history: a new chat archives the last one, and it can be reopened", async ({ harness }) => {
@@ -181,7 +165,9 @@ test("the selection toolbar adds a quote to the chat", async ({ harness }) => {
   // The toolbar lives in the overlay's shadow root.
   const toolbar = pageTab.locator("#ai-skope-overlay-host");
   await expect(toolbar).toBeAttached();
-  await pageTab.locator("#ai-skope-overlay-host").getByRole("button", { name: "Add to chat" }).click();
+  // Notes is unfinished and hidden, so the toolbar offers two actions, not three.
+  await expect(toolbar.getByRole("button", { name: "Save note" })).toHaveCount(0);
+  await toolbar.getByRole("button", { name: "Add to chat" }).click();
 
   await panel.bringToFront();
   await expect(panel.locator(".sk-tray .sk-ctx .q")).toContainText("unlimited seats", { timeout: 15000 });

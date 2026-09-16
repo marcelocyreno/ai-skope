@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * Parked, not deleted. Notes is half built — see issue #11 — so the pane
+ * renders no tab bar and no way into it. Nothing imports this component;
+ * re-enabling the feature means putting the entry points back in App.vue.
+ */
 import Icon from "./Icon.vue";
 import { notes } from "@/stores/notes";
 

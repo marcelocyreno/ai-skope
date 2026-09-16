@@ -17,7 +17,7 @@ provider API keys are supported as a secondary source.
 |---|---|
 | `design/` | The visual design system: tokens, six palettes, 20 component previews, 12 screens, and an interactive prototype (`design/preview/ai-skope.html`). Start there. |
 | `docs/SPEC.md` | The product as specified so far: anatomy, context types, chats & history rules, model-source hierarchy, settings tiers, visual system, implementation assumptions, open questions. |
-| `extension/` | The **Chrome extension**: Vue 3 + TypeScript, MV3, Chrome Side Panel. The AI Pane, the element picker and selection toolbar, the local-file picker, notes, history and the options page. |
+| `extension/` | The **Chrome extension**: Vue 3 + TypeScript, MV3, Chrome Side Panel. The AI Pane, the element picker and selection toolbar, the local-file picker, history and the options page. |
 | `server/` | The **AI Skope Server** (`aiss`), written in Go: HTTP + SSE API, runtime adapters, provider keychain, folder allow-list and file index, chats and notes. |
 | `docs/SERVER-PLAN.md` | The plan the server was built from: architecture, security model, v1 API, milestones. |
 | `docs/runtimes/COMPAT.md` | Which agent command lines are verified and which are still assumed. |

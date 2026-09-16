@@ -1,5 +1,13 @@
 <script setup lang="ts">
-/** Page-linked notes: search, cards with an optional quote, and a composer. */
+/**
+ * Page-linked notes: search, cards with an optional quote, and a composer.
+ *
+ * Parked, not deleted. Nothing renders this today — the notes are not
+ * actually page-linked in the UI, cannot be edited, and the undo after a
+ * delete makes a new note rather than restoring the old one. Issue #11 has
+ * the list. The store and the server endpoints stay, so putting the tab
+ * back is all it takes once those are fixed.
+ */
 import { onMounted } from "vue";
 import { notes, loadNotes, addNote, deleteNote } from "@/stores/notes";
 import { showToast } from "@/stores/toast";

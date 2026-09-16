@@ -7,13 +7,12 @@
 import { loadSettings, onSettingsChanged } from "@/stores/storage";
 
 const MENU_ASK = "skope-ask";
-const MENU_NOTE = "skope-note";
 
 /**
  * What the menu currently looks like, so an unrelated settings change — a
- * palette, a blocked host — does not tear the entries down and build them
- * again. It is null in a worker that has just started and does not yet know,
- * which is exactly when the work should be done rather than skipped.
+ * palette, a blocked host — does not tear the entry down and build it again.
+ * It is null in a worker that has just started and does not yet know, which
+ * is exactly when the work should be done rather than skipped.
  */
 let menuShown: boolean | null = null;
 
@@ -27,17 +26,12 @@ function rebuildMenu(shown: boolean): void {
       title: "Ask AI Skope about this",
       contexts: ["selection"],
     });
-    chrome.contextMenus.create({
-      id: MENU_NOTE,
-      title: "Save selection as a note",
-      contexts: ["selection"],
-    });
   });
 }
 
 /**
  * The right-click menu is opt-in. A fresh install leaves the page's own menu
- * untouched; turning the setting on adds the entries there and then, without
+ * untouched; turning the setting on adds the entry there and then, without
  * reloading the extension.
  */
 async function syncMenu(shown?: boolean): Promise<void> {
@@ -69,7 +63,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   // The panel may still be starting, so the intent is queued rather than sent.
   void chrome.storage.session.set({
     pendingAction: {
-      action: info.menuItemId === MENU_NOTE ? "note" : "add",
+      action: "add",
       selection: { type: "text", quote: info.selectionText ?? "" },
       at: Date.now(),
     },

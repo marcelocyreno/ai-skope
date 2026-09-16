@@ -66,9 +66,9 @@ describe("the right-click menu is opt-in", () => {
     expect(created).toEqual([]);
   });
 
-  it("adds both entries when the setting is turned on, without a reload", async () => {
+  it("adds the entry when the setting is turned on, without a reload", async () => {
     await setSetting({ contextMenu: true });
-    expect(created).toEqual(["skope-ask", "skope-note"]);
+    expect(created).toEqual(["skope-ask"]);
   });
 
   it("does not churn the menu when an unrelated setting changes", async () => {
@@ -82,7 +82,7 @@ describe("the right-click menu is opt-in", () => {
     expect(removeAllCalls).toBe(0);
   });
 
-  it("removes both entries when the setting is turned off", async () => {
+  it("removes the entry when the setting is turned off", async () => {
     await setSetting({ contextMenu: true });
     created.length = 0;
     removeAllCalls = 0;
@@ -93,10 +93,10 @@ describe("the right-click menu is opt-in", () => {
     expect(created).toEqual([]);
   });
 
-  it("puts the entries back after a browser restart", async () => {
+  it("puts the entry back after a browser restart", async () => {
     // Menus do not survive a restart, and onInstalled does not fire on one.
     stored = { contextMenu: true };
     await fire("startup");
-    expect(created).toEqual(["skope-ask", "skope-note"]);
+    expect(created).toEqual(["skope-ask"]);
   });
 });

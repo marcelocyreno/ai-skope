@@ -70,9 +70,9 @@ WHAT YOU CAN DO
 
 • Ask about the page you are reading, grounded in what is actually on it
 • Point at one element — a pricing table, an error message, a diff — and ask about just that
-• Select text and turn it into a question or a note without leaving the page
+• Select text and turn it into a question without leaving the page
 • Ask about local files: a README, a Markdown note, an HTML file on your own disk, from folders you explicitly allow
-• Keep a chat per page, with history, and notes that stay attached to where you made them
+• Keep a chat per page, and the history of every chat you have had
 • Switch model or agent mid-conversation from the pane
 
 WHAT IT READS, AND WHEN
@@ -199,7 +199,7 @@ Six frames in `screenshots/`, all 1280×800. Regenerate any time with
 |---|---|---|
 | `1-answer.png` | A grounded answer beside the page it is about | use |
 | `2-picker.png` | The reticle outlining an element, with its selector | use |
-| `3-selection.png` | The selection toolbar: add to chat, ask, save note | use |
+| `3-selection.png` | The selection toolbar: add to chat, ask | use |
 | `4-files.png` | The file picker searching folders the user allowed | use |
 | `6-first-run.png` | What a new install shows: the one command that installs the server | use |
 | `5-settings.png` | Folders, providers and privacy settings | spare |

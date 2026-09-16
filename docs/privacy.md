@@ -13,8 +13,8 @@ the internet, and no telemetry. Nothing you do in the extension is sent to the
 developer, because there is nowhere for it to be sent.
 
 What the extension talks to is **AI Skope Server** (`aiss`) — a program you
-install and run on your own computer. Your chats, notes and settings live in a
-file on that computer.
+install and run on your own computer. Your chats and settings live in a file
+on that computer.
 
 ## What the extension reads
 
@@ -26,7 +26,7 @@ granted one site at a time.
 Once a site is allowed, page content leaves your browser only when you:
 
 - pick an element and ask about it,
-- select text and add it to a question or a note,
+- select text and add it to a question,
 - answer **yes** to "send this page's text with your question", or
 - have set **Page access** to **Always** in settings.
 
@@ -63,7 +63,7 @@ arrangement you made before installing AI Skope.
 the server address, and your appearance settings (theme, palette, text size).
 
 **On your computer**, in a SQLite database owned by AI Skope Server: your
-chats, your notes, and the index of files in folders you allowed.
+chats and the index of files in folders you allowed.
 
 **In your system keychain**, if you add provider keys through the server: the
 keys themselves. The extension never receives them.
@@ -78,7 +78,7 @@ files and shell history even inside them.
 
 ## Deleting your data
 
-- Individual chats and notes: delete them in the pane.
+- Individual chats: delete them in the pane.
 - Everything the server holds: `aiss reset`.
 - Everything the extension holds: remove the extension.
 - A site's access: revoke it in your browser's extension settings.

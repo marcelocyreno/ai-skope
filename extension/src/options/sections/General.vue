@@ -57,7 +57,7 @@ const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember"
     <div class="sk-row">
       <div class="lbl">
         <b>Right-click menu</b>
-        <small>Add "Ask AI Skope" and "Save as a note" to selected text.</small>
+        <small>Add "Ask AI Skope about this" to selected text.</small>
       </div>
       <button
         type="button"
