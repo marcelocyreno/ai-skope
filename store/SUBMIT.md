@@ -41,10 +41,13 @@ updated from 0.1.0 straight to 0.1.2. `brew upgrade --cask aiss` now offers
 0.1.0 → 0.1.2. **0.1.1 never reached the tap and never will**; anyone on brew
 goes from 0.1.0 to 0.1.2 in one step.
 
-Homebrew warns that the generated cask calls `postflight`, which is deprecated
-in favour of `postflight_steps`. It comes from the `homebrew_casks` hook in
-`../.goreleaser.yaml`, it is a warning rather than a failure, and every install
-prints it.
+The cask Homebrew currently serves calls `postflight`, which Homebrew has
+deprecated in favour of the declarative `postflight_steps`, so every install
+prints a warning. `../.goreleaser.yaml` has been changed to emit the new stanza
+from `custom_block` — goreleaser hardcodes `postflight` for its `hooks`, so the
+stanza is written out by hand there. **The next release carries the fix; the
+published cask still warns.** The new stanza parses and loads without the
+warning, but it has not been watched actually running during an install.
 
 ## Done — do not redo
 

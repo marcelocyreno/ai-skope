@@ -89,9 +89,16 @@ homebrew_casks:
     description: The server half of AI Skope — drives local coding agents for the browser extension
     # Homebrew installs into a quarantined location; without this macOS refuses
     # to run the binary because it is not notarised.
-    hooks:
-      post:
-        install: |
-          if system_command("/usr/bin/xattr", args: ["-h"], print_stderr: false).exit_status == 0
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/aiss"]
-          end
+    #
+    # This would normally go in `hooks.post.install`, but goreleaser renders that
+    # as a `postflight` block and Homebrew has deprecated the flight blocks in
+    # favour of the declarative `*_steps` stanzas — every install printed a
+    # warning. goreleaser has no option for the new form, so the stanza is
+    # written out here. `{{ "{{" }}staged_path}}` is escaped because goreleaser
+    # templates this block before Homebrew ever sees it.
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{" }}staged_path}}/aiss"]
+        end
+      end
