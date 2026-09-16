@@ -131,6 +131,18 @@ func parseObject(raw map[string]any) []Event {
 		out = append(out, toolEvent(raw, "running"))
 	case "tool_result", "exec_command_end":
 		out = append(out, toolEvent(raw, "done"))
+
+	// pi reports the tool actually running at the top level, beside the
+	// message_update frames that announced the call. This is the only place
+	// any agent says whether a tool finished or failed.
+	case "tool_execution_start", "tool_execution_update":
+		out = append(out, toolEvent(raw, "running"))
+	case "tool_execution_end":
+		state := "done"
+		if failed, ok := raw["isError"].(bool); ok && failed {
+			state = "failed"
+		}
+		out = append(out, toolEvent(raw, state))
 	case "error":
 		out = append(out, errorEvent(raw))
 	case "result", "turn.completed", "response.completed":
@@ -190,7 +202,14 @@ func parseContent(v any) []Event {
 			case "tool_use":
 				out = append(out, toolEvent(m, "running"))
 			case "tool_result":
-				out = append(out, toolEvent(m, "done"))
+				// The result block names no tool; it points back at the use
+				// block by tool_use_id, which toolEvent reads as the call's
+				// id so the two merge into one row.
+				state := "done"
+				if failed, ok := m["is_error"].(bool); ok && failed {
+					state = "failed"
+				}
+				out = append(out, toolEvent(m, state))
 			}
 		}
 	}
@@ -229,6 +248,20 @@ func parseAssistantEvent(ev map[string]any) []Event {
 		}
 	case "thinking_start", "thinking_delta", "thinking_end", "text_start":
 		return nil
+
+	// pi announces a call in three parts. The start names the tool and the
+	// call; the delta is nothing but the argument JSON arriving character by
+	// character, the tool-call analogue of text_delta, and carries neither —
+	// it made a row of its own that then spun for ever. The end carries the
+	// assembled call, which is where the target finally becomes readable.
+	//
+	// None of the three means the tool ran: the call is only being written.
+	// tool_execution_end is what finishes the row.
+	case "toolcall_start", "toolcall_end":
+		return []Event{toolEvent(ev, "running")}
+	case "toolcall_delta":
+		return nil
+
 	default:
 		if strings.Contains(t, "tool") {
 			state := "running"
@@ -267,20 +300,53 @@ func parseItem(item map[string]any, completed bool) []Event {
 	return nil
 }
 
+// toolEvent reads one tool frame, in whichever of the known shapes it arrives.
+//
+// The tool call may be nested — pi puts the finished call under "toolCall" —
+// so that object is searched alongside the frame itself for the three things
+// a row needs: which call this is, what tool it is, and what it acted on.
 func toolEvent(m map[string]any, state string) Event {
-	name, _ := firstString(m, "name", "tool", "tool_name", "command", "type")
-	target, _ := firstString(m, "target", "path", "file", "file_path", "selector")
-	if target == "" {
-		if input, ok := m["input"].(map[string]any); ok {
-			target, _ = firstString(input, "file_path", "path", "pattern", "command", "selector")
-		}
+	call, _ := m["toolCall"].(map[string]any)
+	// The id ties the frames of one call together. Every agent spells it
+	// differently, and Anthropic's result block points back at the use block
+	// by tool_use_id rather than repeating the call's own id.
+	id, _ := firstString(m, "toolCallId", "tool_call_id", "tool_use_id", "call_id", "id")
+	if id == "" && call != nil {
+		id, _ = firstString(call, "id", "toolCallId")
 	}
-	detail, _ := firstString(m, "detail", "description", "summary")
+
+	// The real tool name first. "type" is the last resort and a poor one: on a
+	// frame that names the wire event rather than the tool it produced rows
+	// reading "toolcall_start", so an unnamed call is simply "tool".
+	name, _ := firstString(m, "toolName", "name", "tool", "tool_name", "command")
+	if name == "" && call != nil {
+		name, _ = firstString(call, "name", "toolName")
+	}
 	if name == "" {
 		name = "tool"
 	}
+
+	target, _ := firstString(m, "target", "path", "file", "file_path", "selector")
+	if target == "" {
+		// The arguments carry what the call acted on, under whichever key the
+		// agent uses for its own argument object.
+		for _, key := range []string{"input", "args", "arguments"} {
+			args, ok := m[key].(map[string]any)
+			if !ok && call != nil {
+				args, ok = call[key].(map[string]any)
+			}
+			if !ok {
+				continue
+			}
+			if target, _ = firstString(args, "file_path", "path", "pattern", "command", "selector"); target != "" {
+				break
+			}
+		}
+	}
+
+	detail, _ := firstString(m, "detail", "description", "summary")
 	return Event{Kind: EventTool, Tool: &store.ToolRecord{
-		Name: name, Target: target, Detail: detail, State: state,
+		ID: id, Name: name, Target: target, Detail: detail, State: state,
 	}}
 }
 

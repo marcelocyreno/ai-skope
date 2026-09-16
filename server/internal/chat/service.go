@@ -271,7 +271,7 @@ func (s *Service) pump(chat store.Chat, sel runtime.Selection, userMsg store.Mes
 			send(Event{Event: EvTextDelta, Text: ev.Text})
 		case runtime.EventTool:
 			if ev.Tool != nil {
-				msg.Tools = appendTool(msg.Tools, *ev.Tool)
+				msg.Tools = store.AppendTool(msg.Tools, *ev.Tool)
 				send(Event{Event: EvTool, Tool: ev.Tool})
 			}
 		case runtime.EventUsage:
@@ -296,6 +296,7 @@ func (s *Service) pump(chat store.Chat, sel runtime.Selection, userMsg store.Mes
 	}
 
 	msg.Text = strings.TrimSpace(text.String())
+	store.SettleTools(msg.Tools)
 	if msg.Usage == nil {
 		msg.Usage = &store.Usage{}
 	}
@@ -313,21 +314,6 @@ func (s *Service) pump(chat store.Chat, sel runtime.Selection, userMsg store.Mes
 	send(Event{Event: EvTextDone, Text: msg.Text})
 	send(Event{Event: EvUsage, Usage: msg.Usage})
 	send(Event{Event: EvTurnEnd})
-}
-
-// appendTool merges a tool line with the running one of the same name, so a
-// start/finish pair shows as one row that changes state.
-func appendTool(list []store.ToolRecord, t store.ToolRecord) []store.ToolRecord {
-	for i := len(list) - 1; i >= 0; i-- {
-		if list[i].Name == t.Name && list[i].Target == t.Target && list[i].State == "running" {
-			list[i].State = t.State
-			if t.Detail != "" {
-				list[i].Detail = t.Detail
-			}
-			return list
-		}
-	}
-	return append(list, t)
 }
 
 // Cancel stops the turn running on a chat, if any.

@@ -133,6 +133,9 @@ export interface ContextItem {
 }
 
 export interface ToolRecord {
+  /** The agent's own tool-call id, when it gives one: what ties a call's
+   *  start, arguments and result together into a single row. */
+  id?: string;
   name: string;
   target?: string;
   detail?: string;

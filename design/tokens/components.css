@@ -114,6 +114,9 @@
 @keyframes sk-blink { to { visibility: hidden; } }
 .sk-tool { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-ctl); background: var(--surface-2); color: var(--ink-2); font-size: var(--t-12); font-family: var(--font-ui); font-weight: 500; }
 .sk-tool code { font-size: var(--t-11); color: var(--accent-ink); }
+/* A tool that failed says so: the row keeps its shape, the state changes colour. */
+.sk-tool.is-failed { background: var(--bad-soft); }
+.sk-tool.is-failed .sk-ico { color: var(--bad); }
 .sk-spin { width: 12px; height: 12px; border-radius: 50%; border: 1.75px solid var(--line); border-top-color: var(--accent); animation: sk-spin .9s linear infinite; flex: none; }
 @keyframes sk-spin { to { transform: rotate(360deg); } }
 .sk-err { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-ctl); background: var(--bad-soft); color: var(--ink); font-size: var(--t-13); }

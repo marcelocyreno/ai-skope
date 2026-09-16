@@ -397,6 +397,32 @@ func TestAgentOutputShapes(t *testing.T) {
 	}
 }
 
+// Six frames, one call, one row. The parser and store.AppendTool are tested
+// on their own; this is the whole path, from the agent's stdout to what the
+// transcript keeps — including the row settling, which only happens once the
+// turn is over.
+func TestPiToolCallReadsAsOneFinishedRow(t *testing.T) {
+	svc, db, _ := newService(t, "pi-like.sh")
+	chat, _ := db.CreateChat(store.Chat{})
+	ch, err := svc.Send(context.Background(), chat.ID, SendRequest{Text: "count"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	drain(t, ch)
+
+	msgs, _ := db.Messages(chat.ID)
+	tools := msgs[1].Tools
+	if len(tools) != 1 {
+		t.Fatalf("one tool call kept %d rows: %+v", len(tools), tools)
+	}
+	if tools[0].Name != "read" || tools[0].Target != "README.md" {
+		t.Errorf("row reads %+v, want read / README.md", tools[0])
+	}
+	if tools[0].State != "done" {
+		t.Errorf("a finished tool is showing as %q", tools[0].State)
+	}
+}
+
 func TestPromptTellsTheAgentAboutItsFolders(t *testing.T) {
 	// An agent that is not told it may look at the allowed folders never
 	// does, and answers "the page does not say" from inside a repository

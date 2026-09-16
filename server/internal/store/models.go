@@ -104,7 +104,14 @@ type Message struct {
 }
 
 // ToolRecord is a tool line shown in the transcript ("Read table.pg-table").
+//
+// ID is the agent's own tool-call id, when it gives one. It is what ties the
+// events of a single call together — the name alone cannot, because the same
+// tool is often called twice in a turn, and because an agent announces a call
+// before it knows what the call will say. It stays optional: an agent that
+// gives no id still merges by name and target, as it always did.
 type ToolRecord struct {
+	ID     string `json:"id,omitempty"`
 	Name   string `json:"name"`
 	Target string `json:"target,omitempty"`
 	Detail string `json:"detail,omitempty"`
@@ -162,4 +169,56 @@ type Note struct {
 	Body      string `json:"body"`
 	CreatedAt int64  `json:"createdAt"`
 	UpdatedAt int64  `json:"updatedAt"`
+}
+
+// AppendTool merges a tool line with the one already standing for the same
+// call, so the frames of a single call show as one row that changes state.
+//
+// The agent's own tool-call id is the match when there is one: the name alone
+// cannot tell two calls to the same tool apart, and an agent announces a call
+// before it knows what the call will say, so the frames of one call disagree
+// about the name and the target until the last of them arrives. Without the
+// id, pi's three frames became three rows and the first two spun for ever.
+//
+// Falling back to name and target keeps agents that give no id working as
+// they did. A merged row keeps the best of what it has been told: a later
+// frame fills in a name or a target the earlier one did not know, but never
+// blanks one that is already there.
+func AppendTool(list []ToolRecord, t ToolRecord) []ToolRecord {
+	for i := len(list) - 1; i >= 0; i-- {
+		row := &list[i]
+		var same bool
+		if t.ID != "" && row.ID != "" {
+			same = row.ID == t.ID
+		} else {
+			same = row.Name == t.Name && row.Target == t.Target && row.State == "running"
+		}
+		if !same {
+			continue
+		}
+		row.State = t.State
+		if t.Name != "" && t.Name != "tool" {
+			row.Name = t.Name
+		}
+		if t.Target != "" {
+			row.Target = t.Target
+		}
+		if t.Detail != "" {
+			row.Detail = t.Detail
+		}
+		return list
+	}
+	return append(list, t)
+}
+
+// SettleTools closes off any row still showing as running once the turn is
+// over. A tool cannot outlive the process that called it, so a spinner left
+// standing is always a lie — whether the agent never reported the end or
+// reported it in a shape the parser does not know yet.
+func SettleTools(list []ToolRecord) {
+	for i := range list {
+		if list[i].State == "running" {
+			list[i].State = "done"
+		}
+	}
 }

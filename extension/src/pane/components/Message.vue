@@ -8,7 +8,7 @@
  * already used. Fenced blocks inside an answer carry their own button.
  */
 import { computed, onBeforeUnmount, ref } from "vue";
-import type { Message } from "@/api/types";
+import type { Message, ToolRecord } from "@/api/types";
 import { renderMarkdown, renderPlain, withCursor } from "@/pane/markdown";
 import { copyText } from "@/pane/clipboard";
 import { shortModelLabel } from "@/stores/models";
@@ -43,6 +43,16 @@ const answer = computed(() => {
  * reads — see shortModelLabel.
  */
 const model = computed(() => (props.message.model ? shortModelLabel(props.message.model) : ""));
+
+/**
+ * A tool row reads as what happened to it. "failed" used to render exactly
+ * like "done" — a check mark and the word "Read" — which was a lie the moment
+ * anything actually started reporting failures.
+ */
+function toolVerb(state: ToolRecord["state"]): string {
+  if (state === "running") return "Reading";
+  return state === "failed" ? "Could not read" : "Read";
+}
 
 const isUser = computed(() => props.message.role === "user");
 const copyLabel = computed(() => (isUser.value ? "Copy message" : "Copy answer"));
@@ -114,10 +124,15 @@ onBeforeUnmount(() => window.clearTimeout(timer));
       <Icon id="i-reticle" />AI Skope<template v-if="model"> · {{ model }}</template>
     </div>
 
-    <div v-for="(tool, i) in message.tools ?? []" :key="i" class="sk-tool">
+    <div
+      v-for="(tool, i) in message.tools ?? []"
+      :key="tool.id || i"
+      class="sk-tool"
+      :class="{ 'is-failed': tool.state === 'failed' }"
+    >
       <span v-if="tool.state === 'running'" class="sk-spin" />
-      <Icon v-else id="i-check" size="sm" />
-      {{ tool.state === "running" ? "Reading" : "Read" }} <code>{{ tool.target || tool.name }}</code>
+      <Icon v-else :id="tool.state === 'failed' ? 'i-alert' : 'i-check'" size="sm" />
+      {{ toolVerb(tool.state) }} <code>{{ tool.target || tool.name }}</code>
       <template v-if="tool.detail"> · {{ tool.detail }}</template>
     </div>
 

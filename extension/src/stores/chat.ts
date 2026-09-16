@@ -153,12 +153,22 @@ export async function send(opts: SendOptions = {}): Promise<void> {
   } finally {
     chat.sending = false;
     abort = null;
+    // A tool cannot outlive the turn that called it, so no row is left
+    // spinning — whatever the agent did or did not report about its end.
+    for (const tool of assistant.tools ?? []) {
+      if (tool.state === "running") tool.state = "done";
+    }
     // The server owns the transcript; re-read it so ids and usage are exact.
     void refresh();
   }
 }
 
-function applyTurnEvent(assistant: Message, ev: TurnEvent): void {
+/**
+ * One event from the turn, folded into the message being built. Exported for
+ * the tests: the tool-row merge below is the behaviour that was wrong, and it
+ * is not reachable through send() without a server.
+ */
+export function applyTurnEvent(assistant: Message, ev: TurnEvent): void {
   switch (ev.event) {
     case "turn.start":
       if (ev.messageId) assistant.id = ev.messageId;
@@ -171,9 +181,23 @@ function applyTurnEvent(assistant: Message, ev: TurnEvent): void {
       const tool = ev.tool;
       if (!tool) break;
       const list = assistant.tools ?? (assistant.tools = []);
-      const running = list.find((t) => t.name === tool.name && t.target === tool.target && t.state === "running");
-      if (running) Object.assign(running, tool);
-      else list.push({ ...tool });
+      // The same rule the server's appendTool follows, because the pane draws
+      // the turn from the stream and only re-reads the transcript afterwards:
+      // the call's own id when both sides have one, else name and target.
+      const row = list.find((t) =>
+        tool.id && t.id ? t.id === tool.id : t.name === tool.name && t.target === tool.target && t.state === "running",
+      );
+      // A later frame fills in what an earlier one did not know, and never
+      // blanks what it does: the start names the tool before the arguments
+      // have finished arriving, and the end carries the target.
+      if (row) {
+        row.state = tool.state;
+        if (tool.name && tool.name !== "tool") row.name = tool.name;
+        if (tool.target) row.target = tool.target;
+        if (tool.detail) row.detail = tool.detail;
+      } else {
+        list.push({ ...tool });
+      }
       break;
     }
     case "usage":

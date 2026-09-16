@@ -35,6 +35,18 @@ turn. Each shape has a fake in `server/testdata/fakes/` and a case in
   `{"type":"message_update","assistantMessageEvent":{"type":"text_delta",…}}`,
   and usage on `turn_end.message.usage` as `{input, output}`.
   `thinking_*` events are the model reasoning to itself and are dropped.
+  **A tool call arrives in six frames, and they are one row.** Three are
+  `assistantMessageEvent`s: `toolcall_start` (with `id` and `toolName`, added
+  by the JSON mode), `toolcall_delta` (the argument JSON arriving in pieces —
+  no id, no name, and dropped, exactly like `text_delta`'s structured twin),
+  and `toolcall_end` (the assembled `toolCall: {id, name, arguments}`, which
+  is where the target becomes readable). None of them means the tool ran. The
+  run itself is reported at the **top level** as `tool_execution_start`,
+  `tool_execution_update` and `tool_execution_end`, the last carrying
+  `isError` — the only place any agent says a tool failed. The frames are tied
+  together by the call's id, not its name: the earlier ones do not yet know
+  what the later ones will say. Verified against pi 0.84.3's own type
+  declarations.
 - **Codex** — `{"type":"thread.started","thread_id":…}`, then items:
   `{"type":"item.completed","item":{"type":"agent_message","text":…}}`, with
   errors as `{"type":"item.completed","item":{"type":"error","message":…}}` or
