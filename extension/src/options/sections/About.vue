@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { connection, api } from "@/stores/connection";
 import { saveSettings } from "@/stores/storage";
+import { VERSION } from "@/version";
 
 const logs = ref<string[]>([]);
 const showing = ref(false);
@@ -25,7 +26,7 @@ async function unpair() {
   <section class="sk-opt-section" data-section="about">
     <h2>About</h2>
     <div class="sk-row">
-      <div class="lbl"><b>AI Skope 0.1.0</b><small>Chrome extension</small></div>
+      <div class="lbl"><b>AI Skope {{ VERSION }}</b><small>Chrome extension</small></div>
     </div>
     <div class="sk-row">
       <div class="lbl">

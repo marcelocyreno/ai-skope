@@ -7,6 +7,7 @@ import { computed } from "vue";
 import { connection } from "@/stores/connection";
 import { saveSettings, type Settings } from "@/stores/storage";
 import Icon from "./Icon.vue";
+import { VERSION } from "@/version";
 
 const emit = defineEmits<{ (e: "close"): void; (e: "options", section: string): void }>();
 
@@ -134,7 +135,7 @@ const serverSummary = computed(() => {
       <section class="sk-set-section">
         <div class="sk-row" style="border: 0">
           <div class="lbl">
-            <b>AI Skope 0.1.0</b>
+            <b>AI Skope {{ VERSION }}</b>
             <small>Paired with {{ connection.settings?.baseUrl }}</small>
           </div>
         </div>

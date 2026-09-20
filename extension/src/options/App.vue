@@ -6,6 +6,7 @@
 import { ref, onMounted } from "vue";
 import { connection, initConnection } from "@/stores/connection";
 import Icon from "@/pane/components/Icon.vue";
+import { VERSION } from "@/version";
 import General from "./sections/General.vue";
 import Server from "./sections/Server.vue";
 import Folders from "./sections/Folders.vue";
@@ -49,7 +50,7 @@ function scrollTo(id: string) {
     <div class="sk-opt-shell">
       <nav class="sk-opt-nav" aria-label="Settings sections">
         <div class="brand">
-          <Icon id="i-reticle" /><span>AI Skope</span><small>Settings · 0.1.0</small>
+          <Icon id="i-reticle" /><span>AI Skope</span><small>Settings · {{ VERSION }}</small>
         </div>
         <a
           v-for="s in sections"
