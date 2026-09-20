@@ -140,17 +140,23 @@ then copy the three files across — or the prototype and the extension drift.
   sentences; bodies explain *why*, at length when the reason is worth keeping.
 - Comments in this codebase explain the reason a thing is the way it is, not
   what the line does. Match that when adding code.
-- **Issues** are titled `area: imperative summary` — the area matching the
+- **Issues** are titled `Area: imperative summary` — the area matching the
   commit scope that would fix it (`Composer:`, `Model switcher:`, `README:`,
   `Server:`). No bare nouns, no "Need improvement": the title says what should
   change.
-- **A screenshot is evidence, not a description.** An image-only issue gets a
-  body written for it, keeping the image at the end with real alt text. The
-  body follows the same four parts every time: what is wrong and why it
-  matters → **What to do** (options, and which decision is the human's) →
-  **Where it is** (the files, by path, per half) → **Done when** (a checklist
-  another person could verify). Name the open questions rather than inventing
-  an answer.
+- **A screenshot is evidence, not a description.** It leads the body, with alt
+  text saying what it shows, and an image-only issue gets prose written for it.
+  Two shapes, both read off the issues written by hand here:
+  - a defect — `## What the screenshot shows` (transcribe the evidence, so the
+    issue outlives the image) → `## Why` (root cause, offending code quoted and
+    cited `file.ts:87`) → `## Acceptance`
+  - a change — `## Today` (what already exists, by `file:line`) → `## Wanted` →
+    `## Sketch` (paths, grouped per half when the work spans them) →
+    `## Acceptance criteria`
+
+  Add `## Open questions` whenever a decision is the maintainer's — name it
+  rather than settling it. `## Resolution` is written by whoever closes the
+  issue, never at triage.
 - **Issue labels.** Every triaged issue carries one type, at least one area,
   and `triaged`:
   - type — `bug`, `enhancement`, `documentation`, `question`
@@ -162,6 +168,9 @@ then copy the three files across — or the prototype and the extension drift.
   - `triaged` — the title and body have been reviewed and rewritten. Its
     absence is the work queue: `gh issue list --search "-label:triaged"`
   - `good first issue` — self-contained, one half, no design decision pending
+- `/issue-triage` (`.claude/skills/issue-triage/SKILL.md`) is all of the above
+  as an executable procedure, including the step easiest to skip: downloading
+  an issue's screenshots and looking at them before rewriting a word.
 - **Releasing** (see `store/SUBMIT.md` for the full checklist): bump the version
   in `extension/manifest.json`, `extension/package.json` and the root entry of
   `extension/package-lock.json` — Chrome rejects a package that is not strictly
