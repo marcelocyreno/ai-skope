@@ -29,34 +29,50 @@ provider API keys are supported as a secondary source.
 
 ## Try it
 
-```
-cd server && make build && ./aiss start   # start the server
-./aiss folders add ~/dev --watch          # let it read a folder
-./aiss pair                               # note the 8-character code
+Install the server, then take a pairing code:
 
-cd ../extension && npm install && npm run build
+```
+brew install marcelocyreno/tap/aiss
+aiss start                       # listens on 127.0.0.1:7331
+aiss folders add ~/dev --watch   # optional — let it read a folder
+aiss pair                        # note the 8-character code
+```
+
+The extension is loaded unpacked, which means building it:
+
+```
+cd extension && npm install && npm run build
 ```
 
 Then in Chrome: `chrome://extensions` → Developer mode → **Load unpacked** →
 choose `extension/dist`. Click the AI Skope icon (or ⌘⇧A), enter the code, and
 ask about the page you are on.
 
+Building the server from source instead of installing it is `cd server && make
+build`, which needs Go. The
+[install guide](https://marcelocyreno.github.io/ai-skope/install) covers the
+rest: what has to be installed first, the download without Homebrew, and what
+to do when something does not work.
+
 ## Status
 
-- **Wave 1 — visual design:** complete (`design/`).
-- **Wave 2 — the server:** complete (`server/`).
-- **Wave 3 — the extension:** complete (`extension/`).
+All three waves are done: the visual design (`design/`), the server
+(`server/`) and the extension (`extension/`). All five supported agents have
+been driven end to end for real — Claude Code, Codex, pi, omp and opencode —
+attaching a picked element and a local file and streaming the answer back.
+`docs/runtimes/COMPAT.md` records the exact invocation and output shape each
+one was verified against, and the version it was verified on.
 
-All five supported agents have been driven end to end for real — Claude Code,
-Codex, pi, omp and opencode — attaching a picked element and a local file and
-streaming the answer back. `docs/runtimes/COMPAT.md` records the exact
-invocation and output shape each one was verified against, and the version it
-was verified on.
+Since 0.1.0 the work has been on the edges. The default runtime, model and
+effort are chosen in Options → Server & runtimes and survive the pane closing.
+The right-click menu is opt-in and off by default. Notes is hidden until it is
+page-linked, editable and properly undoable
+([#11](https://github.com/marcelocyreno/ai-skope/issues/11)) — the surface is
+gone, the plumbing is parked where it was.
 
-The server is released for macOS and Linux, on both architectures:
-`brew install marcelocyreno/tap/aiss`. The extension is not on the Chrome Web
-Store yet, so it is loaded unpacked — see the
-[install guide](https://marcelocyreno.github.io/ai-skope/install).
+The server is released for macOS and Linux, on both architectures. The
+extension is not publicly listed on the Chrome Web Store yet, so it is loaded
+unpacked; going public is the last listing decision left.
 
 Everything is driven from the `Taskfile.yml` at the root:
 
