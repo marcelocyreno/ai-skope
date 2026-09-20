@@ -373,6 +373,13 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-switcher .foot { border-top: 1px solid var(--line); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: var(--t-12); color: var(--ink-2); }
 .sk-switcher .foot a { color: var(--focus); text-decoration: none; font-family: var(--font-ui); font-weight: 600; }
 .sk-switcher .foot a:hover { text-decoration: underline; }
+.sk-switcher .foot .acts { display: flex; align-items: center; gap: 12px; }
+/* "Save as default" reads as the link beside it, not as a button: a third
+   bordered control in a 364px footer would weigh more than the action does. */
+.sk-switcher .foot .dft { border: 0; background: transparent; padding: 0; font-family: var(--font-ui); font-weight: 600; font-size: var(--t-12); color: var(--focus); white-space: nowrap; }
+.sk-switcher .foot .dft:hover:not(:disabled) { text-decoration: underline; }
+.sk-switcher .foot .dft:disabled { color: var(--ink-3); cursor: default; }
+.sk-switcher .foot .fail { color: var(--bad); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* file picker (server-side) */
 /* The name column keeps a floor and the path yields: a long directory in

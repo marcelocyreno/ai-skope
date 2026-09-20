@@ -11,6 +11,8 @@ import {
   setEffort,
   effortLevels,
   currentOption,
+  saveCurrentAsDefault,
+  selectionIsDefault,
   shortModel,
 } from "@/stores/models";
 import { connection } from "@/stores/connection";
@@ -50,6 +52,34 @@ const isSelected = (o: ModelOption) =>
 function choose(o: ModelOption) {
   selectModel(o);
   emit("close");
+}
+
+const savingDefault = ref(false);
+const savedDefault = ref(false);
+const defaultError = ref("");
+
+/**
+ * Keeps the selection: the popup stays open afterwards so the `default` tag
+ * can be seen moving onto the row, which is the only confirmation that the
+ * next fresh pane will start here.
+ */
+async function saveDefault() {
+  savingDefault.value = true;
+  defaultError.value = "";
+  try {
+    await saveCurrentAsDefault();
+    savedDefault.value = true;
+  } catch (err) {
+    defaultError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    savingDefault.value = false;
+  }
+}
+
+/** Effort is part of what gets saved, so moving it makes the action live again. */
+function chooseEffort(level: string) {
+  setEffort(level);
+  savedDefault.value = false;
 }
 
 const serverLine = computed(() => {
@@ -122,7 +152,7 @@ const serverLine = computed(() => {
           :key="level"
           type="button"
           :aria-pressed="models.selection?.effort === level"
-          @click="setEffort(level)"
+          @click="chooseEffort(level)"
         >
           {{ level }}
         </button>
@@ -130,8 +160,24 @@ const serverLine = computed(() => {
     </div>
 
     <div class="foot">
-      <span>{{ connection.runtimes.filter((r) => r.available).length }} available</span>
-      <a href="#" @click.prevent="emit('manage')">Manage sources →</a>
+      <span v-if="defaultError" class="fail" :title="defaultError">Could not save the default</span>
+      <span v-else>{{ connection.runtimes.filter((r) => r.available).length }} available</span>
+      <span class="acts">
+        <button
+          type="button"
+          class="dft"
+          :disabled="!models.selection || selectionIsDefault || savingDefault"
+          :title="
+            selectionIsDefault
+              ? 'Already what a new chat starts on'
+              : 'New chats and fresh panes start on this runtime, model and effort'
+          "
+          @click="saveDefault()"
+        >
+          {{ savingDefault ? "Saving…" : savedDefault ? "Saved" : "Save as default" }}
+        </button>
+        <a href="#" @click.prevent="emit('manage')">Manage sources →</a>
+      </span>
     </div>
   </div>
 </template>

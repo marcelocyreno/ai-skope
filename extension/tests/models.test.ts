@@ -6,7 +6,7 @@ import type { ModelOption, RuntimeInfo, Selection } from "@/api/types";
 const h = vi.hoisted(() => ({
   connection: { runtimes: [] as RuntimeInfo[], state: "online" },
   server: { models: [] as ModelOption[], default: undefined as Selection | undefined },
-  calls: { models: 0 },
+  calls: { models: 0, saved: [] as Selection[] },
 }));
 
 vi.mock("@/stores/connection", () => ({
@@ -16,19 +16,37 @@ vi.mock("@/stores/connection", () => ({
       h.calls.models++;
       return { models: h.server.models, default: h.server.default };
     },
+    setDefaultModel: async (sel: Selection) => {
+      h.calls.saved.push(sel);
+      h.server.default = sel;
+      return sel;
+    },
   }),
 }));
 
-const { models, loadModels, refreshForRuntimes, shortModel, shortModelLabel } = await import(
-  "@/stores/models"
-);
+const {
+  models,
+  loadModels,
+  refreshForRuntimes,
+  saveCurrentAsDefault,
+  selectionIsDefault,
+  shortModel,
+  shortModelLabel,
+} = await import("@/stores/models");
 
 function runtime(id: string, enabled: boolean, status = "ok"): RuntimeInfo {
   return { id, name: id, enabled, status } as RuntimeInfo;
 }
 
-function option(runtimeId: string, model: string): ModelOption {
-  return { runtime: runtimeId, runtimeName: runtimeId, model, label: model, status: "ok" } as ModelOption;
+function option(runtimeId: string, model: string, effortLevels?: string[]): ModelOption {
+  return {
+    runtime: runtimeId,
+    runtimeName: runtimeId,
+    model,
+    label: model,
+    status: "ok",
+    effortLevels,
+  } as ModelOption;
 }
 
 describe("model store and runtime availability", () => {
@@ -37,8 +55,10 @@ describe("model store and runtime availability", () => {
     h.server.models = [];
     h.server.default = undefined;
     h.calls.models = 0;
+    h.calls.saved = [];
     models.options = [];
     models.selection = null;
+    models.stored = null;
   });
 
   it("drops a selection whose runtime was switched off", async () => {
@@ -105,6 +125,64 @@ describe("model store and runtime availability", () => {
     h.connection.runtimes = [runtime("omp", false, "offline")];
     await refreshForRuntimes();
     expect(h.calls.models).toBe(3);
+  });
+});
+
+describe("saving the selection as the default", () => {
+  beforeEach(async () => {
+    h.connection.runtimes = [runtime("pi", true)];
+    h.server.models = [option("pi", "glm-4.7", ["low", "high"])];
+    h.server.default = { runtime: "pi", model: "glm-4.7" };
+    h.calls.models = 0;
+    h.calls.saved = [];
+    models.options = [];
+    models.selection = null;
+    models.stored = null;
+    await loadModels();
+  });
+
+  it("sends all four fields, so the effort does not stay behind", async () => {
+    const withProvider = { ...option("pi", "glm-4.7", ["low", "high"]), provider: "z.ai" };
+    h.server.models = [withProvider as ModelOption];
+    await loadModels();
+    models.selection = { runtime: "pi", provider: "z.ai", model: "glm-4.7", effort: "high" };
+
+    await saveCurrentAsDefault();
+
+    expect(h.calls.saved).toEqual([
+      { runtime: "pi", provider: "z.ai", model: "glm-4.7", effort: "high" },
+    ]);
+  });
+
+  it("stores no effort for a runtime that offers no levels", async () => {
+    // The options page saves none either; the agent decides, and the server
+    // rejects a level the runtime does not take.
+    h.server.models = [option("pi", "glm-4.7")];
+    await loadModels();
+    models.selection = { runtime: "pi", model: "glm-4.7", effort: "high" };
+
+    await saveCurrentAsDefault();
+
+    expect(h.calls.saved[0].effort).toBeUndefined();
+  });
+
+  it("re-reads the models, so the default tag moves without a reload", async () => {
+    models.selection = { runtime: "pi", model: "glm-4.7", effort: "low" };
+    const before = h.calls.models;
+
+    await saveCurrentAsDefault();
+
+    expect(h.calls.models).toBe(before + 1);
+    expect(models.stored).toEqual({ runtime: "pi", model: "glm-4.7", effort: "low" });
+    expect(selectionIsDefault.value).toBe(true);
+  });
+
+  it("counts a selection whose effort alone moved as not yet the default", () => {
+    models.selection = { runtime: "pi", model: "glm-4.7", effort: "high" };
+    expect(selectionIsDefault.value).toBe(false);
+
+    models.selection = { runtime: "pi", model: "glm-4.7" };
+    expect(selectionIsDefault.value).toBe(true);
   });
 });
 
