@@ -27,7 +27,7 @@ Direct provider API keys remain supported as a secondary source.
 
 ```
 ┌──────────────────────────────────┬──┬──────────────────────────────┐
-│ Content Pane (real page)         │▏ │ Top bar: ◎ AI Skope   + ↺ ⚙  │
+│ Content Pane (real page)         │▏ │ Top bar:              + ↺ ⚙  │
 │                                  │▏ │ Tabs: Chat | Notes (3)        │
 │  · pick mode: amber reticle      │▏ │ Thread (user bubbles right,   │
 │    outline + mono tag            │d │   assistant transcript left,  │
@@ -40,8 +40,10 @@ Direct provider API keys remain supported as a secondary source.
 └──────────────────────────────────┴──┴──────────────────────────────┘
 ```
 
-**Top bar** = identity + navigation only: brand, **New chat**, **History**,
-**Settings**. Brand name collapses to the mark under 350 px.
+**Top bar** = navigation only: **New chat**, **History**, **Settings**. It
+carries no brand row — the browser draws the panel's own header above it from
+`sidepanel.html`'s `<title>`, so a second "AI Skope" would only repeat what is
+already on screen and cost the transcript a row.
 
 **Composer** = everything about *this* message: context tray, textarea (min 3
 rows, grows to 8; ⏎ sends, ⇧⏎ newline), tools **Pick element** (⌘⇧K),

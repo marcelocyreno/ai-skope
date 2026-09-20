@@ -61,6 +61,22 @@ test("notes: the pane offers no way in while the feature is unfinished", async (
   await expect(panel.locator(".sk-notes")).toHaveCount(0);
 });
 
+test("the top bar leaves the name to the panel header the browser draws", async ({ harness }) => {
+  const { panel } = harness;
+  await pair(harness);
+
+  // Chrome puts "AI Skope" above this document itself, from sidepanel.html's
+  // <title>. A brand row here would be the same words one line apart.
+  await expect(panel.locator(".sk-brand")).toHaveCount(0);
+  await expect(panel.getByText("AI Skope", { exact: true })).toHaveCount(0);
+
+  // The row is still there, and still holds everything it held.
+  const topbar = panel.locator(".sk-topbar");
+  for (const label of ["New chat", "Chat history", "Settings"]) {
+    await expect(topbar.getByLabel(label)).toBeVisible();
+  }
+});
+
 test("history: a new chat archives the last one, and it can be reopened", async ({ harness }) => {
   const { panel } = harness;
   await pair(harness);
