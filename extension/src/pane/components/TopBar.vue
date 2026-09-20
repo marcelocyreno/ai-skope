@@ -1,5 +1,9 @@
 <script setup lang="ts">
-/** Identity and navigation only; anything about the message lives below. */
+/**
+ * Navigation only; anything about the message lives below. No brand row:
+ * Chrome draws its own side-panel header above this one, from the `<title>`
+ * in sidepanel.html, so a second "AI Skope" would just repeat it.
+ */
 import Icon from "./Icon.vue";
 import { chat } from "@/stores/chat";
 
@@ -8,10 +12,6 @@ defineEmits<{ (e: "new-chat"): void; (e: "history"): void; (e: "settings"): void
 
 <template>
   <header class="sk-topbar">
-    <div class="sk-brand">
-      <Icon id="i-reticle" />
-      <span class="sk-brand-name">AI Skope</span>
-    </div>
     <div class="sk-topbar-spacer" />
     <button
       type="button"
