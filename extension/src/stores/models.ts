@@ -142,6 +142,56 @@ export const currentOption = computed<ModelOption | undefined>(() =>
 export const effortLevels = computed<string[]>(() => currentOption.value?.effortLevels ?? []);
 
 /**
+ * The effort worth storing with the selection: a runtime that reports no
+ * levels stores none, and the agent decides. The same rule the options page
+ * applies, because the server rejects a level a runtime does not take and the
+ * two entry points must not disagree about what a saved default contains.
+ */
+function storableEffort(): string | undefined {
+  const effort = models.selection?.effort;
+  return effort && effortLevels.value.includes(effort) ? effort : undefined;
+}
+
+/**
+ * Whether the current selection is already what a fresh pane would start on.
+ *
+ * Effort is part of the comparison because it is part of a Selection: moving
+ * only the level leaves something still worth saving, and a control that read
+ * "already the default" there would be lying.
+ */
+export const selectionIsDefault = computed<boolean>(() => {
+  const sel = models.selection;
+  const stored = models.stored;
+  if (!sel || !stored) return false;
+  return (
+    sel.runtime === stored.runtime &&
+    sel.model === stored.model &&
+    (sel.provider ?? "") === (stored.provider ?? "") &&
+    (storableEffort() ?? "") === (stored.effort ?? "")
+  );
+});
+
+/**
+ * Stores what the switcher currently has selected as the default, so the
+ * moment a user picks a model is the moment they can keep it — the same act
+ * that previously meant Settings → Server & runtimes → Default model.
+ *
+ * All four fields travel. `Selection` carries runtime, provider, model and
+ * effort, the options page saves all four together, and saving three here
+ * would quietly discard the level chosen one row above the control.
+ */
+export async function saveCurrentAsDefault(): Promise<void> {
+  const sel = models.selection;
+  if (!sel) return;
+  await setDefaultModel({
+    runtime: sel.runtime,
+    provider: sel.provider,
+    model: sel.model,
+    effort: storableEffort(),
+  });
+}
+
+/**
  * The dot next to the model name: can this model answer right now.
  *
  * When the selection is not among the listed options — a custom runtime with
