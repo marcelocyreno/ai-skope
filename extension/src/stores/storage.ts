@@ -17,9 +17,9 @@ export interface Settings {
   blockedHosts: string[];
   openAutomatically: boolean;
   /**
-   * Whether AI Skope puts its two entries in the page's right-click menu.
+   * Whether AI Skope puts its entry in the page's right-click menu.
    * Off by default: the menu belongs to the page, and the pane's own
-   * selection toolbar and shortcuts already do the same two things.
+   * selection toolbar and shortcuts already do the same.
    */
   contextMenu: boolean;
 }
