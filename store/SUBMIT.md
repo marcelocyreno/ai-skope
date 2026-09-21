@@ -1,6 +1,6 @@
 # Chrome Web Store — where this stands
 
-**Last updated: 15 September 2026.** Pick this up cold: everything below is
+**Last updated: 20 September 2026.** Pick this up cold: everything below is
 either done, or a step you can do in one sitting.
 
 `LISTING.md` holds the text to paste, field by field, in the order the
@@ -144,6 +144,60 @@ and Notes is gone from the feature list.
 - [ ] Uploaded and submitted — **the only step left**
 - [x] `main` pushed, `v0.1.2` tagged, server released, tap updated —
       16 September 2026
+
+### Next: 0.1.3
+
+`v0.1.2` is cut and tagged, so the next package and the next server tag are
+both **0.1.3**. Twelve commits are on `main` since the tag; the ones a reader
+of the listing would notice:
+
+- The right-click menu now works while the pane is open, and its toggle moved
+  from the options page into the pane's quick settings ([#22](https://github.com/marcelocyreno/ai-skope/issues/22))
+- A 1-5 answer-length control in the composer, per message ([#16](https://github.com/marcelocyreno/ai-skope/issues/16))
+- The composer's keyboard legends dropped; Copy and Clear chat kept
+- The model switcher saves the default model
+- The pane no longer repeats the title bar Chrome already draws
+- The README leads with the Homebrew install
+
+Permissions are unchanged, so the seven justifications still hold and the
+review should be the quick kind. `LISTING.md`'s `contextMenus` justification
+was corrected for the moved toggle: it said the entries appear "in the options
+page", which stopped being true with #22, and it said "entries" where the
+extension only ever creates one.
+
+- [x] Version bumped to 0.1.3 in all three files — 20 September 2026
+- [x] Package built — `store/ai-skope-0.1.3.zip`, 85 KB, manifest at the root,
+      no source maps
+- [x] `LISTING.md` and `PUBLISHING.md` corrected for the moved toggle
+- [ ] **The same two end-to-end tests still fail — do not upload.** `the model
+      switcher lists what the server offers and changes the chip` and `the
+      options page manages folders against the real server`, both in
+      `extension/tests/e2e/design-states.spec.ts`. Unchanged since this was
+      first written on 15 September: they fail on every run, and they fail on
+      `main` as well as on the release branch, so they are not the release's
+      doing. The switcher still does not offer a provider's models. The
+      failure dumps `/v1/providers` and `/v1/models`: the provider is
+      registered and healthy there (`lastTestOk: true`, "2 models",
+      `glm-5.3` and `glm-5.3-flash`), but the assertion truncates
+      `/v1/models` at 300 characters, so whether those two reach that
+      endpoint at all is still unknown. Establishing that is the first step —
+      it decides whether the bug is server-side in the `/v1/models` merge or
+      panel-side in the switcher.
+- [ ] **Recapture the screenshots** — `task store:shots`. Still the 5 September
+      frames, now two releases stale: `3-selection.png` shows a "save note"
+      button that no longer exists, the pane carries a Notes tab that is gone,
+      and the settings frames predate the answer-length control and the moved
+      right-click toggle.
+- [ ] Uploaded and submitted
+- [ ] `v0.1.3` tagged and the server released
+
+`internal/files` carries a separate, unrelated flake worth an issue of its
+own: `TestIndexerIndexesAndPrunes` fails when two index passes of the same
+folder land in the same millisecond. `IndexFolder` stamps rows with
+`started := store.Now()` (`index.go:70`, millisecond resolution) and prunes
+`WHERE indexed_at < started` (`store/files.go:99`), so a pass that begins in
+the same millisecond as the previous one prunes nothing. Real folders take
+longer than a millisecond to walk, which is why only the test sees it.
 
 ### If review pushes back
 
