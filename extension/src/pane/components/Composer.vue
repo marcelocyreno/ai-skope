@@ -183,9 +183,6 @@ defineExpose({ focus: () => field.value?.focus() });
     </div>
 
     <div class="sk-hint">
-      <span><kbd>⏎</kbd> send</span>
-      <span><kbd>⇧⏎</kbd> new line</span>
-      <span v-if="chat.messages.length"><kbd>↑</kbd> history</span>
       <span class="grow" />
       <button
         type="button"
