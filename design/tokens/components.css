@@ -160,10 +160,15 @@
    chip drops its chevron too. The stop selectors name .sk-seg as well as
    the toolbar so they outrank .sk-seg.mini further down the file, which
    would otherwise win on source order. */
-.sk-toolrow .sk-seg.sk-conc { flex: none; padding: 1px; }
+.sk-toolrow .sk-seg.sk-conc { flex: none; padding: 1px; align-items: center; }
 .sk-toolrow .sk-seg.sk-conc button { min-width: 17px; padding: 0; justify-content: center; font-variant-numeric: tabular-nums; }
+/* The glyph says what the digits count. It is dimmer than the stops so the
+   selected one still reads first, and never shrinks — the chip is what gives
+   when the row runs out of room. */
+.sk-toolrow .sk-seg.sk-conc > .sk-ico { flex: none; margin: 0 3px 0 4px; color: var(--ink-3); }
 @container (max-width: 380px) {
   .sk-toolrow .sk-seg.sk-conc button { min-width: 14px; }
+  .sk-toolrow .sk-seg.sk-conc > .sk-ico { margin: 0 2px 0 3px; }
   .sk-toolrow .sk-chip-model { margin-left: 2px; padding: 0 6px; }
   .sk-toolrow .sk-chip-model .chev { display: none; }
 }
