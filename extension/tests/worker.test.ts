@@ -1,8 +1,10 @@
 /**
- * The worker's only decision is whether the two context-menu entries exist.
- * It is driven here through a chrome stub rather than by exporting the
- * decision, because the wiring is the part that was wrong: which events are
- * listened to, and what a settings change does to a menu already on screen.
+ * The worker's two jobs around the right-click menu: whether the entry exists,
+ * and where a click on it goes. Both are driven here through a chrome stub
+ * rather than by exporting the decisions, because the wiring is the part that
+ * was wrong — which events are listened to, what a settings change does to a
+ * menu already on screen, and whether a pane that is already open hears the
+ * click at all.
  */
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { DEFAULTS, type Settings } from "@/stores/storage";
@@ -25,8 +27,26 @@ let stored: Partial<Settings> = {};
 const created: string[] = [];
 let removeAllCalls = 0;
 
+/**
+ * A pane that is open and listening, and what it answers with. null is a pane
+ * that is not running: Chrome rejects sendMessage when no extension page is
+ * there to hear it, which is the only signal the worker gets.
+ */
+let openPane: (() => unknown) | null = null;
+const heard: Record<string, unknown>[] = [];
+const queued: Record<string, unknown>[] = [];
+
 vi.stubGlobal("chrome", {
-  runtime: { onInstalled: on("installed"), onStartup: on("startup"), onMessage: on("message") },
+  runtime: {
+    onInstalled: on("installed"),
+    onStartup: on("startup"),
+    onMessage: on("message"),
+    sendMessage: async (msg: Record<string, unknown>) => {
+      if (!openPane) throw new Error("Could not establish connection. Receiving end does not exist.");
+      heard.push(msg);
+      return openPane();
+    },
+  },
   commands: { onCommand: on("command") },
   contextMenus: {
     onClicked: on("clicked"),
@@ -38,7 +58,11 @@ vi.stubGlobal("chrome", {
   },
   storage: {
     local: { get: async () => ({ settings: stored }) },
-    session: { set: async () => {} },
+    session: {
+      set: async (o: Record<string, unknown>) => {
+        queued.push(o);
+      },
+    },
     onChanged: on("changed"),
   },
   sidePanel: { setPanelBehavior: async () => {}, open: async () => {} },
@@ -98,5 +122,49 @@ describe("the right-click menu is opt-in", () => {
     stored = { contextMenu: true };
     await fire("startup");
     expect(created).toEqual(["skope-ask"]);
+  });
+});
+
+describe("a click on the entry reaches the pane", () => {
+  /** Delivery decides after an await, so let the whole chain settle. */
+  const click = async () => {
+    await fire("clicked", { selectionText: "the quoted words" }, { windowId: 1 });
+    await new Promise((r) => setTimeout(r, 0));
+  };
+
+  const selection = { type: "text", quote: "the quoted words" };
+
+  beforeEach(() => {
+    heard.length = 0;
+    queued.length = 0;
+    openPane = null;
+  });
+
+  it("hands the selection straight to a pane that is already open", async () => {
+    openPane = () => ({ received: true });
+
+    await click();
+
+    expect(heard).toEqual([{ kind: "skope:selection-action", action: "add", selection }]);
+    // Acted on live, so nothing is left behind to replay on the next open.
+    expect(queued).toEqual([]);
+  });
+
+  it("queues the selection for a pane that is not running yet", async () => {
+    await click();
+
+    expect(heard).toEqual([]);
+    expect(queued).toHaveLength(1);
+    expect(queued[0].pendingAction).toMatchObject({ action: "add", selection });
+  });
+
+  it("queues it as well when a pane hears the click but does not answer", async () => {
+    // An unanswered message is indistinguishable from an absent pane, and
+    // dropping the click would be worse than a chip arriving a moment late.
+    openPane = () => undefined;
+
+    await click();
+
+    expect(queued).toHaveLength(1);
   });
 });

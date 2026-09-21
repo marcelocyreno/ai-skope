@@ -113,10 +113,21 @@ watch(
   { deep: true },
 );
 
-/** The selection toolbar in the page reports the user's choice here. */
-function onRuntimeMessage(msg: { kind?: string; action?: string; selection?: ContextItem }): undefined {
+/**
+ * The selection toolbar in the page, and the right-click menu in the worker,
+ * both report the user's choice here.
+ *
+ * Answering matters: the worker has no way to see whether a pane is running,
+ * so silence is what makes it queue the action for the next one instead.
+ */
+function onRuntimeMessage(
+  msg: { kind?: string; action?: string; selection?: ContextItem },
+  _sender: chrome.runtime.MessageSender,
+  sendResponse: (reply: unknown) => void,
+): undefined {
   if (msg?.kind !== "skope:selection-action" || !msg.selection) return;
   applySelectionAction(msg.action ?? "add", msg.selection);
+  sendResponse({ received: true });
   return;
 }
 
@@ -126,12 +137,24 @@ function applySelectionAction(action: string, selection: ContextItem) {
   if (action === "ask") composer.value?.focus();
 }
 
+/**
+ * How long a queued intent is still worth acting on. It is written the instant
+ * before the panel is asked to open, so anything older than this outlived the
+ * pane it was meant for — chrome.storage.session keeps it until the browser
+ * quits, and replaying it would attach this morning's selection to whatever
+ * page happens to be open now.
+ */
+const PENDING_MAX_AGE_MS = 60_000;
+
+const fresh = <T extends { at?: number }>(x: T | undefined): T | undefined =>
+  x && Date.now() - (x.at ?? 0) < PENDING_MAX_AGE_MS ? x : undefined;
+
 /** A command or context-menu click may have opened the panel; act on it. */
 async function drainPending() {
   const got = await chrome.storage.session.get(["pendingCommand", "pendingAction"]);
   await chrome.storage.session.remove(["pendingCommand", "pendingAction"]);
-  const cmd = got.pendingCommand as { command: string } | undefined;
-  const action = got.pendingAction as { action: string; selection: ContextItem } | undefined;
+  const cmd = fresh(got.pendingCommand as { command: string; at?: number } | undefined);
+  const action = fresh(got.pendingAction as { action: string; selection: ContextItem; at?: number } | undefined);
   if (action?.selection) applySelectionAction(action.action, action.selection);
   if (cmd?.command === "pick-element") await doPick();
   if (cmd?.command === "add-selection") await doSelection();

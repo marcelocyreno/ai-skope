@@ -57,17 +57,31 @@ onSettingsChanged((s) => {
   void syncMenu(s.contextMenu);
 });
 
+/**
+ * A side panel is normally already open when you right-click, so the click is
+ * offered to it live first — the same message the in-page selection toolbar
+ * sends, so the pane needs no second path for it. Only when nothing answers is
+ * the intent queued for a pane that has yet to start.
+ *
+ * The reply is what tells the two situations apart: the worker cannot see
+ * whether a pane is running, and an action both delivered and queued would be
+ * added to the chat twice.
+ */
+async function deliverSelection(quote: string): Promise<void> {
+  const selection = { type: "text", quote };
+  const reply = (await chrome.runtime
+    .sendMessage({ kind: "skope:selection-action", action: "add", selection })
+    .catch(() => undefined)) as { received?: boolean } | undefined;
+  if (reply?.received) return;
+  await chrome.storage.session.set({ pendingAction: { action: "add", selection, at: Date.now() } });
+}
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab?.windowId) return;
+  // open() has to be reached while the user gesture is still live, so it goes
+  // first and the delivery sorts itself out behind it.
   void chrome.sidePanel.open({ windowId: tab.windowId });
-  // The panel may still be starting, so the intent is queued rather than sent.
-  void chrome.storage.session.set({
-    pendingAction: {
-      action: "add",
-      selection: { type: "text", quote: info.selectionText ?? "" },
-      at: Date.now(),
-    },
-  });
+  void deliverSelection(info.selectionText ?? "");
 });
 
 chrome.commands.onCommand.addListener(async (command) => {

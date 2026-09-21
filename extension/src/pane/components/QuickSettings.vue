@@ -130,6 +130,19 @@ const serverSummary = computed(() => {
           <div class="lbl"><b>Blocked sites</b><small>{{ s?.blockedHosts.length ?? 0 }} site(s) never read.</small></div>
           <button type="button" class="sk-btn secondary sm" @click="emit('options', 'privacy')">Manage</button>
         </div>
+        <div class="sk-row">
+          <div class="lbl">
+            <b>Right-click menu</b>
+            <small>Add "Ask AI Skope about this" to selected text.</small>
+          </div>
+          <button
+            type="button"
+            class="sk-switch"
+            role="switch"
+            :aria-checked="s?.contextMenu"
+            @click="set({ contextMenu: !s?.contextMenu })"
+          />
+        </div>
       </section>
 
       <section class="sk-set-section">
