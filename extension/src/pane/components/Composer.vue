@@ -187,6 +187,7 @@ defineExpose({ focus: () => field.value?.focus() });
         </button>
         <ModelChip :expanded="props.switcherOpen" @open="emit('switcher')" />
         <span class="sk-seg mini sk-conc" role="group" aria-label="Answer length">
+          <Icon id="i-verbosity" />
           <button
             v-for="stop in stops"
             :key="stop.value"
