@@ -204,6 +204,12 @@ export interface SendRequest {
   page?: PageRef;
   context?: ContextItem[];
   model?: Selection;
+  /**
+   * How long the answer should be, 1-5 with 4 neutral. It rides on the
+   * message rather than on Selection: it is about the answer, not about who
+   * writes it. Mirrors chat.SendRequest.Conciseness.
+   */
+  conciseness?: number;
 }
 
 /** The events a turn streams back, one per SSE frame. */

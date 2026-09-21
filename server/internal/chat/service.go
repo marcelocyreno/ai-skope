@@ -49,6 +49,12 @@ type SendRequest struct {
 	Page    *PageRef            `json:"page"`
 	Context []store.ContextItem `json:"context"`
 	Model   *runtime.Selection  `json:"model"`
+
+	// Conciseness is how long the answer should be, 1–5 with 4 neutral. It
+	// rides on the message rather than on Selection because it is about the
+	// answer, not about who writes it — and for the same reason it is not
+	// remembered on the chat: the panel carries it, message by message.
+	Conciseness int `json:"conciseness"`
 }
 
 // Stream event names, mirrored by the SSE endpoint and the extension's UI.
@@ -170,6 +176,7 @@ func (s *Service) Send(ctx context.Context, chatID string, req SendRequest) (<-c
 	packed := Pack(s.guard, Input{
 		Question: req.Text, Page: pageItem, Items: req.Context, Budget: s.cfg.MaxContextBytes,
 		Folders: folders, WorkDir: workDir, Hits: hits, InlineHits: !spec.ReadsFiles,
+		Conciseness: req.Conciseness,
 	})
 	for _, p := range packed.FilePaths {
 		_ = s.db.TouchRecentFile(p)

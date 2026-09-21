@@ -29,6 +29,37 @@ type Input struct {
 	// as paths to start from; one that cannot has their content inlined.
 	Hits       []store.File
 	InlineHits bool
+
+	// Conciseness is how long the answer should be, on the composer's 1–5
+	// scale. Zero means the panel said nothing, which is the same as the
+	// neutral stop.
+	Conciseness int
+}
+
+// ConcisenessNormal is the neutral stop on the composer's 1–5 scale: it adds
+// nothing to the preamble, so a control nobody touches asks for exactly the
+// prompt the server built before the control existed.
+const ConcisenessNormal = 4
+
+// concisenessLine is the one sentence a stop adds to the preamble.
+//
+// Effort tunes how hard the model thinks; this is the other axis, how much it
+// says. Anything off the scale — an older panel that sends nothing, a newer
+// one that sends a stop this server has never heard of — falls through to the
+// neutral stop, because a length instruction nobody asked for is worse than
+// none at all.
+func concisenessLine(stop int) string {
+	switch stop {
+	case 1:
+		return "Answer in a single sentence, with no preamble and no restating of the question.\n"
+	case 2:
+		return "Answer in two or three sentences.\n"
+	case 3:
+		return "Keep the answer short: one short paragraph, or a handful of bullets.\n"
+	case 5:
+		return "Take the room to explain: give the reasoning behind the answer, the caveats that matter, and an example where one helps.\n"
+	}
+	return ""
 }
 
 // Packed is a prompt assembled from a question and its context.
@@ -88,6 +119,7 @@ func Pack(guard *files.Guard, in Input) Packed {
 	sb.WriteString("You are AI Skope, answering questions about what the user is looking at in their browser.\n")
 	sb.WriteString("Answer the question directly and completely; do not propose a plan or ask for approval. ")
 	sb.WriteString("Ground every claim in the material below or in files you read, and say plainly what you could not find.\n")
+	sb.WriteString(concisenessLine(in.Conciseness))
 	sb.WriteString("\n")
 	sb.WriteString(renderFolders(in))
 	if !in.InlineHits {
