@@ -95,6 +95,20 @@ test("history: a new chat archives the last one, and it can be reopened", async 
   await expect(panel.getByText("First question about pricing")).toBeVisible();
 });
 
+test("the composer's row under the field holds the two chat actions and nothing else", async ({
+  harness,
+}) => {
+  const { panel } = harness;
+  await pair(harness);
+
+  // The keyboard legends that used to sit here taught themselves once and then
+  // held a permanent line of a 400 px pane; the two buttons are the only thing
+  // in the row anyone clicks.
+  const row = panel.locator(".sk-composer .sk-hint");
+  await expect(row.locator("kbd")).toHaveCount(0);
+  await expect(row.getByRole("button")).toHaveText(["Copy chat", "Clear chat"]);
+});
+
 test("clear chat archives rather than destroys", async ({ harness }) => {
   const { panel } = harness;
   await pair(harness);
