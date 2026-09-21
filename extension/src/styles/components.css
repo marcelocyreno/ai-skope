@@ -145,9 +145,28 @@
 .sk-field textarea { display: block; width: 100%; resize: none; border: 0; background: transparent; padding: 10px 12px 4px; font-family: var(--font-body); font-size: var(--t-14); line-height: 20px; min-height: calc(20px * 3 + 14px); max-height: calc(20px * 8 + 14px); color: var(--ink); outline: none; }
 .sk-field textarea::placeholder { color: var(--ink-3); }
 .sk-field textarea:disabled { color: var(--ink-3); }
-.sk-toolrow { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; }
-.sk-toolrow .grow { flex: 1; }
-.sk-toolrow .sk-chip-model { margin-left: 4px; }
+.sk-toolrow { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; padding: 4px 6px 6px; }
+.sk-toolrow .grow { flex: 1; min-width: 0; }
+.sk-toolrow .sk-chip-model { margin-left: 4px; overflow: hidden; }
+/* The aiming tools and Send are fixed points of the row: without this they
+   are flex items like any other and give up their pixels before the chip
+   does, which is the wrong thing to lose first. */
+.sk-toolrow .sk-iconbtn, .sk-toolrow .sk-send { flex: none; }
+/* Answer length, beside the model chip: effort tunes how hard the model
+   thinks, this tunes how much it says. The row is tight — about 110px spare
+   at the 400px default and none at --pane-min — so the five stops are sized
+   to their digit and hold that width, and the chip is what gives way: it
+   already ellipsises its name, and below 380px the stops tighten and the
+   chip drops its chevron too. The stop selectors name .sk-seg as well as
+   the toolbar so they outrank .sk-seg.mini further down the file, which
+   would otherwise win on source order. */
+.sk-toolrow .sk-seg.sk-conc { flex: none; padding: 1px; }
+.sk-toolrow .sk-seg.sk-conc button { min-width: 17px; padding: 0; justify-content: center; font-variant-numeric: tabular-nums; }
+@container (max-width: 380px) {
+  .sk-toolrow .sk-seg.sk-conc button { min-width: 14px; }
+  .sk-toolrow .sk-chip-model { margin-left: 2px; padding: 0 6px; }
+  .sk-toolrow .sk-chip-model .chev { display: none; }
+}
 .sk-send { width: 32px; height: 32px; border: 0; border-radius: 50%; display: inline-grid; place-items: center; background: var(--accent); color: var(--accent-on); transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); }
 .sk-send:hover { transform: translateY(-1px); }
 .sk-send:disabled { background: var(--surface-3); color: var(--ink-3); cursor: not-allowed; transform: none; }

@@ -207,7 +207,13 @@ export async function send(opts: SendOptions = {}): Promise<void> {
   try {
     for await (const ev of api().send(
       chatId,
-      { text, page: pageRef(read), context, model: models.selection ?? undefined },
+      {
+        text,
+        page: pageRef(read),
+        context,
+        model: models.selection ?? undefined,
+        conciseness: settings.conciseness,
+      },
       abort.signal,
     )) {
       applyTurnEvent(assistant, ev);
