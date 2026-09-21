@@ -292,9 +292,33 @@ code, kbd, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-
 .sk-field textarea { display: block; width: 100%; resize: none; border: 0; background: transparent; padding: 10px 12px 4px; font-family: var(--font-body); font-size: var(--t-14); line-height: 20px; min-height: calc(20px * 3 + 14px); max-height: calc(20px * 8 + 14px); color: var(--ink); outline: none; }
 .sk-field textarea::placeholder { color: var(--ink-3); }
 .sk-field textarea:disabled { color: var(--ink-3); }
-.sk-toolrow { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; }
-.sk-toolrow .grow { flex: 1; }
-.sk-toolrow .sk-chip-model { margin-left: 4px; }
+.sk-toolrow { display: flex; flex-wrap: nowrap; align-items: center; gap: 2px; padding: 4px 6px 6px; }
+.sk-toolrow .grow { flex: 1; min-width: 0; }
+.sk-toolrow .sk-chip-model { margin-left: 4px; overflow: hidden; }
+/* The aiming tools and Send are fixed points of the row: without this they
+   are flex items like any other and give up their pixels before the chip
+   does, which is the wrong thing to lose first. */
+.sk-toolrow .sk-iconbtn, .sk-toolrow .sk-send { flex: none; }
+/* Answer length, beside the model chip: effort tunes how hard the model
+   thinks, this tunes how much it says. The row is tight — about 110px spare
+   at the 400px default and none at --pane-min — so the five stops are sized
+   to their digit and hold that width, and the chip is what gives way: it
+   already ellipsises its name, and below 380px the stops tighten and the
+   chip drops its chevron too. The stop selectors name .sk-seg as well as
+   the toolbar so they outrank .sk-seg.mini further down the file, which
+   would otherwise win on source order. */
+.sk-toolrow .sk-seg.sk-conc { flex: none; padding: 1px; align-items: center; }
+.sk-toolrow .sk-seg.sk-conc button { min-width: 17px; padding: 0; justify-content: center; font-variant-numeric: tabular-nums; }
+/* The glyph says what the digits count. It is dimmer than the stops so the
+   selected one still reads first, and never shrinks — the chip is what gives
+   when the row runs out of room. */
+.sk-toolrow .sk-seg.sk-conc > .sk-ico { flex: none; margin: 0 3px 0 4px; color: var(--ink-3); }
+@container (max-width: 380px) {
+  .sk-toolrow .sk-seg.sk-conc button { min-width: 14px; }
+  .sk-toolrow .sk-seg.sk-conc > .sk-ico { margin: 0 2px 0 3px; }
+  .sk-toolrow .sk-chip-model { margin-left: 2px; padding: 0 6px; }
+  .sk-toolrow .sk-chip-model .chev { display: none; }
+}
 .sk-send { width: 32px; height: 32px; border: 0; border-radius: 50%; display: inline-grid; place-items: center; background: var(--accent); color: var(--accent-on); transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease); }
 .sk-send:hover { transform: translateY(-1px); }
 .sk-send:disabled { background: var(--surface-3); color: var(--ink-3); cursor: not-allowed; transform: none; }
@@ -934,6 +958,10 @@ html, body { background: #202429; }
   <symbol id="i-chat-clear" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="m9.5 9.5 5 5M14.5 9.5l-5 5"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></symbol>
   <symbol id="i-chat-new" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="M12 9v6M9 12h6"/></symbol>
+  <!-- Answer length. The bubble is i-chat's, so the family reads as one; the two
+       unequal lines are the quantity the control sets. Not a speaker: in a chat
+       pane an audio glyph reads as text-to-speech, which this is not. -->
+  <symbol id="i-verbosity" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4A8 8 0 1 1 20 12z"/><path d="M8.5 10.5h7M8.5 14h4"/></symbol>
   <symbol id="i-history" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 8v4.5l3 2"/></symbol>
   <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5M9 13h6M9 17h6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
