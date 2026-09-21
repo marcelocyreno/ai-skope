@@ -10,6 +10,7 @@ import { connection } from "@/stores/connection";
 import { modelStatus } from "@/stores/models";
 import { page } from "@/stores/page";
 import { showToast } from "@/stores/toast";
+import { saveSettings, CONCISENESS_NORMAL, type Conciseness } from "@/stores/storage";
 import { copyText } from "@/pane/clipboard";
 import { chatMarkdown } from "@/pane/transcript";
 import { atFirstLine, atLastLine } from "@/pane/caret";
@@ -31,6 +32,26 @@ const field = ref<HTMLTextAreaElement | null>(null);
 
 const blocked = computed(() => connection.state !== "online" || modelStatus.value === "offline");
 const canSend = computed(() => chat.draft.trim().length > 0 && !chat.sending && !blocked.value);
+
+/**
+ * Answer length, the other half of what the model chip offers: effort is how
+ * hard the model thinks, this is how much it says. Four is neutral and sends
+ * no instruction at all, so the row can be ignored entirely.
+ *
+ * The stop is chosen per message but kept in chrome.storage.local, which is
+ * therefore also the value on screen — the next message starts where the last
+ * one left off, and the options page sees the same setting.
+ */
+const stops: { value: Conciseness; label: string }[] = [
+  { value: 1, label: "Extremely concise" },
+  { value: 2, label: "Very concise" },
+  { value: 3, label: "Concise" },
+  { value: 4, label: "Normal" },
+  { value: 5, label: "More detail" },
+];
+
+const conciseness = computed(() => connection.settings?.conciseness ?? CONCISENESS_NORMAL);
+const setConciseness = (value: Conciseness) => void saveSettings({ conciseness: value });
 
 const placeholder = computed(() => {
   if (connection.state === "offline") return "Waiting for the server to come back…";
@@ -165,6 +186,19 @@ defineExpose({ focus: () => field.value?.focus() });
           <Icon id="i-folder" />
         </button>
         <ModelChip :expanded="props.switcherOpen" @open="emit('switcher')" />
+        <span class="sk-seg mini sk-conc" role="group" aria-label="Answer length">
+          <button
+            v-for="stop in stops"
+            :key="stop.value"
+            type="button"
+            :aria-pressed="conciseness === stop.value"
+            :aria-label="stop.label"
+            :title="`Answer length: ${stop.label}`"
+            @click="setConciseness(stop.value)"
+          >
+            {{ stop.value }}
+          </button>
+        </span>
         <span class="grow" />
         <button
           v-if="chat.sending"

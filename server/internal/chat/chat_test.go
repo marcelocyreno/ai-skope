@@ -620,3 +620,50 @@ func TestPageTextIsIncludedWhenShared(t *testing.T) {
 		t.Fatalf("shared page text must reach the model: %q", prompt)
 	}
 }
+
+func TestConcisenessAddsOneLineAndTheNeutralStopAddsNone(t *testing.T) {
+	db, _ := store.OpenMemory()
+	defer db.Close()
+	guard := files.NewGuard(db, config.Default())
+
+	pack := func(stop int) string {
+		return Pack(guard, Input{Question: "how does billing work?", Conciseness: stop}).Prompt
+	}
+
+	// The neutral stop is the point of the control's default: a panel that
+	// sends 4, and one built before the control existed and sends nothing,
+	// must produce the same bytes.
+	baseline := pack(0)
+	if got := pack(ConcisenessNormal); got != baseline {
+		t.Fatalf("the neutral stop changed the prompt:\n--- 4 ---\n%s\n--- none ---\n%s", got, baseline)
+	}
+	// So must a stop this server has never heard of.
+	if got := pack(9); got != baseline {
+		t.Fatalf("an off-scale stop changed the prompt:\n%s", got)
+	}
+
+	// Every other stop says something, and says something different.
+	seen := map[string]int{baseline: ConcisenessNormal}
+	for _, stop := range []int{1, 2, 3, 5} {
+		got := pack(stop)
+		if got == baseline {
+			t.Errorf("stop %d added nothing to the preamble", stop)
+			continue
+		}
+		if other, dup := seen[got]; dup {
+			t.Errorf("stop %d reads exactly like stop %d", stop, other)
+		}
+		seen[got] = stop
+		// The instruction belongs in the preamble, above the material and
+		// the question — not trailing after them where it reads as an aside.
+		line := strings.TrimSuffix(concisenessLine(stop), "\n")
+		at := strings.Index(got, line)
+		if at < 0 {
+			t.Errorf("stop %d: prompt is missing %q:\n%s", stop, line, got)
+			continue
+		}
+		if at > strings.Index(got, "## Question") {
+			t.Errorf("stop %d: the length instruction landed after the question", stop)
+		}
+	}
+}

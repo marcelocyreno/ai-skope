@@ -4,6 +4,17 @@
  * pane. Nothing sensitive beyond the bearer token is kept here — chats, notes
  * and provider keys all live on the server.
  */
+
+/**
+ * How long an answer should be, on the composer's five-stop scale: 1 is a
+ * sentence, 3 is short, 5 asks for the reasoning as well. 4 is neutral and
+ * says nothing to the model at all, so a control nobody touches leaves the
+ * prompt exactly as the server would have built it.
+ */
+export type Conciseness = 1 | 2 | 3 | 4 | 5;
+
+export const CONCISENESS_NORMAL: Conciseness = 4;
+
 export interface Settings {
   baseUrl: string;
   token: string;
@@ -16,6 +27,8 @@ export interface Settings {
   /** Sites the extension never reads. */
   blockedHosts: string[];
   openAutomatically: boolean;
+  /** Where the composer's answer-length control starts the next message. */
+  conciseness: Conciseness;
   /**
    * Whether AI Skope puts its two entries in the page's right-click menu.
    * Off by default: the menu belongs to the page, and the pane's own
@@ -34,6 +47,7 @@ export const DEFAULTS: Settings = {
   pageAccess: "ask",
   blockedHosts: [],
   openAutomatically: false,
+  conciseness: CONCISENESS_NORMAL,
   contextMenu: false,
 };
 
