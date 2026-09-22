@@ -55,6 +55,7 @@ const setConciseness = (value: Conciseness) => void saveSettings({ conciseness: 
 
 const placeholder = computed(() => {
   if (connection.state === "offline") return "Waiting for the server to come back…";
+  if (connection.state === "incompatible") return "This server speaks a different version…";
   if (modelStatus.value === "offline") return "Waiting for the model to come back…";
   return "Ask about this page… pick an element or select text to add context";
 });

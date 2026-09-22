@@ -44,6 +44,15 @@ const askingPage = ref(false);
 
 const ready = computed(() => connection.state === "online");
 
+/**
+ * What the shell is rendered for. A server speaking the wrong API is not the
+ * connect screen's business — there is nothing to install and nothing to pair
+ * — so the pane stays on screen and the strip above the dead composer says
+ * which side is behind. `ready` stays narrower: nothing here asks that server
+ * for models or a chat.
+ */
+const shell = computed(() => ready.value || connection.state === "incompatible");
+
 let unwatchTab: (() => void) | null = null;
 
 /** The page the transcript on screen belongs to. */
@@ -290,7 +299,7 @@ function onKeydown(e: KeyboardEvent) {
       @settings="panel = panel === 'settings' ? 'none' : 'settings'"
     />
 
-    <template v-if="ready">
+    <template v-if="shell">
       <div class="sk-body">
         <section class="sk-view">
           <Thread v-if="chat.messages.length" />

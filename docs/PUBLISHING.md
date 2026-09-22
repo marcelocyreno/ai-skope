@@ -153,9 +153,19 @@ that is the product in one image, and it is what the design was built around.
 
 ## Phase 5 — After it is live
 
-- **Versioning**: bump `manifest.json` and the server together; the extension
-  should say when the server is older than it expects (`/v1/capabilities`
-  already reports `apiVersion`, which is exactly what this is for).
+- **Versioning**: bump `manifest.json` and the server together. The pane reads
+  the `apiVersion` that `/v1/health` reports and refuses to start a turn
+  against a server that does not speak the one it was built for — naming both
+  versions, and which side is behind.
+- **When `APIVersion` is bumped**: only when a server release stops speaking
+  what the published extension speaks — a request or response field removed or
+  renamed, an SSE event dropped or given new semantics, an endpoint retired.
+  Additions are not a bump: a new field, a new event or a new endpoint leaves
+  every older pane working, which is the whole point of the tolerant parser.
+  A bump is a release where the two halves must be updated together, and it
+  strands every browser that has not updated yet — `server/internal/version`
+  and `extension/src/version.ts` both have to move, so bump it deliberately
+  and rarely.
 - **Support**: GitHub issues, linked from the listing.
 - **Updates**: the store reviews every update; a new permission triggers a
   fuller review, so add permissions rarely and deliberately.

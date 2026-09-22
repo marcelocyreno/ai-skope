@@ -1,7 +1,13 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import { history, groups } from "@/stores/history";
-import { page } from "@/stores/page";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import type { Chat } from "@/api/types";
+
+// The history store reaches the connection store, which now reads the manifest
+// at import time to know which server API this build speaks. Every context the
+// extension actually runs in has that; a bare test environment does not.
+vi.stubGlobal("chrome", { runtime: { getManifest: () => ({ version: "0.0.0-test" }) } });
+
+const { history, groups } = await import("@/stores/history");
+const { page } = await import("@/stores/page");
 
 function chat(id: string, url: string, host: string): Chat {
   return {

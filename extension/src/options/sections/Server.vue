@@ -112,6 +112,17 @@ async function toggle(r: RuntimeInfo) {
   await refresh();
 }
 
+/**
+ * The line under the address, which is the one place a reader comes to when
+ * the pane says something is wrong with the server — so a version mismatch
+ * has to be legible here too, not only in the pane's strip.
+ */
+const serverLine = computed(() => {
+  if (connection.state === "online") return `connected · v${connection.health?.version}`;
+  if (connection.state === "incompatible") return connection.error;
+  return "not reachable";
+});
+
 const glyph = (id: string) =>
   id.startsWith("claude") ? "r-claude-code"
   : id.startsWith("codex") ? "r-codex"
@@ -138,7 +149,7 @@ const glyph = (id: string) =>
         <b>Server address</b>
         <small>
           <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" style="display: inline-block; vertical-align: middle; margin-right: 5px" />
-          {{ connection.state === "online" ? `connected · v${connection.health?.version}` : "not reachable" }}
+          {{ serverLine }}
         </small>
       </div>
       <input v-model="url" class="sk-input mono" style="width: 240px" aria-label="Server URL" />

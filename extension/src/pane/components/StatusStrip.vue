@@ -11,6 +11,9 @@ import Icon from "./Icon.vue";
 const emit = defineEmits<{ (e: "switch-model"): void }>();
 
 const kind = computed<"offline" | "degraded" | null>(() => {
+  // A version mismatch outranks the model being offline, which it also causes:
+  // no models are loaded against a server the pane refuses to talk to.
+  if (connection.state === "incompatible") return "offline";
   if (connection.state === "offline") return "offline";
   if (modelStatus.value === "offline") return "offline";
   if (modelStatus.value === "degraded") return "degraded";
@@ -18,12 +21,15 @@ const kind = computed<"offline" | "degraded" | null>(() => {
 });
 
 const message = computed(() => {
+  if (connection.state === "incompatible") return connection.error;
   if (connection.state === "offline") return "AI Skope Server isn't reachable";
   if (modelStatus.value === "offline") return `${models.selection?.model ?? "That model"} is offline`;
   return `${models.selection?.model ?? "That model"} is slow right now`;
 });
 
-const isServer = computed(() => connection.state === "offline");
+const isServer = computed(
+  () => connection.state === "offline" || connection.state === "incompatible",
+);
 </script>
 
 <template>
