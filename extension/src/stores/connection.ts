@@ -8,9 +8,16 @@ import { reactive, computed } from "vue";
 import { SkopeClient } from "@/api/client";
 import { ApiError, NetworkError } from "@/api/errors";
 import type { Health, RuntimeInfo, ServerEvent } from "@/api/types";
+import { API_VERSION, VERSION } from "@/version";
 import { loadSettings, saveSettings, onSettingsChanged, type Settings } from "./storage";
 
-export type ConnectionState = "connecting" | "unpaired" | "online" | "offline";
+/**
+ * `incompatible` is reachable but wrong: the server answers, and speaks an API
+ * this build does not. It is a state of its own rather than an offline with a
+ * different message because there is nothing to retry into — a restart of one
+ * side or the other is what fixes it.
+ */
+export type ConnectionState = "connecting" | "unpaired" | "online" | "offline" | "incompatible";
 
 interface ConnectionStore {
   state: ConnectionState;
@@ -86,6 +93,14 @@ export async function connect(): Promise<void> {
   try {
     connection.health = await client.health();
     connection.error = "";
+    // Before anything else, including pairing: every other call is a shape one
+    // of the two sides would have to guess at, and a turn that dies half-way
+    // through has already spent the question.
+    if (connection.health.apiVersion !== API_VERSION) {
+      connection.state = "incompatible";
+      connection.error = mismatchMessage(connection.health);
+      return;
+    }
     if (!client.paired) {
       connection.state = "unpaired";
       return;
@@ -110,6 +125,19 @@ export async function connect(): Promise<void> {
           : String(err);
     scheduleRetry();
   }
+}
+
+/**
+ * mismatchMessage says which side is behind, and names both versions — the
+ * reader has to know which of the two to update, and a support thread that
+ * only says "incompatible" costs a round trip to find out.
+ */
+function mismatchMessage(health: Health): string {
+  const behind = health.apiVersion < API_VERSION ? "server" : "extension";
+  return (
+    `AI Skope Server ${health.version} speaks API v${health.apiVersion}, ` +
+    `and AI Skope ${VERSION} speaks v${API_VERSION} — update the ${behind}.`
+  );
 }
 
 /** scheduleRetry backs off, and counts down so the strip can show the wait. */

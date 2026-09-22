@@ -9,9 +9,10 @@ import type { SendRequest } from "@/api/types";
 
 const sent: SendRequest[] = [];
 const settings = { pageAccess: "never" as const, conciseness: 4 };
+const connection = { state: "online" };
 
 vi.mock("@/stores/connection", () => ({
-  connection: { state: "online" },
+  connection,
   api: () => ({
     createChat: async () => ({ id: "c1", url: "https://example.test", title: "" }),
     chat: async () => ({ chat: { id: "c1" }, messages: [] }),
@@ -57,5 +58,26 @@ describe("the answer-length stop", () => {
     await send();
 
     expect(sent[0].conciseness).toBe(4);
+  });
+});
+
+describe("the connection gate", () => {
+  beforeEach(() => {
+    sent.length = 0;
+    chat.chat = null;
+    chat.messages = [];
+  });
+
+  it("keeps a message from leaving while the connection is not online", async () => {
+    // Send is disabled then, but the empty state's suggestions and the
+    // keyboard reach send() without passing that button — and a server
+    // speaking another API would take the question and then fail part-way
+    // through the answer, with the question already spent.
+    connection.state = "incompatible";
+    chat.draft = "what does this page charge for overage?";
+    await send();
+    connection.state = "online";
+
+    expect(sent).toHaveLength(0);
   });
 });

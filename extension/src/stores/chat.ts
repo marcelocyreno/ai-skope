@@ -153,6 +153,11 @@ export interface SendOptions {
 export async function send(opts: SendOptions = {}): Promise<void> {
   const text = chat.draft.trim();
   if (!text || chat.sending) return;
+  // The last gate before a turn. Send is disabled while the connection is not
+  // online, but the empty state's suggestions and the keyboard reach here
+  // without passing that button — and against a server speaking another API
+  // the answer would die half-way through, with the question already spent.
+  if (connection.state !== "online") return;
 
   // Held before anything can reset the tray below.
   const context = chat.tray.slice();
