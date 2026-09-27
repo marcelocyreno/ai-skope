@@ -137,7 +137,7 @@ const glyph = (id: string) =>
       <div class="lbl">
         <b>Server address</b>
         <small>
-          <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" style="display: inline-block; vertical-align: middle; margin-right: 5px" />
+          <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" style="vertical-align: 1px; margin-right: 6px" />
           {{ connection.state === "online" ? `connected · v${connection.health?.version}` : "not reachable" }}
         </small>
       </div>

@@ -10,7 +10,8 @@ import { connection } from "@/stores/connection";
 import { modelStatus } from "@/stores/models";
 import { page } from "@/stores/page";
 import { showToast } from "@/stores/toast";
-import { saveSettings, CONCISENESS_NORMAL, type Conciseness } from "@/stores/storage";
+import { CONCISENESS_NORMAL } from "@/stores/storage";
+import { lengthStop } from "@/pane/length";
 import { copyText } from "@/pane/clipboard";
 import { chatMarkdown } from "@/pane/transcript";
 import { atFirstLine, atLastLine } from "@/pane/caret";
@@ -18,13 +19,14 @@ import ContextChip from "./ContextChip.vue";
 import ModelChip from "./ModelChip.vue";
 import Icon from "./Icon.vue";
 
-const props = defineProps<{ switcherOpen?: boolean; pickerOpen?: boolean }>();
+const props = defineProps<{ switcherOpen?: boolean; pickerOpen?: boolean; lengthOpen?: boolean }>();
 const emit = defineEmits<{
   (e: "submit"): void;
   (e: "pick"): void;
   (e: "select"): void;
   (e: "files"): void;
   (e: "switcher"): void;
+  (e: "length"): void;
   (e: "clear"): void;
 }>();
 
@@ -35,23 +37,11 @@ const canSend = computed(() => chat.draft.trim().length > 0 && !chat.sending && 
 
 /**
  * Answer length, the other half of what the model chip offers: effort is how
- * hard the model thinks, this is how much it says. Four is neutral and sends
- * no instruction at all, so the row can be ignored entirely.
- *
- * The stop is chosen per message but kept in chrome.storage.local, which is
- * therefore also the value on screen — the next message starts where the last
- * one left off, and the options page sees the same setting.
+ * hard the model thinks, this is how much it says. The button shows the stop
+ * in force and opens LengthMenu, where each stop is named; see length.ts.
  */
-const stops: { value: Conciseness; label: string }[] = [
-  { value: 1, label: "Extremely concise" },
-  { value: 2, label: "Very concise" },
-  { value: 3, label: "Concise" },
-  { value: 4, label: "Normal" },
-  { value: 5, label: "More detail" },
-];
-
 const conciseness = computed(() => connection.settings?.conciseness ?? CONCISENESS_NORMAL);
-const setConciseness = (value: Conciseness) => void saveSettings({ conciseness: value });
+const lengthLabel = computed(() => lengthStop(conciseness.value).label);
 
 const placeholder = computed(() => {
   if (connection.state === "offline") return "Waiting for the server to come back…";
@@ -186,29 +176,19 @@ defineExpose({ focus: () => field.value?.focus() });
           <Icon id="i-folder" />
         </button>
         <ModelChip :expanded="props.switcherOpen" @open="emit('switcher')" />
-        <span class="sk-seg mini sk-conc" role="group" aria-label="Answer length">
-          <Icon id="i-verbosity" />
-          <button
-            v-for="stop in stops"
-            :key="stop.value"
-            type="button"
-            :aria-pressed="conciseness === stop.value"
-            :aria-label="stop.label"
-            :title="`Answer length: ${stop.label}`"
-            @click="setConciseness(stop.value)"
-          >
-            {{ stop.value }}
-          </button>
-        </span>
-        <span class="grow" />
         <button
-          v-if="chat.sending"
           type="button"
-          class="sk-send"
-          aria-label="Stop"
-          style="background: var(--surface-3); color: var(--ink)"
-          @click="cancel()"
+          class="sk-len"
+          aria-haspopup="menu"
+          :aria-expanded="props.lengthOpen"
+          :aria-label="`Answer length: ${lengthLabel}`"
+          :title="`Answer length: ${lengthLabel}`"
+          @click="emit('length')"
         >
+          <Icon id="i-verbosity" />{{ conciseness }}
+        </button>
+        <span class="grow" />
+        <button v-if="chat.sending" type="button" class="sk-send is-stop" aria-label="Stop" @click="cancel()">
           <Icon id="i-close" />
         </button>
         <button v-else type="submit" class="sk-send" :disabled="!canSend" aria-label="Send">

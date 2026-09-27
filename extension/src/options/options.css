@@ -14,12 +14,90 @@ body {
 .sk-options {
   position: static;
   min-height: 100vh;
+  /* The kit's overflow: hidden made this box the nav's scroll container — one
+     that never scrolls — so the "sticky" nav scrolled away with the page. */
+  overflow: visible;
 }
+/* A centred two-column page, rather than a float and a fixed margin that
+   left the right half of a wide window empty and broke a narrow one. */
 .sk-opt-shell {
   overflow: visible;
+  /* A definite width: with only auto margins a column-flex item shrinks to
+     fit its content, and a wide table then pushed the whole page sideways. */
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 40px;
+}
+.sk-opt-shell::before {
+  display: none;
 }
 .sk-opt-nav {
   position: sticky;
   top: 0;
+  float: none;
+  width: auto;
   height: 100vh;
+  padding: 32px 0 0;
+  align-self: start;
+}
+.sk-opt-main {
+  margin: 0;
+  max-width: 780px;
+  padding: 32px 0 80px;
+}
+
+/* Narrow windows: the section list becomes a sticky strip across the top. */
+@media (max-width: 880px) {
+  .sk-opt-shell {
+    display: block;
+    padding: 0 16px;
+  }
+  .sk-opt-nav {
+    z-index: 5;
+    height: auto;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+  .sk-opt-nav .brand {
+    flex: none;
+    flex-wrap: nowrap;
+    margin: 0 10px 0 0;
+  }
+  .sk-opt-nav .brand small,
+  .sk-opt-nav .srv small,
+  .sk-opt-nav .srv .txt {
+    display: none;
+  }
+  .sk-opt-nav a {
+    flex: none;
+    white-space: nowrap;
+  }
+  .sk-opt-nav a.on {
+    box-shadow: inset 0 -2px 0 var(--ink);
+  }
+  .sk-opt-nav .srv {
+    flex: none;
+    margin: 0 0 0 auto;
+    padding: 6px 10px;
+    display: flex;
+  }
+  .sk-opt-main {
+    padding-top: 16px;
+    gap: 16px;
+  }
+  .sk-opt-section {
+    padding: 16px 16px 10px;
+    scroll-margin-top: 64px;
+  }
 }

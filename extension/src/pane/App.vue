@@ -24,6 +24,7 @@ import TopBar from "./components/TopBar.vue";
 import Thread from "./components/Thread.vue";
 import Composer from "./components/Composer.vue";
 import ModelSwitcher from "./components/ModelSwitcher.vue";
+import LengthMenu from "./components/LengthMenu.vue";
 import FilePicker from "./components/FilePicker.vue";
 import StatusStrip from "./components/StatusStrip.vue";
 import EmptyState from "./components/EmptyState.vue";
@@ -33,7 +34,7 @@ import Pairing from "./components/Pairing.vue";
 import Icon from "./components/Icon.vue";
 import Toast from "./components/Toast.vue";
 
-type Overlay = "none" | "switcher" | "files";
+type Overlay = "none" | "switcher" | "files" | "length";
 type Panel = "none" | "history" | "settings";
 
 const overlay = ref<Overlay>("none");
@@ -43,6 +44,23 @@ const composer = ref<InstanceType<typeof Composer> | null>(null);
 const askingPage = ref(false);
 
 const ready = computed(() => connection.state === "online");
+
+/**
+ * The strips and the composer are one block, and its height is what the
+ * popovers and the toast stand on. It changes with every line typed and every
+ * chip added, so it is measured rather than assumed.
+ */
+const dock = ref<HTMLElement | null>(null);
+const dockHeight = ref(0);
+const measureDock = new ResizeObserver(([entry]) => {
+  dockHeight.value = Math.round(entry.target.getBoundingClientRect().height);
+});
+watch(dock, (el, old) => {
+  if (old) measureDock.unobserve(old);
+  if (el) measureDock.observe(el);
+  else dockHeight.value = 0;
+});
+const paneStyle = computed(() => (dockHeight.value ? { "--dock-h": `${dockHeight.value}px` } : {}));
 
 let unwatchTab: (() => void) | null = null;
 
@@ -78,6 +96,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  measureDock.disconnect();
   unwatchTab?.();
   stopConnection();
   chrome.runtime.onMessage.removeListener(onRuntimeMessage);
@@ -283,8 +302,10 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <div class="sk-pane" @keydown="onKeydown">
+  <div class="sk-pane" :style="paneStyle" @keydown="onKeydown">
+    <!-- Unpaired or offline, there is no chat to start, list or configure. -->
     <TopBar
+      v-if="ready"
       @new-chat="doNewChat()"
       @history="panel = panel === 'history' ? 'none' : 'history'"
       @settings="panel = panel === 'settings' ? 'none' : 'settings'"
@@ -304,33 +325,40 @@ function onKeydown(e: KeyboardEvent) {
         </section>
       </div>
 
-      <StatusStrip @switch-model="overlay = 'switcher'" />
+      <div ref="dock" class="sk-dock">
+        <StatusStrip @switch-model="overlay = 'switcher'" />
 
-      <div v-if="askingPage" class="sk-strip is-ask" role="status">
-        <Icon id="i-shield" />
-        <span>Send this page's text with your question?</span>
-        <button type="button" class="act" @click="answerWithPage()">Include page</button>
-        <button type="button" class="act plain" @click="answerWithoutPage()">Without it</button>
+        <div v-if="askingPage" class="sk-strip is-ask" role="status">
+          <Icon id="i-shield" />
+          <span>Send this page's text with your question?</span>
+          <button type="button" class="act" @click="answerWithPage()">Include page</button>
+          <button type="button" class="act plain" @click="answerWithoutPage()">Without it</button>
+        </div>
+
+        <Composer
+          ref="composer"
+          @submit="submitMessage()"
+          :switcher-open="overlay === 'switcher'"
+          :picker-open="overlay === 'files'"
+          :length-open="overlay === 'length'"
+          @pick="doPick()"
+          @select="doSelection()"
+          @files="overlay = overlay === 'files' ? 'none' : 'files'"
+          @switcher="overlay = overlay === 'switcher' ? 'none' : 'switcher'"
+          @length="overlay = overlay === 'length' ? 'none' : 'length'"
+          @clear="doNewChat()"
+        />
       </div>
-
-      <Composer
-        ref="composer"
-        @submit="submitMessage()"
-        :switcher-open="overlay === 'switcher'"
-        :picker-open="overlay === 'files'"
-        @pick="doPick()"
-        @select="doSelection()"
-        @files="overlay = overlay === 'files' ? 'none' : 'files'"
-        @switcher="overlay = overlay === 'switcher' ? 'none' : 'switcher'"
-        @clear="doNewChat()"
-      />
 
       <div v-if="overlay !== 'none'" class="sk-scrim" @click="overlay = 'none'" />
-      <div v-if="overlay === 'switcher'" class="sk-anchor" style="left: 8px; right: 8px; bottom: 118px">
+      <div v-if="overlay === 'switcher'" class="sk-anchor is-pop">
         <ModelSwitcher @close="overlay = 'none'" @manage="openOptions('providers')" />
       </div>
-      <div v-if="overlay === 'files'" class="sk-anchor" style="left: 8px; right: 8px; bottom: 118px">
+      <div v-if="overlay === 'files'" class="sk-anchor is-pop">
         <FilePicker @choose="chooseFile" @close="overlay = 'none'" @manage="openOptions('folders')" />
+      </div>
+      <div v-if="overlay === 'length'" class="sk-anchor is-pop is-end">
+        <LengthMenu @close="overlay = 'none'; composer?.focus()" />
       </div>
 
       <History v-if="panel === 'history'" @close="panel = 'none'" @new-chat="doNewChat()" />

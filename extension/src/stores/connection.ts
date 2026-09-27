@@ -177,5 +177,9 @@ export function applyAppearance(s: Settings): void {
   else root.setAttribute("data-theme", s.theme);
   if (s.palette === "graphite") root.removeAttribute("data-palette");
   else root.setAttribute("data-palette", s.palette);
-  root.style.fontSize = s.textSize === "small" ? "13px" : s.textSize === "large" ? "16px" : "";
+  // The type scale is in px, so the root font size this used to set changed
+  // nothing on screen; the tokens multiply by --text-scale instead.
+  const scale = s.textSize === "small" ? "0.93" : s.textSize === "large" ? "1.14" : "";
+  if (scale) root.style.setProperty("--text-scale", scale);
+  else root.style.removeProperty("--text-scale");
 }

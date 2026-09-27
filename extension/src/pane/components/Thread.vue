@@ -28,12 +28,31 @@ watch(
   },
 );
 
-const today = new Date().toLocaleDateString([], { weekday: "long" });
+/**
+ * When the conversation started. It used to be today's weekday whatever the
+ * chat — so one reopened from History said "Sunday" about last month.
+ */
+const day = computed(() => {
+  const first = chat.messages[0]?.createdAt;
+  if (!first) return "";
+  const d = new Date(first);
+  const now = new Date();
+  const midnight = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((midnight(now) - midnight(d)) / 86_400_000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return d.toLocaleDateString([], { weekday: "long" });
+  return d.toLocaleDateString([], {
+    month: "long",
+    day: "numeric",
+    year: d.getFullYear() === now.getFullYear() ? undefined : "numeric",
+  });
+});
 </script>
 
 <template>
   <div ref="el" class="sk-thread" aria-live="polite">
-    <div class="sk-day">{{ today }}</div>
+    <div v-if="day" class="sk-day">{{ day }}</div>
     <Message
       v-for="m in chat.messages"
       :key="m.id"

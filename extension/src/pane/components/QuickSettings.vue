@@ -24,6 +24,11 @@ const palettes: { id: Settings["palette"]; label: string }[] = [
 
 const set = (patch: Partial<Settings>) => void saveSettings(patch);
 
+const blockedSummary = computed(() => {
+  const n = s.value?.blockedHosts.length ?? 0;
+  return n === 0 ? "No sites blocked yet." : `${n} site${n === 1 ? "" : "s"} never read.`;
+});
+
 const serverSummary = computed(() => {
   if (connection.state !== "online") return "not reachable";
   const n = connection.runtimes.filter((r) => r.available).length;
@@ -97,7 +102,7 @@ const serverSummary = computed(() => {
           <div class="lbl">
             <b>AI Skope Server</b>
             <small>
-              <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" style="display: inline-block; vertical-align: middle; margin-right: 5px" />
+              <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" style="vertical-align: 1px; margin-right: 6px" />
               {{ serverSummary }}
             </small>
           </div>
@@ -127,7 +132,7 @@ const serverSummary = computed(() => {
           </div>
         </div>
         <div class="sk-row">
-          <div class="lbl"><b>Blocked sites</b><small>{{ s?.blockedHosts.length ?? 0 }} site(s) never read.</small></div>
+          <div class="lbl"><b>Blocked sites</b><small>{{ blockedSummary }}</small></div>
           <button type="button" class="sk-btn secondary sm" @click="emit('options', 'privacy')">Manage</button>
         </div>
         <div class="sk-row">
@@ -139,6 +144,7 @@ const serverSummary = computed(() => {
             type="button"
             class="sk-switch"
             role="switch"
+            aria-label="Right-click menu"
             :aria-checked="s?.contextMenu"
             @click="set({ contextMenu: !s?.contextMenu })"
           />

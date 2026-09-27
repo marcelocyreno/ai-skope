@@ -32,7 +32,7 @@ async function setRetention(days: string) {
         <b>Send page content to the model</b>
         <small>Only what you pick or select is sent unless you allow the whole page.</small>
       </div>
-      <div class="sk-seg" role="group">
+      <div class="sk-seg" role="group" aria-label="Page content">
         <button type="button" :aria-pressed="s?.pageAccess === 'ask'" @click="set({ pageAccess: 'ask' })">Ask</button>
         <button type="button" :aria-pressed="s?.pageAccess === 'always'" @click="set({ pageAccess: 'always' })">Always</button>
         <button type="button" :aria-pressed="s?.pageAccess === 'never'" @click="set({ pageAccess: 'never' })">Never</button>
@@ -49,14 +49,14 @@ async function setRetention(days: string) {
       </span>
     </div>
     <div class="sk-row" style="border: 0">
-      <input v-model="host" class="sk-input mono" placeholder="mail.google.com" style="width: 240px" @keydown.enter="addHost()" />
+      <input v-model="host" class="sk-input mono" placeholder="mail.google.com" style="width: 240px" aria-label="Site to block" @keydown.enter="addHost()" />
       <button class="sk-btn secondary sm" @click="addHost()"><Icon id="i-plus" />Add site</button>
     </div>
 
     <div class="sk-row">
       <div class="lbl"><b>Delete chats older than</b><small>Applied by the server.</small></div>
       <span class="sk-selectwrap">
-        <select class="sk-select" @change="setRetention(($event.target as HTMLSelectElement).value)">
+        <select class="sk-select" aria-label="Delete chats older than" @change="setRetention(($event.target as HTMLSelectElement).value)">
           <option value="0">Never</option>
           <option value="90">90 days</option>
           <option value="30">30 days</option>

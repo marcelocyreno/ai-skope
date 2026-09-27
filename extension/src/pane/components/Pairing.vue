@@ -120,7 +120,7 @@ async function saveUrl() {
         autofocus
         @keydown.enter="submit()"
       />
-      <button class="sk-btn primary" :disabled="busy || code.trim().length < 4" @click="submit()">
+      <button class="sk-btn primary wide" :disabled="busy || code.trim().length < 4" @click="submit()">
         {{ busy ? "Pairing…" : "Pair" }}
       </button>
       <p v-if="error" class="err">{{ error }}</p>
