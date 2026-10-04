@@ -6,6 +6,7 @@ theme: jekyll-theme-cayman
 # a user or a store reviewer actually needs.
 exclude:
   - PUBLISHING.md
+  - SHELL-PLAN.md
   - SERVER-PLAN.md
   - SPEC.md
   - runtimes
