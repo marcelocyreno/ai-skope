@@ -47,6 +47,22 @@ function activate(f: FileEntry) {
   else emit("choose", f);
 }
 
+/** A folder is known by its own name; the path above it is the detail. */
+function split(path: string): { name: string; parent: string } {
+  const trimmed = path.replace(/\/+$/, "");
+  const at = trimmed.lastIndexOf("/");
+  return at <= 0 ? { name: trimmed, parent: "" } : { name: trimmed.slice(at + 1), parent: trimmed.slice(0, at) };
+}
+
+/**
+ * The end of a path is the part that tells files apart; its start is the same
+ * for every row. Long ones keep their last two folders.
+ */
+function tail(path: string): string {
+  const parts = path.split("/").filter(Boolean);
+  return parts.length > 3 ? `…/${parts.slice(-2).join("/")}` : path;
+}
+
 const kb = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`);
 </script>
 
@@ -54,7 +70,7 @@ const kb = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n /
   <div class="sk-pop sk-switcher sk-filepick" role="listbox" aria-label="Files">
     <div class="srv">
       <span class="sk-dot" />AI Skope Server ·
-      {{ files.folders.map((f) => f.display).join(" · ") || "no folders allowed yet" }}
+      {{ files.folders.map((f) => tail(f.display)).join(" · ") || "no folders allowed yet" }}
     </div>
 
     <div class="search">
@@ -72,12 +88,11 @@ const kb = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n /
       <button
         v-if="files.browsing"
         type="button"
-        class="sk-model sk-file"
+        class="sk-model sk-file two"
         @click="files.browsing = ''; void openPicker()"
       >
         <span class="ft dir"><Icon id="i-arrow-left" /></span>
-        <span class="nm"><span>Back</span></span>
-        <span class="meta" />
+        <span class="txt"><span class="nm"><span>Back</span></span></span>
       </button>
 
       <template v-for="g in showing" :key="g.label">
@@ -86,18 +101,21 @@ const kb = (n: number) => (n < 1024 ? `${n} B` : n < 1048576 ? `${Math.round(n /
           v-for="f in g.items"
           :key="f.path"
           type="button"
-          class="sk-model sk-file"
+          class="sk-model sk-file two"
           role="option"
+          :title="f.display || f.path"
           @click="activate(f)"
         >
           <span class="ft" :class="{ dir: f.isDir }">
             <Icon v-if="f.isDir" id="i-folder" />
             <template v-else>{{ (f.ext || "").replace(".", "").slice(0, 4).toUpperCase() || "TXT" }}</template>
           </span>
-          <span class="nm"><span>{{ f.name }}</span></span>
-          <span class="meta">
-            <template v-if="f.isDir">{{ f.size }} files</template>
-            <template v-else>{{ f.dir }} · {{ kb(f.size) }}</template>
+          <span class="txt">
+            <span class="nm"><span>{{ f.isDir ? split(f.display || f.name).name : f.name }}</span></span>
+            <span class="sub">
+              <template v-if="f.isDir">{{ f.size }} files<template v-if="split(f.display || f.name).parent"> · {{ tail(split(f.display || f.name).parent) }}</template></template>
+              <template v-else>{{ kb(f.size) }} · {{ tail(f.dir) }}</template>
+            </span>
           </span>
         </button>
       </template>

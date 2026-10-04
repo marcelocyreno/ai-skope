@@ -39,7 +39,7 @@ body {
   width: 64px;
   height: 64px;
   stroke-width: 1;
-  color: var(--ink-3);
+  color: var(--line-strong);
 }
 .sk-connect h2 {
   margin: 0;
@@ -128,17 +128,27 @@ body {
 .sk-code-input {
   width: 100%;
   max-width: 260px;
-  height: 40px;
+  height: 44px;
   text-align: center;
   font-family: var(--font-mono);
   font-size: var(--t-16);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-ctl);
   background: var(--surface-2);
   color: var(--ink);
   outline: none;
+}
+.sk-code-input::placeholder {
+  color: var(--ink-3);
+  letter-spacing: 0.2em;
+}
+/* The one action on the screen, as wide as the field it submits. */
+.sk-connect .sk-btn.wide {
+  width: 100%;
+  max-width: 260px;
+  height: 36px;
 }
 .sk-code-input:focus {
   border-color: var(--focus);
@@ -162,6 +172,32 @@ body {
 .sk-strip.is-ask .sk-ico {
   color: var(--focus);
 }
-.sk-strip .act.plain {
-  color: var(--ink-2);
+
+/* The strips and the composer, as one block whose height the pane tracks in
+   --dock-h. Popovers and the toast sit on top of it rather than at a fixed
+   118px from the bottom, which covered the field as soon as it grew (a
+   second line, a tray of chips, the ask strip). */
+.sk-dock {
+  flex: none;
+}
+.sk-anchor.is-pop {
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--dock-h, 118px) + 6px);
+}
+.sk-anchor.is-pop.is-end {
+  left: auto;
+}
+.sk-anchor.is-pop .sk-pop {
+  max-height: calc(100vh - var(--dock-h, 118px) - 20px);
+}
+.sk-anchor.is-pop .sk-switcher {
+  width: 100%;
+}
+.sk-anchor.is-pop .sk-switcher .list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.sk-pane > .sk-toast {
+  bottom: calc(var(--dock-h, 6px) + 12px);
 }

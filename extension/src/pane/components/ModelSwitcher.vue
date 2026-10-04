@@ -3,7 +3,7 @@
  * The switcher rises from the chip in the composer. Its shape follows the
  * server's own hierarchy: runtime → provider / model → effort.
  */
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   models,
   groupedOptions,
@@ -21,6 +21,11 @@ import Icon from "./Icon.vue";
 
 const emit = defineEmits<{ (e: "close"): void; (e: "manage"): void }>();
 const filter = ref("");
+const list = ref<HTMLElement | null>(null);
+
+// Open on the model in use: with a few runtimes it is often below the fold,
+// and the check mark is the switcher's answer to "what am I on?".
+onMounted(() => list.value?.querySelector('[aria-checked="true"]')?.scrollIntoView({ block: "nearest" }));
 
 const groups = computed(() => {
   const q = filter.value.trim().toLowerCase();
@@ -82,6 +87,18 @@ function chooseEffort(level: string) {
   savedDefault.value = false;
 }
 
+/** Latency and context, then the state in words — the dot alone is colour only. */
+function detail(o: ModelOption): string {
+  const parts: string[] = [];
+  if (o.provider) parts.push(o.provider);
+  if (o.latencyMs) parts.push(`${o.latencyMs} ms`);
+  if (o.ctx) parts.push(`${Math.round(o.ctx / 1000)}K ctx`);
+  return parts.join(" · ");
+}
+
+const stateWord = (o: ModelOption) =>
+  o.status === "offline" ? "offline" : o.status === "degraded" ? "slow" : "";
+
 const serverLine = computed(() => {
   const base = connection.settings?.baseUrl.replace(/^https?:\/\//, "") ?? "";
   if (connection.state !== "online") return `${base} · not reachable`;
@@ -101,7 +118,7 @@ const serverLine = computed(() => {
       <input v-model="filter" placeholder="Find a model or runtime" aria-label="Find a model" autofocus />
     </div>
 
-    <div class="list">
+    <div ref="list" class="list">
       <template v-for="g in groups" :key="g.key">
         <div class="sk-group">
           <span><Icon :id="glyphFor(g.options[0])" />{{ g.label }}</span>
@@ -110,7 +127,7 @@ const serverLine = computed(() => {
           v-for="o in g.options"
           :key="`${o.runtime}/${o.provider ?? ''}/${o.model}`"
           type="button"
-          class="sk-model"
+          class="sk-model two"
           :class="{ 'is-off': o.status === 'offline' }"
           role="option"
           :aria-checked="isSelected(o)"
@@ -121,14 +138,14 @@ const serverLine = computed(() => {
             class="sk-dot"
             :class="o.status === 'degraded' ? 'is-degraded' : o.status === 'offline' ? 'is-offline' : ''"
           />
-          <span class="nm">
-            <span v-if="o.provider" class="prov">{{ o.provider }} /</span>
-            <span class="mdl">{{ shortModel(o.model) }}</span>
-            <span v-if="o.default" class="sk-tag">default</span>
-          </span>
-          <span class="meta">
-            <template v-if="o.latencyMs">{{ o.latencyMs }} ms</template>
-            <template v-if="o.ctx"> · {{ Math.round(o.ctx / 1000) }}K ctx</template>
+          <span class="txt">
+            <span class="nm">
+              <span class="mdl">{{ shortModel(o.model) }}</span>
+              <span v-if="o.default" class="sk-tag">default</span>
+            </span>
+            <span v-if="detail(o) || stateWord(o)" class="sub">
+              <span v-if="stateWord(o)" class="st">{{ stateWord(o) }}<template v-if="detail(o)"> · </template></span>{{ detail(o) }}
+            </span>
           </span>
           <Icon id="i-check" class="chk" />
         </button>

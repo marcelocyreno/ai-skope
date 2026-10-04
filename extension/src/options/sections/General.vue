@@ -7,6 +7,7 @@ import Icon from "@/pane/components/Icon.vue";
 const s = computed(() => connection.settings);
 const set = (patch: Partial<Settings>) => void saveSettings(patch);
 const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember", "arctic", "mono"];
+const named = (p?: string) => (p ? p[0].toUpperCase() + p.slice(1) : "");
 </script>
 
 <template>
@@ -14,14 +15,14 @@ const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember"
     <h2>General</h2>
     <div class="sk-row">
       <div class="lbl"><b>Theme</b><small>Follows Chrome unless you choose one.</small></div>
-      <div class="sk-seg" role="group">
+      <div class="sk-seg" role="group" aria-label="Theme">
         <button type="button" :aria-pressed="s?.theme === 'light'" @click="set({ theme: 'light' })"><Icon id="i-sun" />Light</button>
         <button type="button" :aria-pressed="s?.theme === 'dark'" @click="set({ theme: 'dark' })"><Icon id="i-moon" />Dark</button>
         <button type="button" :aria-pressed="s?.theme === 'system'" @click="set({ theme: 'system' })"><Icon id="i-monitor" />System</button>
       </div>
     </div>
     <div class="sk-row">
-      <div class="lbl"><b>Color</b><small>{{ s?.palette }}</small></div>
+      <div class="lbl"><b>Color</b><small>{{ named(s?.palette) }}</small></div>
       <div class="sk-swatches" role="group" aria-label="Color palette">
         <button
           v-for="p in palettes"
@@ -31,14 +32,15 @@ const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember"
           :data-palette="p"
           data-theme="dark"
           :aria-pressed="s?.palette === p"
-          :aria-label="p"
+          :aria-label="named(p)"
+          :title="named(p)"
           @click="set({ palette: p })"
         />
       </div>
     </div>
     <div class="sk-row">
       <div class="lbl"><b>Text size</b></div>
-      <div class="sk-seg" role="group">
+      <div class="sk-seg" role="group" aria-label="Text size">
         <button type="button" :aria-pressed="s?.textSize === 'small'" @click="set({ textSize: 'small' })">Small</button>
         <button type="button" :aria-pressed="s?.textSize === 'default'" @click="set({ textSize: 'default' })">Default</button>
         <button type="button" :aria-pressed="s?.textSize === 'large'" @click="set({ textSize: 'large' })">Large</button>
@@ -50,6 +52,7 @@ const palettes: Settings["palette"][] = ["graphite", "nocturne", "sage", "ember"
         type="button"
         class="sk-switch"
         role="switch"
+        aria-label="Open automatically"
         :aria-checked="s?.openAutomatically"
         @click="set({ openAutomatically: !s?.openAutomatically })"
       />

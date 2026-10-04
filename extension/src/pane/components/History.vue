@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Chats grouped by this page, this site, everywhere — deletable, undoable. */
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { history, loadHistory, groups, deleteChat, undoDelete } from "@/stores/history";
 import { chat, openChat } from "@/stores/chat";
 import { showToast } from "@/stores/toast";
@@ -32,6 +32,19 @@ async function remove(c: Chat, e: Event) {
   });
 }
 
+/**
+ * A chat is created the moment a page is opened, so every page visited left
+ * an "Untitled chat · 0 messages" row behind. Those say nothing and are
+ * hidden — except the one open now, which is where the next question goes.
+ */
+const shown = computed(() =>
+  groups.value
+    .map((g) => ({ ...g, chats: g.chats.filter((c) => c.messageCount > 0 || c.id === chat.chat?.id) }))
+    .filter((g) => g.chats.length > 0),
+);
+
+const plural = (n: number) => `${n} message${n === 1 ? "" : "s"}`;
+
 const when = (ms: number) => {
   const d = new Date(ms);
   const today = new Date();
@@ -60,31 +73,38 @@ const when = (ms: number) => {
     </div>
 
     <div class="bd">
-      <section v-for="g in groups" :key="g.key" class="sk-set-section sk-hist-group">
+      <section v-for="g in shown" :key="g.key" class="sk-set-section sk-hist-group">
         <h3>{{ g.label }} <span v-if="g.detail" class="url">{{ g.detail }}</span></h3>
-        <button
+        <div
           v-for="c in g.chats"
           :key="c.id"
-          type="button"
-          class="sk-chat"
+          class="sk-chat-row"
           :class="{ 'is-current': c.id === chat.chat?.id }"
-          @click="open(c)"
         >
-          <span class="fav">{{ (c.host || "?").slice(0, 1).toUpperCase() }}</span>
-          <span class="body">
-            <span class="ttl">{{ c.title || "Untitled chat" }}</span>
-            <span class="meta">
-              {{ c.model || c.runtime || "—" }} · {{ c.messageCount }} message{{ c.messageCount === 1 ? "" : "s" }} ·
-              {{ when(c.updatedAt) }}<template v-if="g.showHost"> · {{ c.host }}</template>
+          <button type="button" class="sk-chat" @click="open(c)">
+            <span class="fav">{{ (c.host || "?").slice(0, 1).toUpperCase() }}</span>
+            <span class="body">
+              <span class="ttl">{{ c.title || (c.messageCount ? "Untitled chat" : "New chat") }}</span>
+              <span class="meta">
+                <template v-if="c.messageCount">{{ c.model || c.runtime || "—" }} · {{ plural(c.messageCount) }} · </template>
+                {{ when(c.updatedAt) }}<template v-if="g.showHost"> · {{ c.host }}</template>
+              </span>
             </span>
-          </span>
-          <span v-if="c.id === chat.chat?.id" class="sk-tag">open</span>
-          <span v-else class="del sk-iconbtn sm" role="button" aria-label="Delete chat" @click="remove(c, $event)">
+            <span v-if="c.id === chat.chat?.id" class="sk-tag">open</span>
+          </button>
+          <button
+            v-if="c.id !== chat.chat?.id"
+            type="button"
+            class="del sk-iconbtn sm"
+            :aria-label="`Delete ${c.title || 'chat'}`"
+            title="Delete chat"
+            @click="remove(c, $event)"
+          >
             <Icon id="i-trash" />
-          </span>
-        </button>
+          </button>
+        </div>
       </section>
-      <div v-if="groups.length === 0" class="sk-hist-empty">
+      <div v-if="shown.length === 0" class="sk-hist-empty">
         <template v-if="history.query">No chats match "{{ history.query }}".</template>
         <template v-else>No chats yet.</template>
       </div>

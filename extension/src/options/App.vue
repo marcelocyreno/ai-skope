@@ -3,7 +3,7 @@
  * The full settings page: everything you configure once. It talks to the same
  * server the pane does, and shares the design kit's components.
  */
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { connection, initConnection } from "@/stores/connection";
 import Icon from "@/pane/components/Icon.vue";
 import { VERSION } from "@/version";
@@ -28,11 +28,35 @@ const sections = [
 const active = ref(location.hash.replace("#", "") || "general");
 
 onMounted(async () => {
+  window.addEventListener("scroll", onScroll, { passive: true });
   await initConnection();
   scrollTo(active.value);
 });
 
+onUnmounted(() => window.removeEventListener("scroll", onScroll));
+
+/**
+ * The nav follows the reader. It only ever changed on a click, so scrolling
+ * to Privacy left "General" highlighted. A click's own smooth scroll passes
+ * through every section on the way, so for that long the click decides.
+ */
+let clickedAt = 0;
+function onScroll() {
+  if (Date.now() - clickedAt < 800) return;
+  const sections = [...document.querySelectorAll<HTMLElement>("[data-section]")];
+  if (sections.length === 0) return;
+  const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+  let current = sections[0].dataset.section ?? "general";
+  for (const el of sections) if (el.getBoundingClientRect().top <= 120) current = el.dataset.section ?? current;
+  if (atBottom) current = sections[sections.length - 1].dataset.section ?? current;
+  if (current !== active.value) {
+    active.value = current;
+    history.replaceState(null, "", `#${current}`);
+  }
+}
+
 function go(id: string) {
+  clickedAt = Date.now();
   active.value = id;
   history.replaceState(null, "", `#${id}`);
   scrollTo(id);
@@ -57,13 +81,14 @@ function scrollTo(id: string) {
           :key="s.id"
           href="#"
           :class="{ on: active === s.id }"
+          :aria-current="active === s.id ? 'location' : undefined"
           @click.prevent="go(s.id)"
         >
           {{ s.label }}
         </a>
-        <div class="srv">
+        <div class="srv" :title="connection.state === 'online' ? 'Server connected' : 'Server unreachable'">
           <span class="sk-dot" :class="connection.state === 'online' ? '' : 'is-offline'" />
-          {{ connection.state === "online" ? "Server connected" : "Server unreachable" }}
+          <span class="txt">{{ connection.state === "online" ? "Server connected" : "Server unreachable" }}</span>
           <small class="mono">{{ connection.settings?.baseUrl }}</small>
         </div>
       </nav>

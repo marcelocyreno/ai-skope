@@ -121,7 +121,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
 
   <div v-else class="sk-msg ai" :class="{ 'is-streaming': streaming }">
     <div class="sk-ai-head">
-      <Icon id="i-reticle" />AI Skope<template v-if="model"> · {{ model }}</template>
+      <Icon id="i-reticle" />AI Skope<template v-if="model"> · <span class="mdl">{{ model }}</span></template>
     </div>
 
     <div
